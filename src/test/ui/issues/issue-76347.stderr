@@ -1,0 +1,12 @@
+error[E0592]: duplicate definition with name `A`
+  --> $DIR/issue-76347.rs:6:5
+   |
+LL |     A(i32),
+   |     ------ definition of variant `A`
+...
+LL |     pub const A: Self = Foo::A(0);
+   |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ other definition of `A`
+
+error: aborting due to previous error
+
+For more information about this error, try `rustc --explain E0592`.
