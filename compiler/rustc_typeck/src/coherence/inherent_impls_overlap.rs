@@ -4,6 +4,7 @@ use rustc_hir::def_id::{CrateNum, DefId, LOCAL_CRATE};
 use rustc_hir::itemlikevisit::ItemLikeVisitor;
 use rustc_middle::ty::TyCtxt;
 use rustc_trait_selection::traits::{self, SkipLeakCheck};
+use rustc_data_structures::fx::FxHashMap;
 
 pub fn crate_inherent_impls_overlap_check(tcx: TyCtxt<'_>, crate_num: CrateNum) {
     assert_eq!(crate_num, LOCAL_CRATE);
@@ -105,13 +106,15 @@ impl InherentOverlapChecker<'tcx> {
 
 impl ItemLikeVisitor<'v> for InherentOverlapChecker<'tcx> {
     fn visit_item(&mut self, item: &'v hir::Item<'v>) {
-        match item.kind {
-            hir::ItemKind::Enum(..)
-            | hir::ItemKind::Struct(..)
-            | hir::ItemKind::Trait(..)
-            | hir::ItemKind::Union(..) => {
-                check_common_overlapping(self, item)
+        match &item.kind {
+            hir::ItemKind::Enum(e, _) => {
+                check_common_overlapping(self, item);
+                check_variant_overlapping(self, e, item.hir_id);
             }
+
+            hir::ItemKind::Struct(..)
+            | hir::ItemKind::Trait(..)
+            | hir::ItemKind::Union(..) => check_common_overlapping(self, item),
             _ => {}
         }
     }
@@ -123,7 +126,7 @@ impl ItemLikeVisitor<'v> for InherentOverlapChecker<'tcx> {
 
 fn check_common_overlapping<'v, 'tcx>(
     checker: &mut InherentOverlapChecker<'tcx>,
-    item: &'v hir::Item<'v>
+    item: &'v hir::Item<'v>,
 ) {
     let ty_def_id = checker.tcx.hir().local_def_id(item.hir_id);
     let impls = checker.tcx.inherent_impls(ty_def_id);
@@ -135,5 +138,41 @@ fn check_common_overlapping<'v, 'tcx>(
             }
         }
     }
+}
 
+fn check_variant_overlapping<'v, 'tcx>(
+    checker: &mut InherentOverlapChecker<'tcx>,
+    en: &hir::EnumDef<'v>,
+    item_id: hir::HirId,
+) {
+    let ty_def_id = checker.tcx.hir().local_def_id(item_id);
+    let items = checker.tcx.inherent_impls(ty_def_id).iter().flat_map(|impl_block_id| {
+        checker.tcx.associated_items(*impl_block_id).in_definition_order()
+    });
+
+    let variant_names: FxHashMap<_, _> = en.variants.iter().map(|v| (&v.ident, v.span)).collect();
+
+    for item in items {
+        let item_name = &item.ident;
+
+        if let Some(variant_span) = variant_names.get(&item_name) {
+            let name = item.ident.normalize_to_macros_2_0();
+            let mut err = struct_span_err!(
+                checker.tcx.sess,
+                checker.tcx.span_of_impl(item.def_id).unwrap(),
+                E0592,
+                "duplicate definition with name `{}`",
+                name,
+            );
+            err.span_label(
+                *variant_span,
+                format!("definition of variant `{}`", name),
+            );
+            err.span_label(
+                checker.tcx.span_of_impl(item.def_id).unwrap(),
+                format!("other definition of `{}`", name),
+            );
+            err.emit();
+        }
+    }
 }
