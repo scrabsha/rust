@@ -110,16 +110,7 @@ impl ItemLikeVisitor<'v> for InherentOverlapChecker<'tcx> {
             | hir::ItemKind::Struct(..)
             | hir::ItemKind::Trait(..)
             | hir::ItemKind::Union(..) => {
-                let ty_def_id = self.tcx.hir().local_def_id(item.hir_id);
-                let impls = self.tcx.inherent_impls(ty_def_id);
-
-                for (i, &impl1_def_id) in impls.iter().enumerate() {
-                    for &impl2_def_id in &impls[(i + 1)..] {
-                        if self.impls_have_common_items(impl1_def_id, impl2_def_id) {
-                            self.check_for_overlapping_inherent_impls(impl1_def_id, impl2_def_id);
-                        }
-                    }
-                }
+                check_common_overlapping(self, item)
             }
             _ => {}
         }
@@ -128,4 +119,21 @@ impl ItemLikeVisitor<'v> for InherentOverlapChecker<'tcx> {
     fn visit_trait_item(&mut self, _trait_item: &hir::TraitItem<'v>) {}
 
     fn visit_impl_item(&mut self, _impl_item: &hir::ImplItem<'v>) {}
+}
+
+fn check_common_overlapping<'v, 'tcx>(
+    checker: &mut InherentOverlapChecker<'tcx>,
+    item: &'v hir::Item<'v>
+) {
+    let ty_def_id = checker.tcx.hir().local_def_id(item.hir_id);
+    let impls = checker.tcx.inherent_impls(ty_def_id);
+
+    for (i, &impl1_def_id) in impls.iter().enumerate() {
+        for &impl2_def_id in &impls[(i + 1)..] {
+            if checker.impls_have_common_items(impl1_def_id, impl2_def_id) {
+                checker.check_for_overlapping_inherent_impls(impl1_def_id, impl2_def_id);
+            }
+        }
+    }
+
 }
