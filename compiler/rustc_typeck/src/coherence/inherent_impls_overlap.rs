@@ -107,14 +107,15 @@ impl InherentOverlapChecker<'tcx> {
 impl ItemLikeVisitor<'v> for InherentOverlapChecker<'tcx> {
     fn visit_item(&mut self, item: &'v hir::Item<'v>) {
         match &item.kind {
+            hir::ItemKind::Struct(..)
+            | hir::ItemKind::Trait(..)
+            | hir::ItemKind::Union(..) => check_common_overlapping(self, item),
+            // For enums, we also need to check that the variant name does not
+            // overlap with an item defined in an impl block.
             hir::ItemKind::Enum(e, _) => {
                 check_common_overlapping(self, item);
                 check_variant_overlapping(self, e, item.hir_id);
             }
-
-            hir::ItemKind::Struct(..)
-            | hir::ItemKind::Trait(..)
-            | hir::ItemKind::Union(..) => check_common_overlapping(self, item),
             _ => {}
         }
     }
@@ -124,6 +125,7 @@ impl ItemLikeVisitor<'v> for InherentOverlapChecker<'tcx> {
     fn visit_impl_item(&mut self, _impl_item: &hir::ImplItem<'v>) {}
 }
 
+// Checks that the items don't overlap with each other.
 fn check_common_overlapping<'v, 'tcx>(
     checker: &mut InherentOverlapChecker<'tcx>,
     item: &'v hir::Item<'v>,
@@ -140,6 +142,7 @@ fn check_common_overlapping<'v, 'tcx>(
     }
 }
 
+// Checks that the items don't overlap with a variant name.
 fn check_variant_overlapping<'v, 'tcx>(
     checker: &mut InherentOverlapChecker<'tcx>,
     en: &hir::EnumDef<'v>,
