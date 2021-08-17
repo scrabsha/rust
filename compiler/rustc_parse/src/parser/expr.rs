@@ -5,6 +5,7 @@ use super::{SemiColonMode, SeqSep, TokenExpectType, TrailingToken};
 use crate::maybe_recover_from_interpolated_ty_qpath;
 
 use ast::token::DelimToken;
+use ast::StmtKind;
 use rustc_ast::ptr::P;
 use rustc_ast::token::{self, Token, TokenKind};
 use rustc_ast::tokenstream::Spacing;
@@ -1717,7 +1718,7 @@ impl<'a> Parser<'a> {
         let capture_clause = self.parse_capture_clause()?;
         let decl = self.parse_fn_block_decl()?;
         let decl_hi = self.prev_token.span;
-        let body = match decl.output {
+        let mut body = match decl.output {
             FnRetTy::Default(_) => {
                 let restrictions = self.restrictions - Restrictions::STMT_EXPR;
                 self.parse_expr_res(restrictions, None)?
@@ -1743,7 +1744,40 @@ impl<'a> Parser<'a> {
             // FIXME: parse a sequence of statements until we either fail or
             // meet the closing parenthesis.
 
-            panic!();
+            let first_statement_span = body.span;
+
+            let mut stmts = Vec::new();
+
+            stmts.push(self.mk_stmt(body.span, StmtKind::Semi(body)));
+
+            while self.eat(&TokenKind::Semi) {
+                // FIXME: what is ForceCollect?
+                let stmt = match self.parse_stmt(ForceCollect::Yes) {
+                    Ok(stmt) => stmt,
+                    Err(mut err) => {
+                        err.emit();
+                        Some(self.mk_stmt_err(self.token.span))
+                    }
+                };
+
+                if let Some(stmt) = stmt {
+                    stmts.push(stmt);
+                }
+            }
+
+            let last_stmt_span = stmts.last().unwrap().span;
+
+            let block = self.mk_block(
+                stmts,
+                BlockCheckMode::Default,
+                first_statement_span.to(last_stmt_span),
+            );
+
+            let block_span = block.span;
+
+            body = self.mk_expr(block.span, ExprKind::Block(block, None), AttrVec::new());
+
+            self.struct_span_err(block_span, "Missing braces around block").emit();
         }
 
         if let Async::Yes { span, .. } = asyncness {
