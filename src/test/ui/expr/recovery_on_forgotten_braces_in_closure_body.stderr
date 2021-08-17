@@ -1,0 +1,9 @@
+error: Missing braces around block
+  --> $DIR/recovery_on_forgotten_braces_in_closure_body.rs:8:9
+   |
+LL | /         println!("{}", a);
+LL | |         a * b
+   | |_____________^
+
+error: aborting due to previous error
+
