@@ -1742,6 +1742,8 @@ impl<'a> Parser<'a> {
             // braces at some point.
             // FIXME: parse a sequence of statements until we either fail or
             // meet the closing parenthesis.
+
+            panic!();
         }
 
         if let Async::Yes { span, .. } = asyncness {
