@@ -4,6 +4,7 @@ use super::{AttrWrapper, BlockMode, ForceCollect, Parser, PathStyle, Restriction
 use super::{SemiColonMode, SeqSep, TokenExpectType, TrailingToken};
 use crate::maybe_recover_from_interpolated_ty_qpath;
 
+use ast::token::DelimToken;
 use rustc_ast::ptr::P;
 use rustc_ast::token::{self, Token, TokenKind};
 use rustc_ast::tokenstream::Spacing;
@@ -1727,6 +1728,21 @@ impl<'a> Parser<'a> {
                 self.parse_block_expr(None, body_lo, BlockCheckMode::Default, AttrVec::new())?
             }
         };
+
+        if self.token_cursor.frame.delim == DelimToken::Paren && self.token.kind == TokenKind::Semi
+        {
+            // A semicolon after a closure body is not allowed in a parenthesed
+            // context (the only token that can follow a closure body in this)
+            // situation is a comma.
+            //
+            // This may be a sign that the user wants to write a sequence of
+            // statements but has forgotten to put braces around it.
+
+            // FIXME: emit an error suggesting that there should be some
+            // braces at some point.
+            // FIXME: parse a sequence of statements until we either fail or
+            // meet the closing parenthesis.
+        }
 
         if let Async::Yes { span, .. } = asyncness {
             // Feature-gate `async ||` closures.
