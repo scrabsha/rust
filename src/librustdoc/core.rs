@@ -148,7 +148,7 @@ crate fn new_handler(
     debugging_opts: &DebuggingOptions,
 ) -> rustc_errors::Handler {
     let emitter: Box<dyn Emitter + sync::Send> = match error_format {
-        ErrorOutputType::HumanReadable(kind) => {
+        ErrorOutputType::HumanReadable(kind, _) => {
             let (short, color_config) = kind.unzip();
             Box::new(
                 EmitterWriter::stderr(

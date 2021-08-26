@@ -637,6 +637,39 @@ impl EmitterWriter {
         }
     }
 
+    pub fn html(
+        dst: Box<dyn Write + Send>,
+        source_map: Option<Lrc<SourceMap>>,
+        short_message: bool,
+        teach: bool,
+        macro_backtrace: bool,
+    ) -> EmitterWriter {
+        let output_file = HtmlFormatter::new(dst);
+
+        let dst = Destination::HtmlFile(output_file);
+        EmitterWriter {
+            dst,
+            sm: source_map,
+            short_message,
+            teach,
+            ui_testing: false,
+            // FIXME(scrabsha): do we expect a certain terminal width in
+            // html-rendered files?
+            terminal_width: None,
+            macro_backtrace,
+        }
+    }
+
+    pub fn html_stderr(
+        source_map: Option<Lrc<SourceMap>>,
+        short_message: bool,
+        teach: bool,
+        macro_backtrace: bool,
+    ) -> EmitterWriter {
+        let dst = Box::new(io::stderr());
+        EmitterWriter::html(dst, source_map, short_message, teach, macro_backtrace)
+    }
+
     pub fn ui_testing(mut self, ui_testing: bool) -> Self {
         self.ui_testing = ui_testing;
         self
@@ -2126,6 +2159,8 @@ fn emit_to_destination(
 
     let mut dst = dst.writable();
 
+    dst.begin()?;
+
     // In order to prevent error message interleaving, where multiple error lines get intermixed
     // when multiple compiler processes error simultaneously, we emit errors with additional
     // steps.
@@ -2150,6 +2185,7 @@ fn emit_to_destination(
         }
     }
     dst.flush()?;
+    dst.end()?;
     Ok(())
 }
 
@@ -2158,6 +2194,7 @@ pub enum Destination {
     Buffered(BufferWriter),
     // The bool denotes whether we should be emitting ansi color codes or not
     Raw(Box<(dyn Write + Send)>, bool),
+    HtmlFile(HtmlFormatter),
 }
 
 pub enum WritableDst<'a> {
@@ -2165,6 +2202,7 @@ pub enum WritableDst<'a> {
     Buffered(&'a mut BufferWriter, Buffer),
     Raw(&'a mut (dyn Write + Send)),
     ColoredRaw(Ansi<&'a mut (dyn Write + Send)>),
+    HtmlFile(&'a mut HtmlFormatter),
 }
 
 impl Destination {
@@ -2192,6 +2230,7 @@ impl Destination {
             }
             Destination::Raw(ref mut t, false) => WritableDst::Raw(t),
             Destination::Raw(ref mut t, true) => WritableDst::ColoredRaw(Ansi::new(t)),
+            Destination::HtmlFile(ref mut file) => WritableDst::HtmlFile(file),
         }
     }
 
@@ -2200,6 +2239,7 @@ impl Destination {
             Self::Terminal(ref stream) => stream.supports_color(),
             Self::Buffered(ref buffer) => buffer.buffer().supports_color(),
             Self::Raw(_, supports_color) => supports_color,
+            Self::HtmlFile(_) => true,
         }
     }
 }
@@ -2261,6 +2301,7 @@ impl<'a> WritableDst<'a> {
             WritableDst::Buffered(_, ref mut t) => t.set_color(color),
             WritableDst::ColoredRaw(ref mut t) => t.set_color(color),
             WritableDst::Raw(_) => Ok(()),
+            WritableDst::HtmlFile(ref mut t) => t.set_color(color),
         }
     }
 
@@ -2270,6 +2311,27 @@ impl<'a> WritableDst<'a> {
             WritableDst::Buffered(_, ref mut t) => t.reset(),
             WritableDst::ColoredRaw(ref mut t) => t.reset(),
             WritableDst::Raw(_) => Ok(()),
+            WritableDst::HtmlFile(ref mut t) => t.reset(),
+        }
+    }
+
+    fn begin(&mut self) -> io::Result<()> {
+        match *self {
+            WritableDst::Terminal(_) => Ok(()),
+            WritableDst::Buffered(_, _) => Ok(()),
+            WritableDst::Raw(_) => Ok(()),
+            WritableDst::ColoredRaw(_) => Ok(()),
+            WritableDst::HtmlFile(ref mut t) => t.begin(),
+        }
+    }
+
+    fn end(&mut self) -> io::Result<()> {
+        match *self {
+            WritableDst::Terminal(_) => Ok(()),
+            WritableDst::Buffered(_, _) => Ok(()),
+            WritableDst::Raw(_) => Ok(()),
+            WritableDst::ColoredRaw(_) => Ok(()),
+            WritableDst::HtmlFile(ref mut t) => t.end(),
         }
     }
 }
@@ -2281,6 +2343,7 @@ impl<'a> Write for WritableDst<'a> {
             WritableDst::Buffered(_, ref mut buf) => buf.write(bytes),
             WritableDst::Raw(ref mut w) => w.write(bytes),
             WritableDst::ColoredRaw(ref mut t) => t.write(bytes),
+            WritableDst::HtmlFile(ref mut f) => f.write(bytes),
         }
     }
 
@@ -2290,6 +2353,7 @@ impl<'a> Write for WritableDst<'a> {
             WritableDst::Buffered(_, ref mut buf) => buf.flush(),
             WritableDst::Raw(ref mut w) => w.flush(),
             WritableDst::ColoredRaw(ref mut w) => w.flush(),
+            WritableDst::HtmlFile(ref mut f) => f.flush(),
         }
     }
 }
@@ -2299,6 +2363,108 @@ impl<'a> Drop for WritableDst<'a> {
         if let WritableDst::Buffered(ref mut dst, ref mut buf) = self {
             drop(dst.print(buf));
         }
+    }
+}
+
+/// A type that formats everything it receives to HTML. It implements both
+/// Write (so that we can write text in it) and WriteColor (so that we can
+/// set which color to use).
+pub struct HtmlFormatter {
+    inner: Box<dyn Write>,
+}
+
+impl HtmlFormatter {
+    fn new(inner: Box<dyn Write>) -> HtmlFormatter {
+        HtmlFormatter { inner }
+    }
+
+    fn begin(&mut self) -> io::Result<()> {
+        write!(self.inner, "<pre>")
+    }
+
+    fn end(&mut self) -> io::Result<()> {
+        write!(self.inner, "</pre>")
+    }
+
+    // Creates the string of a `style` attribute in an html element
+    fn mk_style_string(spec: &ColorSpec) -> String {
+        let mut buffer = String::new();
+
+        let colors = [("color", spec.fg()), ("background-color", spec.bg())];
+        let colors = colors.iter().flat_map(|(c_name, c_value)| {
+            c_value.map(|c_value| (c_name, term_color_to_html_color(*c_value)))
+        });
+
+        for (key, value) in colors {
+            buffer.push_str(format!("{}: {};", key, value).as_str());
+        }
+
+        let font_modifiers = [
+            ("font-weight:bold", spec.bold()),
+            ("font-style:italic", spec.italic()),
+            ("text-decoration:underline", spec.underline()),
+        ];
+        let font_modifiers = font_modifiers
+            .iter()
+            .flat_map(|(property, applicable)| if *applicable { Some(property) } else { None })
+            .copied();
+
+        for font_modifier in font_modifiers {
+            buffer.push_str(format!("{};", font_modifier).as_str());
+        }
+
+        // The trailing semicolon must removed as defined in the style
+        // attribute grammar:
+        // https://drafts.csswg.org/css-style-attr/#syntax
+        let _ = buffer.pop();
+
+        buffer
+    }
+}
+
+impl Write for HtmlFormatter {
+    fn write(&mut self, buf: &[u8]) -> io::Result<usize> {
+        self.inner.write(buf)
+    }
+
+    fn flush(&mut self) -> io::Result<()> {
+        self.inner.flush()
+    }
+}
+
+impl WriteColor for HtmlFormatter {
+    fn supports_color(&self) -> bool {
+        true
+    }
+
+    fn set_color(&mut self, spec: &ColorSpec) -> io::Result<()> {
+        write!(self, "<span style=\"{}\">", Self::mk_style_string(spec))
+    }
+
+    fn reset(&mut self) -> io::Result<()> {
+        write!(self, "</span>")
+    }
+}
+
+fn term_color_to_html_color(color: Color) -> Cow<'static, str> {
+    // All the CSS color keywords are available at:
+    // https://drafts.csswg.org/css-color/#named-colors
+    match color {
+        Color::Black => Cow::Borrowed("black"),
+        Color::Blue => Cow::Borrowed("blue"),
+        Color::Green => Cow::Borrowed("green"),
+        Color::Red => Cow::Borrowed("red"),
+        Color::Cyan => Cow::Borrowed("cyan"),
+        Color::Magenta => Cow::Borrowed("magenta"),
+        Color::Yellow => Cow::Borrowed("yellow"),
+        Color::White => Cow::Borrowed("white"),
+
+        Color::Rgb(r, g, b) => Cow::Owned(format!("rgb({},{},{})", r, g, b)),
+
+        // FIXME: should we support ANSI colors?
+        Color::Ansi256(_) => unreachable!(),
+
+        anything => panic!("Unknown color code: {:?}", anything),
     }
 }
 

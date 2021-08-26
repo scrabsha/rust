@@ -367,7 +367,7 @@ fn run_test(
             path.to_str().expect("target path must be valid unicode").to_string()
         }
     });
-    if let ErrorOutputType::HumanReadable(kind) = options.error_format {
+    if let ErrorOutputType::HumanReadable(kind, _) = options.error_format {
         let (short, color_config) = kind.unzip();
 
         if short {
