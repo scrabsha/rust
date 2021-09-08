@@ -26,8 +26,8 @@ use rustc_data_structures::sync::Lrc;
 use rustc_span::hygiene::{ExpnKind, MacroKind};
 use std::borrow::Cow;
 use std::cmp::{max, min, Reverse};
-use std::io;
-use std::io::{prelude::*, ErrorKind};
+use std::io::prelude::*;
+use std::io::{self, ErrorKind};
 use std::iter;
 use std::path::Path;
 use termcolor::{Ansi, BufferWriter, ColorChoice, ColorSpec, StandardStream};
@@ -2421,17 +2421,30 @@ impl HtmlFormatter {
         buffer
     }
 
-    // buf may or may not be used as a buffer to store the output data.
-    fn substitute_reserved_char(chr: char, buf: &mut [u8; 4]) -> &str {
+    fn is_reserved_char(chr: char) -> bool {
+        // Reserved characters are described at:
+        // https://developer.mozilla.org/en-US/docs/Glossary/Entity#reserved_characters
+        ['&', '<', '>', '"'].contains(&chr)
+    }
+
+    fn substitute_reserved_char(chr: char) -> &'static str {
         match chr {
-            // Reserved characters are described at:
+            // Substitutions for reserved characters are described at:
             // https://developer.mozilla.org/en-US/docs/Glossary/Entity#reserved_characters
             '&' => "&amp;",
             '<' => "&lt;",
             '>' => "&gt;",
             '"' => "&quot;",
 
-            chr => chr.encode_utf8(buf),
+            _ => unreachable!(),
+        }
+    }
+
+    fn escaped_and_unescaped_pair(input: &str) -> (&str, Option<char>) {
+        let mut chars = input.chars();
+        match chars.next_back() {
+            Some(chr) if Self::is_reserved_char(chr) => (chars.as_str(), Some(chr)),
+            Some(_) | None => (input, None),
         }
     }
 }
@@ -2443,22 +2456,42 @@ impl Write for HtmlFormatter {
         //   - error messages, hardcoded or generated on the fly,
         //   - characters from the input file.
         // Error messages are handled by Rustc and stored in Strings, so they
-        // are always UTF8-formatted. We also require input files to be UTF-8
+        // are always UTF8-encoded. We also require input files to be UTF-8
         // encoded. As such, everything that an HtmlFormatter can print is
         // UTF8-encoded.
+        let buf_as_str = std::str::from_utf8(buf).expect("Attempt to write non-UTF8 error message");
 
-        let input_buf = std::str::from_utf8(buf).expect("Attempt to write non-UTF8 error message");
+        let mut idx = 0;
+        let segments_to_print = buf_as_str
+            .split_inclusive(Self::is_reserved_char)
+            .map(Self::escaped_and_unescaped_pair)
+            .flat_map(|(already_escaped, to_escape)| {
+                let already_escaped_len = already_escaped.len();
+                let already_escaped = Some((idx, already_escaped, false));
+                idx += already_escaped_len;
 
-        let mut escaped_char_buf = [0; 4];
+                let just_escaped = to_escape
+                    .map(Self::substitute_reserved_char)
+                    .map(|substitute| (idx, substitute, true));
+                idx += to_escape.map(char::len_utf8).unwrap_or_default();
 
-        for (idx, chr) in input_buf.char_indices() {
-            let content = Self::substitute_reserved_char(chr, &mut escaped_char_buf);
+                [already_escaped, just_escaped]
+            })
+            .flatten();
 
-            match self.inner.write_all(content.as_bytes()) {
-                Ok(()) => {}
+        for (idx, segment, is_escaped) in segments_to_print {
+            if is_escaped {
+                match self.inner.write_all(segment.as_bytes()) {
+                    Ok(()) => {}
 
-                Err(err) if err.kind() == ErrorKind::WriteZero => return Ok(idx),
-                Err(err) => return Err(err),
+                    Err(err) if err.kind() == ErrorKind::WriteZero => return Ok(idx),
+                    Err(err) => return Err(err),
+                };
+            } else {
+                let bytes_written = self.inner.write(segment.as_bytes())?;
+                if bytes_written != segment.len() {
+                    return Ok(idx + bytes_written);
+                }
             }
         }
 
