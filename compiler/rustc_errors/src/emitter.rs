@@ -26,10 +26,10 @@ use rustc_data_structures::sync::Lrc;
 use rustc_span::hygiene::{ExpnKind, MacroKind};
 use std::borrow::Cow;
 use std::cmp::{max, min, Reverse};
-use std::io;
-use std::io::prelude::*;
+use std::io::{prelude::*, ErrorKind};
 use std::iter;
 use std::path::Path;
+use std::{io, slice};
 use termcolor::{Ansi, BufferWriter, ColorChoice, ColorSpec, StandardStream};
 use termcolor::{Buffer, Color, WriteColor};
 use tracing::*;
@@ -2421,41 +2421,38 @@ impl HtmlFormatter {
         buffer
     }
 
-    #[allow(dead_code)]
-    fn substitute_reserved_characters(buf: &[u8]) -> Vec<u8> {
-        // Given that we always push at least one element to out, it is
-        // guaranteed to be at least as large as buf.
-        let mut out = Vec::with_capacity(buf.len());
+    // We take chr as reference so that we can turn it into a slice with
+    // slice::from_ref.
+    fn substitute_reserved_char(chr: &u8) -> &[u8] {
+        match chr {
+            // Reserved characters are described at:
+            // https://developer.mozilla.org/en-US/docs/Glossary/Entity#reserved_characters
+            b'&' => b"&amp;",
+            b'<' => b"&lt;",
+            b'>' => b"&gt;",
+            b'"' => b"&quot;",
 
-        for chr in buf {
-            match chr {
-                // Reserved characters are described at:
-                // https://developer.mozilla.org/en-US/docs/Glossary/Entity#reserved_characters
-                b'&' => out.extend(b"&amp;"),
-                b'<' => out.extend(b"&lt;"),
-                b'>' => out.extend(b"&gt;"),
-                b'"' => out.extend(b"&quot;"),
-                other => out.push(*other),
-            }
+            chr => slice::from_ref(chr),
         }
-
-        out
     }
 }
 
 impl Write for HtmlFormatter {
     fn write(&mut self, buf: &[u8]) -> io::Result<usize> {
-        let escaped_buffer = Self::substitute_reserved_characters(buf);
+        let escaped_chars = buf
+            .iter()
+            .enumerate()
+            .map(|(idx, content)| (idx, Self::substitute_reserved_char(content)));
 
-        // HACK: as we're not writing the exact same data as what was given to
-        // us, we can't just call self.inner.write(escaped_buffer.as_slice()),
-        // as its Ok return value belongs to the range 0..=escaped_buffer.len(),
-        // which breaks the invariant of Write::write, where the Ok return value
-        // must belong to 0..=buf.len().
-        //
-        // As a workaround, we can write the whole substituted buffer at once
-        // using Write::write_all and return the length of the initial buffer.
-        self.inner.write_all(escaped_buffer.as_slice())?;
+        for (idx, content) in escaped_chars {
+            match self.inner.write_all(content) {
+                Ok(()) => {}
+
+                Err(err) if err.kind() == ErrorKind::WriteZero => return Ok(idx),
+                Err(err) => return Err(err),
+            }
+        }
+
         Ok(buf.len())
     }
 
