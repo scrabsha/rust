@@ -1097,9 +1097,8 @@ options! {
         environment variable `RUSTC_GRAPHVIZ_FONT` (default: `Courier, monospace`)"),
     hir_stats: bool = (false, parse_bool, [UNTRACKED],
         "print some statistics about AST and HIR (default: no)"),
-    // FIXME(scrabsha): update tests in compiler/rustc_interface/src/test.rs
     html_output: bool = (false, parse_bool, [UNTRACKED],
-        "prints the compiler output as HTML code (default: no)"),
+        "print the compiler output as HTML code (default: no)"),
     human_readable_cgu_names: bool = (false, parse_bool, [TRACKED],
         "generate human-readable, predictable names for codegen units (default: no)"),
     identify_regions: bool = (false, parse_bool, [UNTRACKED],
