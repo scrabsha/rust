@@ -26,10 +26,10 @@ use rustc_data_structures::sync::Lrc;
 use rustc_span::hygiene::{ExpnKind, MacroKind};
 use std::borrow::Cow;
 use std::cmp::{max, min, Reverse};
+use std::io;
 use std::io::{prelude::*, ErrorKind};
 use std::iter;
 use std::path::Path;
-use std::{io, slice};
 use termcolor::{Ansi, BufferWriter, ColorChoice, ColorSpec, StandardStream};
 use termcolor::{Buffer, Color, WriteColor};
 use tracing::*;
@@ -2421,31 +2421,40 @@ impl HtmlFormatter {
         buffer
     }
 
-    // We take chr as reference so that we can turn it into a slice with
-    // slice::from_ref.
-    fn substitute_reserved_char(chr: &u8) -> &[u8] {
+    // buf may or may not be used as a buffer to store the output data.
+    fn substitute_reserved_char(chr: char, buf: &mut [u8; 4]) -> &str {
         match chr {
             // Reserved characters are described at:
             // https://developer.mozilla.org/en-US/docs/Glossary/Entity#reserved_characters
-            b'&' => b"&amp;",
-            b'<' => b"&lt;",
-            b'>' => b"&gt;",
-            b'"' => b"&quot;",
+            '&' => "&amp;",
+            '<' => "&lt;",
+            '>' => "&gt;",
+            '"' => "&quot;",
 
-            chr => slice::from_ref(chr),
+            chr => chr.encode_utf8(buf),
         }
     }
 }
 
 impl Write for HtmlFormatter {
     fn write(&mut self, buf: &[u8]) -> io::Result<usize> {
-        let escaped_chars = buf
-            .iter()
-            .enumerate()
-            .map(|(idx, content)| (idx, Self::substitute_reserved_char(content)));
+        // This should not panic since there are two things that are printed
+        // in HtmlFormatter:
+        //   - error messages, hardcoded or generated on the fly,
+        //   - characters from the input file.
+        // Error messages are handled by Rustc and stored in Strings, so they
+        // are always UTF8-formatted. We also require input files to be UTF-8
+        // encoded. As such, everything that an HtmlFormatter can print is
+        // UTF8-encoded.
 
-        for (idx, content) in escaped_chars {
-            match self.inner.write_all(content) {
+        let input_buf = std::str::from_utf8(buf).expect("Attempt to write non-UTF8 error message");
+
+        let mut escaped_char_buf = [0; 4];
+
+        for (idx, chr) in input_buf.char_indices() {
+            let content = Self::substitute_reserved_char(chr, &mut escaped_char_buf);
+
+            match self.inner.write_all(content.as_bytes()) {
                 Ok(()) => {}
 
                 Err(err) if err.kind() == ErrorKind::WriteZero => return Ok(idx),

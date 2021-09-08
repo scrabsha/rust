@@ -1,5 +1,5 @@
 error[E0580]: `main` function has wrong type
-  --> $DIR/html-output.rs:20:1
+  --> $DIR/html-output.rs:10:1
    |
 LL | fn main(_: ()) {}
    | ^^^^^^^^^^^^^^ incorrect number of function parameters
