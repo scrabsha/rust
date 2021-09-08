@@ -2423,40 +2423,40 @@ impl HtmlFormatter {
 
     #[allow(dead_code)]
     fn substitute_reserved_characters(buf: &[u8]) -> Vec<u8> {
-        // dbg!(buf);
-
         // Given that we always push at least one element to out, it is
         // guaranteed to be at least as large as buf.
         let mut out = Vec::with_capacity(buf.len());
-
-        // let buf_as_string = String::from_utf8(buf.to_vec()).unwrap();
-        // dbg!(buf_as_string);
 
         for chr in buf {
             match chr {
                 // Reserved characters are described at:
                 // https://developer.mozilla.org/en-US/docs/Glossary/Entity#reserved_characters
-                // b'&' => out.extend(b"&amp;"),
-                // b'<' => out.extend(b"&lt;"),
-                b'>' => out.extend_from_slice(b"&gt;"),
-                // b'"' => out.extend(b"&quot;"),
+                b'&' => out.extend(b"&amp;"),
+                b'<' => out.extend(b"&lt;"),
+                b'>' => out.extend(b"&gt;"),
+                b'"' => out.extend(b"&quot;"),
                 other => out.push(*other),
             }
         }
 
-        // let out_as_string = String::from_utf8(out.clone()).unwrap();
-        // dbg!(out_as_string);
-
-        // dbg!(out)
-
-        b"coucou".to_vec()
+        out
     }
 }
 
 impl Write for HtmlFormatter {
     fn write(&mut self, buf: &[u8]) -> io::Result<usize> {
         let escaped_buffer = Self::substitute_reserved_characters(buf);
-        self.inner.write(escaped_buffer.as_slice())
+
+        // HACK: as we're not writing the exact same data as what was given to
+        // us, we can't just call self.inner.write(escaped_buffer.as_slice()),
+        // as its Ok return value belongs to the range 0..=escaped_buffer.len(),
+        // which breaks the invariant of Write::write, where the Ok return value
+        // must belong to 0..=buf.len().
+        //
+        // As a workaround, we can write the whole substituted buffer at once
+        // using Write::write_all and return the length of the initial buffer.
+        self.inner.write_all(escaped_buffer.as_slice())?;
+        Ok(buf.len())
     }
 
     fn flush(&mut self) -> io::Result<()> {
