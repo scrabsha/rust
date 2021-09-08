@@ -2379,11 +2379,11 @@ impl HtmlFormatter {
     }
 
     fn begin(&mut self) -> io::Result<()> {
-        write!(self.inner, "<pre>")
+        write!(self.inner, r#"<pre style="margin:0px">"#)
     }
 
     fn end(&mut self) -> io::Result<()> {
-        write!(self.inner, "</pre>")
+        write!(self.inner, r#"</pre>"#)
     }
 
     // Creates the string of a `style` attribute in an html element
@@ -2467,11 +2467,11 @@ impl WriteColor for HtmlFormatter {
     }
 
     fn set_color(&mut self, spec: &ColorSpec) -> io::Result<()> {
-        write!(self.inner, "<span style=\"{}\">", Self::mk_style_string(spec))
+        write!(self.inner, r#"<span style="{}">"#, Self::mk_style_string(spec))
     }
 
     fn reset(&mut self) -> io::Result<()> {
-        write!(self.inner, "</span>")
+        write!(self.inner, r#"</span>"#)
     }
 }
 
