@@ -1,0 +1,12 @@
+<pre style="margin:0px"><span style="color: red;font-weight:bold">error[E0580]</span><span style="font-weight:bold">: `main` function has wrong type</span>
+<span style="">  </span><span style="color: blue;font-weight:bold">--&gt; </span><span style="">/home/ssha/iomentum/rust/src/test/ui/html-output.rs:20:1</span>
+<span style="">   </span><span style="color: blue;font-weight:bold">|</span>
+<span style="color: blue;font-weight:bold">20</span><span style=""> </span><span style="color: blue;font-weight:bold">| </span><span style="color: red;font-weight:bold">fn main(_: ())</span><span style=""> {}</span>
+<span style="">   </span><span style="color: blue;font-weight:bold">| </span><span style="color: red;font-weight:bold">^^^^^^^^^^^^^^</span><span style=""> </span><span style="color: red;font-weight:bold">incorrect number of function parameters</span>
+</pre><pre style="margin:0px"><span style="">   </span><span style="color: blue;font-weight:bold">|</span>
+</pre><pre style="margin:0px"><span style="">   </span><span style="color: blue;font-weight:bold">= </span><span style="font-weight:bold">note</span><span style="">: expected fn pointer `fn()`</span>
+<span style="">              found fn pointer `fn(</span><span style="font-weight:bold">()</span><span style="">)`</span>
+</pre>
+<pre style="margin:0px"><span style="color: red;font-weight:bold">error</span><span style="font-weight:bold">: aborting due to previous error</span>
+</pre>
+<pre style="margin:0px"><span style="font-weight:bold">For more information about this error, try `rustc --explain E0580`.</span></pre>

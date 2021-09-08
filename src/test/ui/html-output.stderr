@@ -1,0 +1,12 @@
+error[E0580]: `main` function has wrong type
+  --> $DIR/html-output.rs:20:1
+   |
+LL | fn main(_: ()) {}
+   | ^^^^^^^^^^^^^^ incorrect number of function parameters
+   |
+   = note: expected fn pointer `fn()`
+              found fn pointer `fn(())`
+
+error: aborting due to previous error
+
+For more information about this error, try `rustc --explain E0580`.
