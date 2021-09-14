@@ -21,6 +21,7 @@ use crate::{
 
 use rustc_lint_defs::pluralize;
 
+use core::slice::SplitInclusive;
 use rustc_data_structures::fx::FxHashMap;
 use rustc_data_structures::sync::Lrc;
 use rustc_span::hygiene::{ExpnKind, MacroKind};
@@ -2420,77 +2421,24 @@ impl HtmlFormatter {
 
         buffer
     }
-
-    fn is_reserved_char(chr: char) -> bool {
-        // Reserved characters are described at:
-        // https://developer.mozilla.org/en-US/docs/Glossary/Entity#reserved_characters
-        ['&', '<', '>', '"'].contains(&chr)
-    }
-
-    fn substitute_reserved_char(chr: char) -> &'static str {
-        match chr {
-            // Substitutions for reserved characters are described at:
-            // https://developer.mozilla.org/en-US/docs/Glossary/Entity#reserved_characters
-            '&' => "&amp;",
-            '<' => "&lt;",
-            '>' => "&gt;",
-            '"' => "&quot;",
-
-            _ => unreachable!(),
-        }
-    }
-
-    fn escaped_and_unescaped_pair(input: &str) -> (&str, Option<char>) {
-        let mut chars = input.chars();
-        match chars.next_back() {
-            Some(chr) if Self::is_reserved_char(chr) => (chars.as_str(), Some(chr)),
-            Some(_) | None => (input, None),
-        }
-    }
 }
 
 impl Write for HtmlFormatter {
     fn write(&mut self, buf: &[u8]) -> io::Result<usize> {
-        // This should not panic since there are two things that are printed
-        // in HtmlFormatter:
-        //   - error messages, hardcoded or generated on the fly,
-        //   - characters from the input file.
-        // Error messages are handled by Rustc and stored in Strings, so they
-        // are always UTF8-encoded. We also require input files to be UTF-8
-        // encoded. As such, everything that an HtmlFormatter can print is
-        // UTF8-encoded.
-        let buf_as_str = std::str::from_utf8(buf).expect("Attempt to write non-UTF8 error message");
-
-        let mut idx = 0;
-        let segments_to_print = buf_as_str
-            .split_inclusive(Self::is_reserved_char)
-            .map(Self::escaped_and_unescaped_pair)
-            .flat_map(|(already_escaped, to_escape)| {
-                let already_escaped_len = already_escaped.len();
-                let already_escaped = Some((idx, already_escaped, false));
-                idx += already_escaped_len;
-
-                let just_escaped = to_escape
-                    .map(Self::substitute_reserved_char)
-                    .map(|substitute| (idx, substitute, true));
-                idx += to_escape.map(char::len_utf8).unwrap_or_default();
-
-                [already_escaped, just_escaped]
-            })
-            .flatten();
-
-        for (idx, segment, is_escaped) in segments_to_print {
-            if is_escaped {
-                match self.inner.write_all(segment.as_bytes()) {
+        for (idx, segment) in EscapedHtmlIter::new(buf) {
+            match segment {
+                EscapedHtmlSegment::Modified(buf) => match self.inner.write_all(buf) {
                     Ok(()) => {}
 
-                    Err(err) if err.kind() == ErrorKind::WriteZero => return Ok(idx),
-                    Err(err) => return Err(err),
-                };
-            } else {
-                let bytes_written = self.inner.write(segment.as_bytes())?;
-                if bytes_written != segment.len() {
-                    return Ok(idx + bytes_written);
+                    Err(e) if e.kind() == ErrorKind::WriteZero => return Ok(idx),
+                    Err(e) => return Err(e),
+                },
+                EscapedHtmlSegment::Unmodified(buf) => {
+                    let bytes_written = self.inner.write(buf)?;
+
+                    if bytes_written != buf.len() {
+                        return Ok(idx + bytes_written);
+                    }
                 }
             }
         }
@@ -2515,6 +2463,81 @@ impl WriteColor for HtmlFormatter {
     fn reset(&mut self) -> io::Result<()> {
         write!(self.inner, r#"</span>"#)
     }
+}
+
+struct EscapedHtmlIter<'a> {
+    iter: SplitInclusive<'a, u8, fn(&u8) -> bool>,
+    index: usize,
+    trimmed_escaped: Option<&'static [u8]>,
+}
+
+impl<'a> EscapedHtmlIter<'a> {
+    fn new(input: &'a [u8]) -> Self {
+        EscapedHtmlIter {
+            iter: input.split_inclusive(Self::is_reserved_byte),
+            index: 0,
+            trimmed_escaped: None,
+        }
+    }
+
+    fn is_reserved_byte(byte: &u8) -> bool {
+        // Reserved characters are described at:
+        // https://developer.mozilla.org/en-US/docs/Glossary/Entity#reserved_characters
+        [b'&', b'<', b'>', b'"'].contains(&byte)
+    }
+
+    fn substitute_reserved_byte(byte: u8) -> Option<&'static [u8]> {
+        match byte {
+            // Substitutions for reserved characters are described at:
+            // https://developer.mozilla.org/en-US/docs/Glossary/Entity#reserved_characters
+            b'&' => Some(b"&amp;"),
+            b'<' => Some(b"&lt;"),
+            b'>' => Some(b"&gt;"),
+            b'"' => Some(b"&quot;"),
+
+            _ => None,
+        }
+    }
+
+    fn trim_escapable_and_escape(input: &[u8]) -> (&[u8], Option<&'static [u8]>) {
+        input
+            .split_last()
+            .and_then(|(last, rest)| {
+                Self::substitute_reserved_byte(*last).map(|substituted| (rest, Some(substituted)))
+            })
+            .unwrap_or_else(|| (input, None))
+    }
+}
+
+impl<'a> Iterator for EscapedHtmlIter<'a> {
+    type Item = (usize, EscapedHtmlSegment<'a>);
+
+    fn next(&mut self) -> Option<Self::Item> {
+        match self.trimmed_escaped.take() {
+            Some(substitution) => {
+                let idx = self.index;
+                self.index += 1;
+
+                Some((idx, EscapedHtmlSegment::Modified(substitution)))
+            }
+
+            None => {
+                let segment = self.iter.next()?;
+                let (already_escaped, just_escaped) = Self::trim_escapable_and_escape(segment);
+                let idx = self.index;
+
+                self.trimmed_escaped = just_escaped;
+                self.index += already_escaped.len();
+
+                Some((idx, EscapedHtmlSegment::Unmodified(already_escaped)))
+            }
+        }
+    }
+}
+
+enum EscapedHtmlSegment<'a> {
+    Modified(&'a [u8]),
+    Unmodified(&'a [u8]),
 }
 
 fn term_color_to_html_color(color: Color) -> Cow<'static, str> {
