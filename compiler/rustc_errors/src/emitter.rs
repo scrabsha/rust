@@ -2425,14 +2425,12 @@ impl HtmlFormatter {
 
 impl Write for HtmlFormatter {
     fn write(&mut self, buf: &[u8]) -> io::Result<usize> {
-        let mut first = true;
-
         for (idx, segment) in EscapedHtmlIter::new(buf) {
             match segment {
                 EscapedHtmlSegment::Modified(buf) => match self.inner.write_all(buf) {
                     Ok(()) => {}
 
-                    Err(e) if first => return Err(e),
+                    Err(e) if idx == 0 => return Err(e),
                     Err(e) => return Ok(idx),
                 },
 
@@ -2440,7 +2438,7 @@ impl Write for HtmlFormatter {
                     Ok(bytes_written) if bytes_written == buf.len() => {}
                     Ok(bytes_written) => return Ok(idx + bytes_written),
 
-                    Err(e) if first => return Err(e),
+                    Err(e) if idx == 0 => return Err(e),
                     Err(e) => return Ok(idx),
                 },
             }
