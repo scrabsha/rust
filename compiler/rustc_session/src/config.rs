@@ -291,7 +291,7 @@ impl OutputType {
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum ErrorOutputType {
     /// Output meant for the consumption of humans.
-    HumanReadable(HumanReadableErrorType),
+    HumanReadable(HumanReadableErrorType, bool /* Explicitely indicated by cli */),
     /// Output that's consumed by other tools such as `rustfix` or the `RLS`.
     Json {
         /// Render the JSON in a human readable way (with indents and newlines).
@@ -304,7 +304,7 @@ pub enum ErrorOutputType {
 
 impl Default for ErrorOutputType {
     fn default() -> Self {
-        Self::HumanReadable(HumanReadableErrorType::Default(ColorConfig::Auto))
+        Self::HumanReadable(HumanReadableErrorType::Default(ColorConfig::Auto), false)
     }
 }
 
@@ -1268,17 +1268,19 @@ pub fn parse_error_format(
     let error_format = if matches.opts_present(&["error-format".to_owned()]) {
         match matches.opt_str("error-format").as_ref().map(|s| &s[..]) {
             None | Some("human") => {
-                ErrorOutputType::HumanReadable(HumanReadableErrorType::Default(color))
+                ErrorOutputType::HumanReadable(HumanReadableErrorType::Default(color), true)
             }
             Some("human-annotate-rs") => {
-                ErrorOutputType::HumanReadable(HumanReadableErrorType::AnnotateSnippet(color))
+                ErrorOutputType::HumanReadable(HumanReadableErrorType::AnnotateSnippet(color), true)
             }
             Some("json") => ErrorOutputType::Json { pretty: false, json_rendered },
             Some("pretty-json") => ErrorOutputType::Json { pretty: true, json_rendered },
-            Some("short") => ErrorOutputType::HumanReadable(HumanReadableErrorType::Short(color)),
+            Some("short") => {
+                ErrorOutputType::HumanReadable(HumanReadableErrorType::Short(color), true)
+            }
 
             Some(arg) => early_error(
-                ErrorOutputType::HumanReadable(HumanReadableErrorType::Default(color)),
+                ErrorOutputType::HumanReadable(HumanReadableErrorType::Default(color), false),
                 &format!(
                     "argument for `--error-format` must be `human`, `json` or \
                      `short` (instead was `{}`)",
@@ -1287,7 +1289,7 @@ pub fn parse_error_format(
             ),
         }
     } else {
-        ErrorOutputType::HumanReadable(HumanReadableErrorType::Default(color))
+        ErrorOutputType::HumanReadable(HumanReadableErrorType::Default(color), false)
     };
 
     match error_format {
@@ -1352,7 +1354,7 @@ fn check_debug_option_stability(
                 "`--error-format=pretty-json` is unstable",
             );
         }
-        if let ErrorOutputType::HumanReadable(HumanReadableErrorType::AnnotateSnippet(_)) =
+        if let ErrorOutputType::HumanReadable(HumanReadableErrorType::AnnotateSnippet(_), _) =
             error_format
         {
             early_error(

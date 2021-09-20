@@ -135,6 +135,8 @@ pub struct TestProps {
     pub should_ice: bool,
     // If true, the stderr is expected to be different across bit-widths.
     pub stderr_per_bitwidth: bool,
+    // If true, the errors are emitted in a separate .html file
+    pub html_output: bool,
 }
 
 impl TestProps {
@@ -175,6 +177,7 @@ impl TestProps {
             assembly_output: None,
             should_ice: false,
             stderr_per_bitwidth: false,
+            html_output: false,
         }
     }
 
@@ -349,6 +352,10 @@ impl TestProps {
 
                 if !self.stderr_per_bitwidth {
                     self.stderr_per_bitwidth = config.parse_stderr_per_bitwidth(ln);
+                }
+
+                if !self.html_output {
+                    self.html_output = config.parse_html_output(ln);
                 }
             });
         }
@@ -730,6 +737,10 @@ impl Config {
 
     fn parse_edition(&self, line: &str) -> Option<String> {
         self.parse_name_value_directive(line, "edition")
+    }
+
+    fn parse_html_output(&self, line: &str) -> bool {
+        self.parse_name_directive(line, "html-output")
     }
 }
 

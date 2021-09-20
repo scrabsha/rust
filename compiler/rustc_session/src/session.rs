@@ -1,7 +1,7 @@
 use crate::cgu_reuse_tracker::CguReuseTracker;
 use crate::code_stats::CodeStats;
 pub use crate::code_stats::{DataTypeKind, FieldInfo, SizeKind, VariantInfo};
-use crate::config::{self, CrateType, OutputType, SwitchWithOptPath};
+use crate::config::{self, CrateType, ErrorOutputType, OutputType, SwitchWithOptPath};
 use crate::filesearch;
 use crate::lint::{self, LintId};
 use crate::parse::ParseSess;
@@ -1106,8 +1106,32 @@ fn default_emitter(
     emitter_dest: Option<Box<dyn Write + Send>>,
 ) -> Box<dyn Emitter + sync::Send> {
     let macro_backtrace = sopts.debugging_opts.macro_backtrace;
+
+    let error_format_passed_explicitely = matches!(
+        sopts.error_format,
+        config::ErrorOutputType::HumanReadable(_, true) | config::ErrorOutputType::Json { .. }
+    );
+
+    if error_format_passed_explicitely && sopts.debugging_opts.html_output {
+        early_error(
+            ErrorOutputType::default(),
+            "-Z html-output debug flag conflicts with --error-format",
+        );
+    }
+
+    if sopts.debugging_opts.html_output {
+        // FIXME(scrabsha): ensure that there's no conflicts with other
+        // parameters.
+        return Box::new(EmitterWriter::html_stderr(
+            Some(source_map),
+            false,
+            true,
+            macro_backtrace,
+        ));
+    }
+
     match (sopts.error_format, emitter_dest) {
-        (config::ErrorOutputType::HumanReadable(kind), dst) => {
+        (config::ErrorOutputType::HumanReadable(kind, _), dst) => {
             let (short, color_config) = kind.unzip();
 
             if let HumanReadableErrorType::AnnotateSnippet(_) = kind {
@@ -1425,7 +1449,7 @@ pub enum IncrCompSession {
 
 pub fn early_error_no_abort(output: config::ErrorOutputType, msg: &str) {
     let emitter: Box<dyn Emitter + sync::Send> = match output {
-        config::ErrorOutputType::HumanReadable(kind) => {
+        config::ErrorOutputType::HumanReadable(kind, _) => {
             let (short, color_config) = kind.unzip();
             Box::new(EmitterWriter::stderr(color_config, None, short, false, None, false))
         }
@@ -1444,7 +1468,7 @@ pub fn early_error(output: config::ErrorOutputType, msg: &str) -> ! {
 
 pub fn early_warn(output: config::ErrorOutputType, msg: &str) {
     let emitter: Box<dyn Emitter + sync::Send> = match output {
-        config::ErrorOutputType::HumanReadable(kind) => {
+        config::ErrorOutputType::HumanReadable(kind, _) => {
             let (short, color_config) = kind.unzip();
             Box::new(EmitterWriter::stderr(color_config, None, short, false, None, false))
         }

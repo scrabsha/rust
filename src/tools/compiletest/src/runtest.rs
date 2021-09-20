@@ -1,6 +1,8 @@
 // ignore-tidy-filelength
 
-use crate::common::{expected_output_path, UI_EXTENSIONS, UI_FIXED, UI_STDERR, UI_STDOUT};
+use crate::common::{
+    expected_output_path, HTML_OUTPUT, UI_EXTENSIONS, UI_FIXED, UI_STDERR, UI_STDOUT,
+};
 use crate::common::{output_base_dir, output_base_name, output_testname_unique};
 use crate::common::{Assembly, Incremental, JsDocTest, MirOpt, RunMake, RustdocJson, Ui};
 use crate::common::{Codegen, CodegenUnits, DebugInfo, Debugger, Rustdoc};
@@ -1597,8 +1599,13 @@ impl<'test> TestCx<'test> {
             _ => AllowUnused::No,
         };
 
-        let mut rustc =
-            self.make_compile_args(&self.testpaths.file, output_file, emit_metadata, allow_unused);
+        let mut rustc = self.make_compile_args(
+            &self.testpaths.file,
+            output_file,
+            emit_metadata,
+            allow_unused,
+            DisableErrorFormat::No,
+        );
 
         rustc.arg("-L").arg(&self.aux_output_dir_name());
 
@@ -1828,8 +1835,13 @@ impl<'test> TestCx<'test> {
         // Create the directory for the stdout/stderr files.
         create_dir_all(aux_cx.output_base_dir()).unwrap();
         let input_file = &aux_testpaths.file;
-        let mut aux_rustc =
-            aux_cx.make_compile_args(input_file, aux_output, EmitMetadata::No, AllowUnused::No);
+        let mut aux_rustc = aux_cx.make_compile_args(
+            input_file,
+            aux_output,
+            EmitMetadata::No,
+            AllowUnused::No,
+            DisableErrorFormat::No,
+        );
 
         for key in &aux_props.unset_rustc_env {
             aux_rustc.env_remove(key);
@@ -1947,6 +1959,7 @@ impl<'test> TestCx<'test> {
         output_file: TargetLocation,
         emit_metadata: EmitMetadata,
         allow_unused: AllowUnused,
+        disable_no_error_format: DisableErrorFormat,
     ) -> Command {
         let is_aux = input_file.components().map(|c| c.as_os_str()).any(|c| c == "auxiliary");
         let is_rustdoc = self.is_rustdoc() && !is_aux;
@@ -1987,14 +2000,18 @@ impl<'test> TestCx<'test> {
                 // If we are extracting and matching errors in the new
                 // fashion, then you want JSON mode. Old-skool error
                 // patterns still match the raw compiler output.
-                if self.props.error_patterns.is_empty() {
+                if self.props.error_patterns.is_empty()
+                    && disable_no_error_format == DisableErrorFormat::No
+                {
                     rustc.args(&["--error-format", "json"]);
                 }
                 rustc.arg("-Zui-testing");
                 rustc.arg("-Zdeduplicate-diagnostics=no");
             }
             Ui => {
-                if !self.props.compile_flags.iter().any(|s| s.starts_with("--error-format")) {
+                if !self.props.compile_flags.iter().any(|s| s.starts_with("--error-format"))
+                    && disable_no_error_format == DisableErrorFormat::No
+                {
                     rustc.args(&["--error-format", "json"]);
                 }
                 rustc.arg("-Ccodegen-units=1");
@@ -2294,8 +2311,13 @@ impl<'test> TestCx<'test> {
 
         let output_file = TargetLocation::ThisDirectory(self.output_base_dir());
         let input_file = &self.testpaths.file;
-        let mut rustc =
-            self.make_compile_args(input_file, output_file, EmitMetadata::No, AllowUnused::No);
+        let mut rustc = self.make_compile_args(
+            input_file,
+            output_file,
+            EmitMetadata::No,
+            AllowUnused::No,
+            DisableErrorFormat::No,
+        );
         rustc.arg("-L").arg(aux_dir).arg("--emit=llvm-ir");
 
         self.compose_and_run_compiler(rustc, None)
@@ -2308,8 +2330,13 @@ impl<'test> TestCx<'test> {
 
         let output_file = TargetLocation::ThisFile(output_path.clone());
         let input_file = &self.testpaths.file;
-        let mut rustc =
-            self.make_compile_args(input_file, output_file, EmitMetadata::No, AllowUnused::No);
+        let mut rustc = self.make_compile_args(
+            input_file,
+            output_file,
+            EmitMetadata::No,
+            AllowUnused::No,
+            DisableErrorFormat::No,
+        );
 
         rustc.arg("-L").arg(self.aux_output_dir_name());
 
@@ -2452,6 +2479,7 @@ impl<'test> TestCx<'test> {
             output_file,
             EmitMetadata::No,
             AllowUnused::Yes,
+            DisableErrorFormat::No,
         );
         rustc.arg("-L").arg(&new_rustdoc.aux_output_dir_name());
         new_rustdoc.build_all_auxiliary(&mut rustc);
@@ -3355,6 +3383,23 @@ impl<'test> TestCx<'test> {
             );
         }
 
+        if self.props.html_output {
+            let mut rustc = self.make_compile_args(
+                &self.testpaths.file,
+                TargetLocation::ThisDirectory(self.make_exe_name()),
+                emit_metadata,
+                AllowUnused::No,
+                DisableErrorFormat::Yes,
+            );
+            rustc.arg("-Zhtml_output");
+            let res = self.compose_and_run_compiler(rustc, None);
+            let html_output = res.stderr;
+
+            let expected_html = self.load_expected_output(HTML_OUTPUT);
+
+            errors += self.compare_output(HTML_OUTPUT, &html_output, &expected_html);
+        }
+
         if errors > 0 {
             println!("To update references, rerun the tests and pass the `--bless` flag");
             let relative_path_to_file =
@@ -3433,6 +3478,7 @@ impl<'test> TestCx<'test> {
                 TargetLocation::ThisFile(self.make_exe_name()),
                 emit_metadata,
                 AllowUnused::No,
+                DisableErrorFormat::No,
             );
             rustc.arg("-L").arg(&self.aux_output_dir_name());
             let res = self.compose_and_run_compiler(rustc, None);
@@ -3957,6 +4003,12 @@ enum TargetLocation {
 }
 
 enum AllowUnused {
+    Yes,
+    No,
+}
+
+#[derive(PartialEq)]
+enum DisableErrorFormat {
     Yes,
     No,
 }
