@@ -427,6 +427,10 @@ struct LateResolutionVisitor<'a, 'b, 'ast> {
     /// In most cases this will be `None`, in which case errors will always be reported.
     /// If it is `true`, then it will be updated when entering a nested function or trait body.
     in_func_body: bool,
+
+    /// FIXME(scrabsha): doc
+    maybe_ruby_closure: bool,
+    first_stmt: bool,
 }
 
 /// Walks the whole crate in DFS order, visiting each item, resolving names as it goes.
@@ -706,6 +710,30 @@ impl<'a: 'ast, 'ast> Visitor<'ast> for LateResolutionVisitor<'a, '_, 'ast> {
         visit::walk_where_predicate(self, p);
         self.diagnostic_metadata.current_where_predicate = previous_value;
     }
+
+    fn visit_stmt(&mut self, s: &'ast Stmt) {
+        if self.first_stmt
+            && matches!(
+                s,
+                Stmt {
+                    kind: StmtKind::Semi(
+                        expr,
+                        ..
+                    ),
+                    ..
+                }
+                if is_closure(expr)
+            )
+        {
+            self.maybe_ruby_closure = true;
+        }
+
+        visit::walk_stmt(self, s)
+    }
+}
+
+fn is_closure(expr: &Expr) -> bool {
+    matches!(expr.kind, ExprKind::Closure(..))
 }
 
 impl<'a: 'ast, 'b, 'ast> LateResolutionVisitor<'a, 'b, 'ast> {
@@ -728,6 +756,9 @@ impl<'a: 'ast, 'b, 'ast> LateResolutionVisitor<'a, 'b, 'ast> {
             diagnostic_metadata: DiagnosticMetadata::default(),
             // errors at module scope should always be reported
             in_func_body: false,
+
+            first_stmt: false,
+            maybe_ruby_closure: false,
         }
     }
 
@@ -2279,7 +2310,7 @@ impl<'a: 'ast, 'b, 'ast> LateResolutionVisitor<'a, 'b, 'ast> {
             }
         }
         // Descend into the block.
-        for stmt in &block.stmts {
+        for (idx, stmt) in block.stmts.iter().enumerate() {
             if let StmtKind::Item(ref item) = stmt.kind {
                 if let ItemKind::MacroDef(..) = item.kind {
                     num_macro_definition_ribs += 1;
@@ -2289,7 +2320,11 @@ impl<'a: 'ast, 'b, 'ast> LateResolutionVisitor<'a, 'b, 'ast> {
                 }
             }
 
+            if idx == 0 {
+                self.first_stmt = true;
+            }
             self.visit_stmt(stmt);
+            self.first_stmt = false;
         }
         self.diagnostic_metadata.current_block_could_be_bare_struct_literal = prev;
 

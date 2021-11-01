@@ -595,6 +595,11 @@ impl<'a: 'ast, 'ast> LateResolutionVisitor<'a, '_, 'ast> {
             }
         }
 
+        // Add a help message if we're in a ruby-style closure
+        if self.maybe_ruby_closure {
+            err.note("This looks like a ruby closure. Please RiiR!");
+        }
+
         (err, candidates)
     }
 
