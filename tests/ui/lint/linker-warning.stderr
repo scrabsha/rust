@@ -1,4 +1,4 @@
-warning: crate-level attribute should be an inner attribute: add an exclamation mark: `#![foo]`
+warning: crate-level attribute should be an inner attribute: add an exclamation mark: `#![allow]`
   --> $DIR/linker-warning.rs:7:1
    |
 LL | #[allow(linker_messages)]

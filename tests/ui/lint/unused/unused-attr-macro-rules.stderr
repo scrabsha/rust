@@ -1,4 +1,4 @@
-error: crate-level attribute should be an inner attribute: add an exclamation mark: `#![foo]`
+error: crate-level attribute should be an inner attribute: add an exclamation mark: `#![recursion_limit]`
   --> $DIR/unused-attr-macro-rules.rs:11:1
    |
 LL | #[recursion_limit="1"]

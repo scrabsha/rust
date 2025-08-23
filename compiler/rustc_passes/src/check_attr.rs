@@ -369,24 +369,7 @@ impl<'tcx> CheckAttrVisitor<'tcx> {
 
             if hir_id != CRATE_HIR_ID {
                 match attr {
-                    // FIXME(jdonszelmann) move to attribute parsing when validation gets better there
-                    &Attribute::Parsed(AttributeKind::CrateName {
-                        attr_span: span, style, ..
-                    }) => match style {
-                        ast::AttrStyle::Outer => self.tcx.emit_node_span_lint(
-                            UNUSED_ATTRIBUTES,
-                            hir_id,
-                            span,
-                            errors::OuterCrateLevelAttr,
-                        ),
-                        ast::AttrStyle::Inner => self.tcx.emit_node_span_lint(
-                            UNUSED_ATTRIBUTES,
-                            hir_id,
-                            span,
-                            errors::InnerCrateLevelAttr,
-                        ),
-                    },
-                    Attribute::Parsed(_) => { /* not crate-level */ }
+                    Attribute::Parsed(_) => { /* Already validated. */ }
                     Attribute::Unparsed(attr) => {
                         // FIXME(jdonszelmann): remove once all crate-level attrs are parsed and caught by
                         // the above
@@ -397,12 +380,16 @@ impl<'tcx> CheckAttrVisitor<'tcx> {
                                 .and_then(|ident| BUILTIN_ATTRIBUTE_MAP.get(&ident.name))
                         {
                             match attr.style {
-                                ast::AttrStyle::Outer => self.tcx.emit_node_span_lint(
-                                    UNUSED_ATTRIBUTES,
-                                    hir_id,
-                                    attr.span,
-                                    errors::OuterCrateLevelAttr,
-                                ),
+                                ast::AttrStyle::Outer => {
+                                    let attr_name = attr.path.to_string();
+
+                                    self.tcx.emit_node_span_lint(
+                                        UNUSED_ATTRIBUTES,
+                                        hir_id,
+                                        attr.span,
+                                        errors::OuterCrateLevelAttr { attr_name },
+                                    )
+                                }
                                 ast::AttrStyle::Inner => self.tcx.emit_node_span_lint(
                                     UNUSED_ATTRIBUTES,
                                     hir_id,
@@ -1851,12 +1838,20 @@ impl<'tcx> CheckAttrVisitor<'tcx> {
         {
             if hir_id != CRATE_HIR_ID {
                 match style {
-                    Some(ast::AttrStyle::Outer) => self.tcx.emit_node_span_lint(
-                        UNUSED_ATTRIBUTES,
-                        hir_id,
-                        attr.span(),
-                        errors::OuterCrateLevelAttr,
-                    ),
+                    Some(ast::AttrStyle::Outer) => {
+                        let attr_name = attr
+                            .ident()
+                            .as_ref()
+                            .map(|ident| ident.as_str())
+                            .unwrap_or("foo")
+                            .to_string();
+                        self.tcx.emit_node_span_lint(
+                            UNUSED_ATTRIBUTES,
+                            hir_id,
+                            attr.span(),
+                            errors::OuterCrateLevelAttr { attr_name },
+                        )
+                    }
                     Some(ast::AttrStyle::Inner) | None => self.tcx.emit_node_span_lint(
                         UNUSED_ATTRIBUTES,
                         hir_id,
