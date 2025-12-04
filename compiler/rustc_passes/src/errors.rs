@@ -1186,6 +1186,17 @@ pub(crate) struct UnknownFeature {
 }
 
 #[derive(Diagnostic)]
+#[diag(passes_misspelled_feature, code = E0635)]
+pub(crate) struct MisspelledFeature {
+    #[primary_span]
+    pub span: Span,
+    pub misspelled_name: Symbol,
+    pub actual_name: Symbol,
+    #[suggestion(style = "verbose", code = "{actual_name}", applicability = "maybe-incorrect")]
+    pub suggestion: Span,
+}
+
+#[derive(Diagnostic)]
 #[diag(passes_unknown_feature_alias, code = E0635)]
 pub(crate) struct RenamedFeature {
     #[primary_span]

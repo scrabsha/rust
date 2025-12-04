@@ -2395,11 +2395,11 @@ pub(crate) fn update_submodule<'a>(
         .arg(relative_path)
         .run_capture_stdout(dwn_ctx.exec_ctx)
         .stdout();
-
-    let actual_hash = recorded
-        .split_whitespace()
-        .nth(2)
-        .unwrap_or_else(|| panic!("unexpected output `{recorded}`"));
+    
+    let actual_hash = recorded                    
+        .split_whitespace()                       
+        .nth(2)                                   
+        .unwrap_or_else(|| panic!("unexpected out put `{recorded}`"));
 
     if actual_hash == checked_out_hash {
         // already checked out
