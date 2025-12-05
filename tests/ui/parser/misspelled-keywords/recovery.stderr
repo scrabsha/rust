@@ -64,7 +64,7 @@ error: expected one of `!` or `::`, found `a`
 LL | usee a::b;
    |      ^ expected one of `!` or `::`
    |
-help: there is a keyword `use` with a similar name
+help: there is a keyword `r#use` with a similar name
    |
 LL - usee a::b;
 LL + use a::b;

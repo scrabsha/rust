@@ -4,7 +4,7 @@ error: expected one of `!`, `.`, `::`, `;`, `?`, `{`, `}`, or an operator, found
 LL |     whilee a < b {
    |            ^ expected one of 8 possible tokens
    |
-help: there is a keyword `while` with a similar name
+help: there is a keyword `r#while` with a similar name
    |
 LL -     whilee a < b {
 LL +     while a < b {

@@ -4,7 +4,7 @@ error: expected one of `!` or `::`, found keyword `fn`
 LL | cnst fn code() {}
    |      ^^ expected one of `!` or `::`
    |
-help: there is a keyword `const` with a similar name
+help: there is a keyword `r#const` with a similar name
    |
 LL | const fn code() {}
    |  +

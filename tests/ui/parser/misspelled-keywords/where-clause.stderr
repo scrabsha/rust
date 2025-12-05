@@ -6,7 +6,7 @@ LL | fn code<T>() -> u8
 LL | wheree
    | ^^^^^^ unexpected token
    |
-help: there is a keyword `where` with a similar name
+help: there is a keyword `r#where` with a similar name
    |
 LL - wheree
 LL + where

@@ -4,7 +4,7 @@ error: expected one of `!` or `::`, found `parser`
 LL | mode parser;
    |      ^^^^^^ expected one of `!` or `::`
    |
-help: there is a keyword `mod` with a similar name
+help: there is a keyword `r#mod` with a similar name
    |
 LL - mode parser;
 LL + mod parser;

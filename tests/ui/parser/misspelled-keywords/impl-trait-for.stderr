@@ -4,7 +4,7 @@ error: expected one of `!`, `(`, `+`, `::`, `<`, `where`, or `{`, found `Human`
 LL | impl Debug form Human {}
    |                 ^^^^^ expected one of 7 possible tokens
    |
-help: there is a keyword `for` with a similar name
+help: there is a keyword `r#for` with a similar name
    |
 LL - impl Debug form Human {}
 LL + impl Debug for Human {}

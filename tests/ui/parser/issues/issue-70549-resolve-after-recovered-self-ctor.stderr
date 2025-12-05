@@ -10,7 +10,7 @@ error: expected one of `:`, `@`, or `|`, found keyword `Self`
 LL |     fn foo(&mur Self) {}
    |                 ^^^^ expected one of `:`, `@`, or `|`
    |
-help: there is a keyword `mut` with a similar name
+help: there is a keyword `r#mut` with a similar name
    |
 LL -     fn foo(&mur Self) {}
 LL +     fn foo(&mut Self) {}
@@ -40,7 +40,7 @@ error: expected one of `:`, `@`, or `|`, found keyword `Self`
 LL |     fn bar(&'static mur Self) {}
    |                         ^^^^ expected one of `:`, `@`, or `|`
    |
-help: there is a keyword `mut` with a similar name
+help: there is a keyword `r#mut` with a similar name
    |
 LL -     fn bar(&'static mur Self) {}
 LL +     fn bar(&'static mut Self) {}
@@ -52,7 +52,7 @@ error: expected one of `:`, `@`, or `|`, found keyword `Self`
 LL |     fn baz(&mur Self @ _) {}
    |                 ^^^^ expected one of `:`, `@`, or `|`
    |
-help: there is a keyword `mut` with a similar name
+help: there is a keyword `r#mut` with a similar name
    |
 LL -     fn baz(&mur Self @ _) {}
 LL +     fn baz(&mut Self @ _) {}

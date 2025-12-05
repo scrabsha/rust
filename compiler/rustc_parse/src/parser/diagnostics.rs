@@ -223,7 +223,7 @@ impl std::fmt::Display for UnaryFixity {
 struct MisspelledKw {
     // We use a String here because `Symbol::into_diag_arg` calls `Symbol::to_ident_string`, which
     // prefix the keyword with a `r#` because it aims to print the symbol as an identifier.
-    similar_kw: String,
+    similar_kw: Symbol,
     #[primary_span]
     span: Span,
     is_incorrect_case: bool,
@@ -235,7 +235,7 @@ struct MisspelledKw {
 /// candidate is found.
 fn find_similar_kw(lookup: Ident, candidates: &[Symbol]) -> Option<MisspelledKw> {
     lookup.name.find_similar(candidates).map(|(similar_kw, is_incorrect_case)| MisspelledKw {
-        similar_kw: similar_kw.to_string(),
+        similar_kw,
         is_incorrect_case,
         span: lookup.span,
     })

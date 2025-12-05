@@ -4,7 +4,7 @@ error: expected one of `!`, `.`, `::`, `;`, `?`, `{`, `}`, or an operator, found
 LL |     form i in 1..10 {}
    |          ^ expected one of 8 possible tokens
    |
-help: there is a keyword `for` with a similar name
+help: there is a keyword `r#for` with a similar name
    |
 LL -     form i in 1..10 {}
 LL +     for i in 1..10 {}

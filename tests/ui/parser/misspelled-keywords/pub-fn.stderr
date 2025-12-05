@@ -4,7 +4,7 @@ error: expected one of `#`, `async`, `auto`, `const`, `default`, `enum`, `extern
 LL | puB fn code() {}
    | ^^^ expected one of 21 possible tokens
    |
-help: write keyword `pub` in lowercase
+help: write keyword `r#pub` in lowercase
    |
 LL - puB fn code() {}
 LL + pub fn code() {}

@@ -4,7 +4,7 @@ error: expected one of `move`, `use`, `{`, `|`, or `||`, found `Move`
 LL |     async Move {}
    |           ^^^^ expected one of `move`, `use`, `{`, `|`, or `||`
    |
-help: write keyword `move` in lowercase
+help: write keyword `r#move` in lowercase
    |
 LL -     async Move {}
 LL +     async move {}

@@ -4,7 +4,7 @@ error: expected one of `:`, `;`, `=`, `@`, or `|`, found `a`
 LL |     let muta a = 10;
    |              ^ expected one of `:`, `;`, `=`, `@`, or `|`
    |
-help: there is a keyword `mut` with a similar name
+help: there is a keyword `r#mut` with a similar name
    |
 LL -     let muta a = 10;
 LL +     let mut a = 10;

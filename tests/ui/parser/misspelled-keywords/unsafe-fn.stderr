@@ -4,7 +4,7 @@ error: expected one of `!` or `::`, found keyword `fn`
 LL | unsafee fn code() {}
    |         ^^ expected one of `!` or `::`
    |
-help: there is a keyword `unsafe` with a similar name
+help: there is a keyword `r#unsafe` with a similar name
    |
 LL - unsafee fn code() {}
 LL + unsafe fn code() {}
