@@ -2464,13 +2464,31 @@ impl<'test> TestCx<'test> {
 
         let mut normalized = output.to_string();
 
+        let mut normalize_path = |from: &str, to: &str| {
+            let from = if json { &from.replace("\\", "\\\\") } else { from };
+
+            normalized = normalized.replace(from, to)
+        };
+
+        let parent_dir = self.testpaths.file.parent().unwrap();
+
+        #[cfg(unix)]
+        {
+            let hostname = nix::unistd::gethostname().expect("Failed to get device hostname");
+            let hostname = hostname.to_str().expect("Device hostname is not UTF8");
+
+            let canonicalized_parent_dir = parent_dir.canonicalize_utf8().unwrap();
+
+            let file_url_prefix = format!("file://{hostname}{canonicalized_parent_dir}");
+            normalize_path(&file_url_prefix, "file://$HOSTNAME$DIR");
+        }
+
         let mut normalize_path = |from: &Utf8Path, to: &str| {
             let from = if json { &from.as_str().replace("\\", "\\\\") } else { from.as_str() };
 
             normalized = normalized.replace(from, to);
         };
 
-        let parent_dir = self.testpaths.file.parent().unwrap();
         normalize_path(parent_dir, "$DIR");
 
         if self.props.remap_src_base {

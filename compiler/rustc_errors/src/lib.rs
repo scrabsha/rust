@@ -8,6 +8,7 @@
 #![cfg_attr(bootstrap, feature(assert_matches))]
 #![feature(associated_type_defaults)]
 #![feature(box_patterns)]
+#![feature(cfg_select)]
 #![feature(default_field_values)]
 #![feature(error_reporter)]
 #![feature(macro_metavar_expr_concat)]

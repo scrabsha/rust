@@ -648,6 +648,14 @@ impl FileName {
             _ => None,
         }
     }
+
+    pub fn as_local_path(&self) -> Option<&Path> {
+        match self {
+            FileName::Real(path) => path.local_path(),
+            FileName::DocTest(path, _) => Some(&*path),
+            _ => None,
+        }
+    }
 }
 
 /// Represents a span.

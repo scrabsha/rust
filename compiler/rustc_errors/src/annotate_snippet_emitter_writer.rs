@@ -5,11 +5,12 @@
 //!
 //! [annotate_snippets]: https://docs.rs/crate/annotate-snippets/
 
+use core::fmt;
 use std::borrow::Cow;
 use std::error::Report;
-use std::fmt::Debug;
-use std::io;
-use std::io::Write;
+use std::fmt::{Debug, Formatter, Write as _};
+use std::io::{self, Write as _};
+use std::os::unix::ffi::OsStrExt;
 use std::sync::Arc;
 
 use annotate_snippets::renderer::DEFAULT_TERM_WIDTH;
@@ -467,6 +468,7 @@ impl AnnotateSnippetEmitter {
                                         Snippet::source(source)
                                             .line_start(line_offset)
                                             .path(filename.clone())
+                                            .url(self.try_make_url(&file.name))
                                             .fold(fold)
                                             .patches(parts.into_iter().map(
                                                 |(span, replacement)| {
@@ -564,14 +566,18 @@ impl AnnotateSnippetEmitter {
         if let Some((bounding_span, source, offset_line)) = shrink_file(&spans, file_name, sm) {
             let adj_lo = bounding_span.lo().to_usize();
             let filename = sm.filename_for_diagnostics(file_name).to_string_lossy().to_string();
-            Some(Snippet::source(source).line_start(offset_line).path(filename).annotations(
-                annotations.into_iter().map(move |a| {
-                    let lo = a.span.lo().to_usize().saturating_sub(adj_lo);
-                    let hi = a.span.hi().to_usize().saturating_sub(adj_lo);
-                    let ann = a.kind.span(lo..hi);
-                    if let Some(label) = a.label { ann.label(label) } else { ann }
-                }),
-            ))
+            Some(
+                Snippet::source(source)
+                    .line_start(offset_line)
+                    .path(filename)
+                    .url(self.try_make_url(file_name))
+                    .annotations(annotations.into_iter().map(move |a| {
+                        let lo = a.span.lo().to_usize().saturating_sub(adj_lo);
+                        let hi = a.span.hi().to_usize().saturating_sub(adj_lo);
+                        let ann = a.kind.span(lo..hi);
+                        if let Some(label) = a.label { ann.label(label) } else { ann }
+                    })),
+            )
         } else {
             None
         }
@@ -650,6 +656,58 @@ impl AnnotateSnippetEmitter {
             }
         }
         group
+    }
+
+    fn try_make_url(&self, file_name: &FileName) -> Option<String> {
+        if self.terminal_url != TerminalUrl::Yes {
+            return None;
+        }
+
+        cfg_select! {
+            unix => {
+                let encode = |fmt: &mut Formatter<'_>, bytes: &[u8]| -> fmt::Result {
+                    for byte in bytes {
+                        match byte {
+                            b'0'..=b'9'
+                            | b'A'..=b'Z'
+                            | b'a'..=b'z'
+                            | b'/'
+                            | b':'
+                            | b'-'
+                            | b'.'
+                            | b'_'
+                            | b'~'
+                            | 128.. => {
+                                fmt.write_char(*byte as char)?;
+                            }
+
+                            _ => {
+                                const HEX: &[u8] = b"0123456789ABCDEF";
+                                fmt.write_char('%')?;
+                                fmt.write_char(HEX[(byte >> 4) as usize] as char)?;
+                                fmt.write_char(HEX[(byte & 0xF) as usize] as char)?;
+                            }
+                        }
+                    }
+
+                    Ok(())
+                };
+
+                let hostname = nix::unistd::gethostname().ok()?;
+                let hostname = fmt::from_fn(|fmt| encode(fmt, hostname.as_bytes()));
+
+                let path = file_name.as_local_path()?.canonicalize().ok()?.into_os_string();
+                let path = fmt::from_fn(|fmt| encode(fmt, path.as_bytes()));
+
+                Some(format!("file://{hostname}{path}"))
+            }
+
+            _ => {
+                // FIXME: supporting Windows would be neat, but it looks /very/ complicated:
+                // https://github.com/BurntSushi/ripgrep/blob/cb66736f146f093497f4dc537b33d0826f9af33c/crates/printer/src/hyperlink/mod.rs#L768
+                None
+            }
+        }
     }
 }
 

@@ -5,10 +5,14 @@ edition = "2024"
 
 [dependencies]
 # tidy-alphabetical-start
-annotate-snippets = { version = "0.12.10", features = ["simd"] }
+# This is the good stuff:
+annotate-snippets = { git = "ssh://git@github.com/scrabsha/annotate-snippets-rs.git", branch = "hyperlinks", features = ["simd"] }
+# THIS COMMIT IS FCKED UP:
+# annotate-snippets = { git = "ssh://git@github.com/rust-lang/annotate-snippets-rs.git", rev = "78b1f7d", features = ["simd"] }
 anstream = "0.6.20"
 anstyle = "1.0.13"
 derive_setters = "0.1.6"
+nix = { version = "0.30.1", features = ["hostname"] }
 rustc_abi = { path = "../rustc_abi" }
 rustc_ast = { path = "../rustc_ast" }
 rustc_data_structures = { path = "../rustc_data_structures" }
