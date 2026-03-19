@@ -421,31 +421,7 @@ impl fmt::Display for Display<'_> {
                     (sym::unix, None) => "Unix",
                     (sym::windows, None) => "Windows",
                     (sym::debug_assertions, None) => "debug-assertions enabled",
-                    (sym::target_os, Some(os)) => match os.as_str() {
-                        "android" => "Android",
-                        "cygwin" => "Cygwin",
-                        "dragonfly" => "DragonFly BSD",
-                        "emscripten" => "Emscripten",
-                        "freebsd" => "FreeBSD",
-                        "fuchsia" => "Fuchsia",
-                        "haiku" => "Haiku",
-                        "hermit" => "Hermit",
-                        "illumos" => "illumos",
-                        "ios" => "iOS",
-                        "l4re" => "L4Re",
-                        "linux" => "Linux",
-                        "macos" => "macOS",
-                        "netbsd" => "NetBSD",
-                        "openbsd" => "OpenBSD",
-                        "redox" => "Redox",
-                        "solaris" => "Solaris",
-                        "tvos" => "tvOS",
-                        "wasi" => "WASI",
-                        "watchos" => "watchOS",
-                        "windows" => "Windows",
-                        "visionos" => "visionOS",
-                        _ => "",
-                    },
+                    (sym::target_os, Some(os)) => human_readable_target_os(*os).unwrap_or_default(),
                     (sym::target_arch, Some(arch)) => match arch.as_str() {
                         "aarch64" => "AArch64",
                         "arm" => "ARM",
@@ -525,6 +501,35 @@ impl fmt::Display for Display<'_> {
             }
         }
     }
+}
+
+fn human_readable_target_os(os: Symbol) -> Option<&'static str> {
+    const OSES: &[(Symbol, &str)] = &[
+        (sym::android, "Android"),
+        (sym::cygwin, "Cygwin"),
+        (sym::dragonfly, "DragonFly BSD"),
+        (sym::emscripten, "Emscripten"),
+        (sym::freebsd, "FreeBSD"),
+        (sym::fuchsia, "Fuchsia"),
+        (sym::haiku, "Haiku"),
+        (sym::hermit, "Hermit"),
+        (sym::illumos, "illumos"),
+        (sym::ios, "iOS"),
+        (sym::l4re, "L4Re"),
+        (sym::linux, "Linux"),
+        (sym::macos, "macOS"),
+        (sym::netbsd, "NetBSD"),
+        (sym::openbsd, "OpenBSD"),
+        (sym::redox, "Redox"),
+        (sym::solaris, "Solaris"),
+        (sym::tvos, "tvOS"),
+        (sym::wasi, "WASI"),
+        (sym::watchos, "watchOS"),
+        (sym::windows, "Windows"),
+        (sym::visionos, "visionOS"),
+    ];
+
+    OSES.iter().find_map(|(os_, human_readable)| os.eq(os_).then_some(*human_readable))
 }
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Hash)]
