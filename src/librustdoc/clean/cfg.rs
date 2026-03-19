@@ -3,6 +3,7 @@
 // FIXME: Once the portability lint RFC is implemented (see tracking issue #41619),
 // switch to use those structures instead.
 
+use std::str::FromStr;
 use std::sync::Arc;
 use std::{fmt, mem, ops};
 
@@ -15,6 +16,7 @@ use rustc_hir::attrs::{self, AttributeKind, CfgEntry, CfgHideShow, HideOrShow};
 use rustc_middle::ty::TyCtxt;
 use rustc_span::symbol::{Symbol, sym};
 use rustc_span::{DUMMY_SP, Span};
+use rustc_target::spec;
 
 use crate::display::{Joined as _, MaybeDisplay, Wrapped};
 use crate::html::escape::Escape;
@@ -504,32 +506,70 @@ impl fmt::Display for Display<'_> {
 }
 
 fn human_readable_target_os(os: Symbol) -> Option<&'static str> {
-    const OSES: &[(Symbol, &str)] = &[
-        (sym::android, "Android"),
-        (sym::cygwin, "Cygwin"),
-        (sym::dragonfly, "DragonFly BSD"),
-        (sym::emscripten, "Emscripten"),
-        (sym::freebsd, "FreeBSD"),
-        (sym::fuchsia, "Fuchsia"),
-        (sym::haiku, "Haiku"),
-        (sym::hermit, "Hermit"),
-        (sym::illumos, "illumos"),
-        (sym::ios, "iOS"),
-        (sym::l4re, "L4Re"),
-        (sym::linux, "Linux"),
-        (sym::macos, "macOS"),
-        (sym::netbsd, "NetBSD"),
-        (sym::openbsd, "OpenBSD"),
-        (sym::redox, "Redox"),
-        (sym::solaris, "Solaris"),
-        (sym::tvos, "tvOS"),
-        (sym::wasi, "WASI"),
-        (sym::watchos, "watchOS"),
-        (sym::windows, "Windows"),
-        (sym::visionos, "visionOS"),
-    ];
+    let os = spec::Os::from_str(os.as_str()).ok()?;
+    Os(os).human_readable_desc()
+}
 
-    OSES.iter().find_map(|(os_, human_readable)| os.eq(os_).then_some(*human_readable))
+struct Os(spec::Os);
+
+impl Os {
+    // FIXME(scrabsha): should we make this a method of `spec::Os` directly?
+    fn human_readable_desc(&self) -> Option<&'static str> {
+        use spec::Os::*;
+        Some(match &self.0 {
+            // tidy-alphabetical-start
+            Aix => "AIX",
+            AmdHsa => "AMD GPU",
+            Android => "Android",
+            Cuda => "CUDA",
+            Cygwin => "Cygwin",
+            Dragonfly => "DragonFlyBSD",
+            Emscripten => "Emscripten",
+            EspIdf => "ESP-IDF",
+            FreeBsd => "FreeBSD",
+            Fuchsia => "Fuchsia",
+            Haiku => "Haiku",
+            HelenOs => "HelenOS",
+            Hermit => "Hermit",
+            Horizon => "Nintendo Switch/Horizon",
+            Hurd => "GNU/Hurd",
+            IOs => "iOS",
+            Illumos => "illumos",
+            L4Re => "L4Re",
+            Linux => "Linux",
+            LynxOs178 => "LynxOS-178",
+            MacOs => "macOS",
+            Managarm => "Managarm",
+            Motor => "Motor OS",
+            NetBsd => "NetBSD",
+            None => "bare-metal", // FIXME(scrabsha): is this appropriate
+            Nto => "QNX Neutrino",
+            NuttX => "NuttX",
+            OpenBsd => "OpenBSD",
+            Psp => "Play Station Portable",
+            Psx => "Play Station 1",
+            Qurt => "Hexagon QuRT",
+            Redox => "Redox OS",
+            Rtems => "RTEMS OS",
+            Solaris => "Solaris",
+            SolidAsp3 => "Solid TOPPERS/ASP3",
+            TeeOs => "TEEOS",
+            Trusty => "Trusty",
+            TvOs => "tvOS",
+            Uefi => "UEFI",
+            VexOs => "VEXos",
+            VisionOs => "visionOS",
+            Vita => "Play Station Vita",
+            VxWorks => "VxWorks",
+            Wasi => "WASI",
+            WatchOs => "watchOS",
+            Windows => "Windows",
+            Xous => "Xous",
+            Zkvm => "zero knowledge Virtual Machine",
+            // tidy-alphabetical-end
+            Unknown | Other(_) => return Option::None,
+        })
+    }
 }
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Hash)]
