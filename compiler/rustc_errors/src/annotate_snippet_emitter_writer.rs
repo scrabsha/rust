@@ -573,14 +573,24 @@ impl AnnotateSnippetEmitter {
         if let Some((bounding_span, source, offset_line)) = shrink_file(&spans, file_name, sm) {
             let adj_lo = bounding_span.lo().to_usize();
             let filename = sm.filename_for_diagnostics(file_name).to_string_lossy().to_string();
-            Some(Snippet::source(source).line_start(offset_line).path(filename).annotations(
-                annotations.into_iter().map(move |a| {
-                    let lo = a.span.lo().to_usize().saturating_sub(adj_lo);
-                    let hi = a.span.hi().to_usize().saturating_sub(adj_lo);
-                    let ann = a.kind.span(lo..hi);
-                    if let Some(label) = a.label { ann.label(label) } else { ann }
-                }),
-            ))
+            let path_url = annotations
+                .iter()
+                .find_map(|annotation| {
+                    matches!(annotation.kind, AnnotationKind::Primary).then_some(annotation.span)
+                })
+                .and_then(|span| self.path_url(sm, file_name, span));
+            Some(
+                Snippet::source(source)
+                    .line_start(offset_line)
+                    .path(filename)
+                    .path_url(path_url)
+                    .annotations(annotations.into_iter().map(move |a| {
+                        let lo = a.span.lo().to_usize().saturating_sub(adj_lo);
+                        let hi = a.span.hi().to_usize().saturating_sub(adj_lo);
+                        let ann = a.kind.span(lo..hi);
+                        if let Some(label) = a.label { ann.label(label) } else { ann }
+                    })),
+            )
         } else {
             None
         }
@@ -622,10 +632,12 @@ impl AnnotateSnippetEmitter {
                     // ⸬  $SRC_DIR/core/src/option.rs:602:4
                     // │
                     // ╰ note: not covered
+                    let path_url = self.path_url(sm, file_name, a.span);
                     group = group.element(
                         Origin::path(filename.clone())
                             .line(sm.doctest_offset_line(file_name, lo.line))
-                            .char_column(lo.col_display),
+                            .char_column(lo.col_display)
+                            .path_url(path_url),
                     );
                 }
 
@@ -638,10 +650,12 @@ impl AnnotateSnippetEmitter {
                     // ⸬  $SRC_DIR/core/src/option.rs:602:4 (<- It adds *this*)
                     // │
                     // ╰ note: not covered
+                    let path_url = self.path_url(sm, file_name, a.span);
                     group = group.element(
                         Origin::path(filename.clone())
                             .line(sm.doctest_offset_line(file_name, hi.line))
-                            .char_column(hi.col_display),
+                            .char_column(hi.col_display)
+                            .path_url(path_url),
                     );
                 }
 
@@ -659,6 +673,17 @@ impl AnnotateSnippetEmitter {
             }
         }
         group
+    }
+
+    fn path_url(&self, sm: &SourceMap, file_name: &FileName, span: Span) -> Option<String> {
+        let hostname = nix::unistd::gethostname().ok()?;
+        let absolute_path = file_name.clone().into_local_path()?.canonicalize().ok()?;
+        let hostname = hostname.display();
+        // TODO(scrabsha): characters must be encoded here probably.
+        let absolute_path = absolute_path.display();
+        let line = sm.lookup_char_pos(span.lo()).line;
+
+        Some(format!("file://{hostname}{absolute_path}#{line}"))
     }
 }
 
