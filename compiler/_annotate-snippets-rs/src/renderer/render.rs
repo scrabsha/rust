@@ -1,22 +1,22 @@
 // Most of this file is adapted from https://github.com/rust-lang/rust/blob/160905b6253f42967ed4aef4b98002944c7df24c/compiler/rustc_errors/src/emitter.rs
 
 use std::borrow::Cow;
-use std::cmp::{max, min, Ordering, Reverse};
+use std::cmp::{Ordering, Reverse, max, min};
 use std::collections::HashMap;
 use std::fmt;
 
 use anstyle::Style;
 
-use super::margin::Margin;
-use super::stylesheet::Stylesheet;
 use super::DecorStyle;
 use super::Renderer;
+use super::margin::Margin;
+use super::stylesheet::Stylesheet;
 use crate::level::{Level, LevelInner};
 use crate::renderer::source_map::{
     AnnotatedLineInfo, LineInfo, Loc, SourceMap, SplicedLines, SubstitutionHighlight, TrimmedPatch,
 };
 use crate::renderer::styled_buffer::StyledBuffer;
-use crate::snippet::Id;
+use crate::snippet::{self, Id};
 use crate::{
     Annotation, AnnotationKind, Element, Group, Message, Origin, Padding, Patch, Report, Snippet,
     Title,
@@ -266,7 +266,7 @@ fn render_short_message(renderer: &Renderer, groups: &[Group<'_>]) -> Result<Str
         }
 
         if let Some(path) = &cause.path {
-            let mut origin = Origin::path(path.as_ref());
+            let mut origin = Origin::path(path.as_ref()).path_url(cause.url.as_deref());
 
             let source_map = SourceMap::new(&cause.source, cause.line_start);
             let (_depth, annotated_lines) =
@@ -486,7 +486,24 @@ fn render_origin(
         _ => origin.path.to_string(),
     };
 
+    if let Some(url) = origin.url.as_ref() {
+        buffer.append(
+            buffer_msg_line_offset,
+            &format!("\x1B]8;;{url}\x1B\\"),
+            ElementStyle::LineAndColumn,
+        );
+    }
+
     buffer.append(buffer_msg_line_offset, &str, ElementStyle::LineAndColumn);
+
+    if origin.url.is_some() {
+        buffer.append(
+            buffer_msg_line_offset,
+            "\x1B]8;;\x1B\\",
+            ElementStyle::LineAndColumn,
+        );
+    }
+
     if !renderer.short_message {
         for _ in 0..max_line_num_len {
             buffer.prepend(buffer_msg_line_offset, " ", ElementStyle::NoStyle);
@@ -509,6 +526,7 @@ fn render_snippet_annotations(
 ) {
     if let Some(path) = &snippet.path {
         let mut origin = Origin::path(path.as_ref());
+        origin.url = snippet.url.clone();
         // print out the span location and spacer before we print the annotated source
         // to do this, we need to know if this span will be primary
         //let is_primary = primary_path == Some(&origin.path);
@@ -2753,7 +2771,7 @@ fn newline_count(body: &str) -> usize {
 
 #[cfg(test)]
 mod test {
-    use super::{newline_count, OUTPUT_REPLACEMENTS};
+    use super::{OUTPUT_REPLACEMENTS, newline_count};
     use snapbox::IntoData;
 
     fn format_replacements(replacements: Vec<(char, &str)>) -> String {

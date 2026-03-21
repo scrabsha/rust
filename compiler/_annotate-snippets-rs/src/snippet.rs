@@ -1,7 +1,7 @@
 //! Structures used as an input for the library.
 
-use crate::renderer::source_map::{as_substr, TrimmedPatch};
 use crate::Level;
+use crate::renderer::source_map::{TrimmedPatch, as_substr};
 use std::borrow::Cow;
 use std::ops::Range;
 
@@ -222,6 +222,7 @@ pub struct Message<'a> {
 pub struct Snippet<'a, T> {
     pub(crate) path: Option<Cow<'a, str>>,
     pub(crate) line_start: usize,
+    pub(crate) url: Option<Cow<'a, str>>,
     pub(crate) source: Cow<'a, str>,
     pub(crate) markers: Vec<T>,
     pub(crate) fold: bool,
@@ -241,6 +242,7 @@ impl<'a, T: Clone> Snippet<'a, T> {
         Self {
             path: None,
             line_start: 1,
+            url: None,
             source: source.into(),
             markers: vec![],
             fold: true,
@@ -275,6 +277,11 @@ impl<'a, T: Clone> Snippet<'a, T> {
     /// See [`AnnotationKind::Visible`] to force specific spans to be shown.
     pub fn fold(mut self, fold: bool) -> Self {
         self.fold = fold;
+        self
+    }
+
+    pub fn path_url(mut self, url: impl Into<OptionCow<'a>>) -> Self {
+        self.url = url.into().0;
         self
     }
 }
@@ -484,6 +491,7 @@ pub struct Origin<'a> {
     pub(crate) path: Cow<'a, str>,
     pub(crate) line: Option<usize>,
     pub(crate) char_column: Option<usize>,
+    pub(crate) url: Option<Cow<'a, str>>,
 }
 
 impl<'a> Origin<'a> {
@@ -499,6 +507,7 @@ impl<'a> Origin<'a> {
             path: path.into(),
             line: None,
             char_column: None,
+            url: None,
         }
     }
 
@@ -517,6 +526,11 @@ impl<'a> Origin<'a> {
     /// </div>
     pub fn char_column(mut self, char_column: usize) -> Self {
         self.char_column = Some(char_column);
+        self
+    }
+
+    pub fn path_url(mut self, url: impl Into<OptionCow<'a>>) -> Self {
+        self.url = url.into().0;
         self
     }
 }
