@@ -1,3 +1,5 @@
+#![allow(warnings)]
+
 //! Format [diagnostic reports][Report], including highlighting snippets of text
 //!
 //! # Example
