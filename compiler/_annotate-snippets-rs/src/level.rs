@@ -157,9 +157,9 @@ impl<'a> Level<'a> {
     ///
     /// ```rust
     /// # #[allow(clippy::needless_doctest_main)]
-    #[doc = include_str!("../examples/custom_level.rs")]
+    #[cfg_attr(doc, doc = include_str!("../examples/custom_level.rs"))]
     /// ```
-    #[doc = include_str!("../examples/custom_level.svg")]
+    #[cfg_attr(doc, doc = include_str!("../examples/custom_level.svg"))]
     pub fn with_name(self, name: impl Into<OptionCow<'a>>) -> Level<'a> {
         Level {
             name: Some(name.into().0),

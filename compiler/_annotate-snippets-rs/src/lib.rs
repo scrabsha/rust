@@ -4,16 +4,16 @@
 //!
 //! ```rust
 //! # #[allow(clippy::needless_doctest_main)]
-#![doc = include_str!("../examples/expected_type.rs")]
+#![cfg_attr(doc, doc = include_str!("../examples/expected_type.rs"))]
 //! ```
 //!
-#![doc = include_str!("../examples/expected_type.svg")]
+#![cfg_attr(doc, doc = include_str!("../examples/expected_type.svg"))]
 //!
 //! # Visual overview
 //!
 //! [`Report`]
 //!
-#![doc = include_str!("../examples/multi_suggestion.svg")]
+#![cfg_attr(doc, doc = include_str!("../examples/multi_suggestion.svg"))]
 //!
 //! ### Primary group
 //!

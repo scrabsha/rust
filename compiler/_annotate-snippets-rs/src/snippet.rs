@@ -39,9 +39,9 @@ pub(crate) struct Id<'a> {
 ///
 /// ```rust
 /// # #[allow(clippy::needless_doctest_main)]
-#[doc = include_str!("../examples/highlight_message.rs")]
+#[cfg_attr(doc, doc = include_str!("../examples/highlight_message.rs"))]
 /// ```
-#[doc = include_str!("../examples/highlight_message.svg")]
+#[cfg_attr(doc, doc = include_str!("../examples/highlight_message.svg"))]
 #[derive(Clone, Debug)]
 pub struct Group<'a> {
     pub(crate) primary_level: Level<'a>,
@@ -64,9 +64,9 @@ impl<'a> Group<'a> {
     ///
     /// ```rust
     /// # #[allow(clippy::needless_doctest_main)]
-    #[doc = include_str!("../examples/elide_header.rs")]
+    #[cfg_attr(doc, doc = include_str!("../examples/elide_header.rs"))]
     /// ```
-    #[doc = include_str!("../examples/elide_header.svg")]
+    #[cfg_attr(doc, doc = include_str!("../examples/elide_header.svg"))]
     pub fn with_level(level: Level<'a>) -> Self {
         Self {
             primary_level: level,
@@ -315,10 +315,10 @@ impl<'a> Snippet<'a, Patch<'a>> {
 ///
 /// ```rust
 /// # #[allow(clippy::needless_doctest_main)]
-#[doc = include_str!("../examples/expected_type.rs")]
+#[cfg_attr(doc, doc = include_str!("../examples/expected_type.rs"))]
 /// ```
 ///
-#[doc = include_str!("../examples/expected_type.svg")]
+#[cfg_attr(doc, doc = include_str!("../examples/expected_type.svg"))]
 #[derive(Clone, Debug)]
 pub struct Annotation<'a> {
     pub(crate) span: Range<usize>,
@@ -380,10 +380,10 @@ pub enum AnnotationKind {
     ///
     /// ```rust
     /// # #[allow(clippy::needless_doctest_main)]
-    #[doc = include_str!("../examples/struct_name_as_context.rs")]
+    #[cfg_attr(doc, doc = include_str!("../examples/struct_name_as_context.rs"))]
     /// ```
     ///
-    #[doc = include_str!("../examples/struct_name_as_context.svg")]
+    #[cfg_attr(doc, doc = include_str!("../examples/struct_name_as_context.svg"))]
     ///
     Visible,
 }
@@ -412,10 +412,10 @@ impl AnnotationKind {
 ///
 /// ```rust
 /// # #[allow(clippy::needless_doctest_main)]
-#[doc = include_str!("../examples/multi_suggestion.rs")]
+#[cfg_attr(doc, doc = include_str!("../examples/multi_suggestion.rs"))]
 /// ```
 ///
-#[doc = include_str!("../examples/multi_suggestion.svg")]
+#[cfg_attr(doc, doc = include_str!("../examples/multi_suggestion.svg"))]
 #[derive(Clone, Debug)]
 pub struct Patch<'a> {
     pub(crate) span: Range<usize>,
