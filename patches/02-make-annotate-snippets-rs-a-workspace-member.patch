@@ -1,0 +1,109 @@
+diff --git a/compiler/_annotate-snippets-rs/Cargo.toml b/compiler/_annotate-snippets-rs/Cargo.toml
+index f5d44e1887..6e10f61cea 100644
+--- a/compiler/_annotate-snippets-rs/Cargo.toml
++++ b/compiler/_annotate-snippets-rs/Cargo.toml
+@@ -1,22 +1,22 @@
+-[workspace]
+-resolver = "2"
++# [workspace]
++# resolver = "2"
+ 
+-[workspace.package]
+-repository = "https://github.com/rust-lang/annotate-snippets-rs"
+-license = "MIT OR Apache-2.0"
+-edition = "2021"
+-rust-version = "1.66.0"  # MSRV
+-include = [
+-  "build.rs",
+-  "src/**/*",
+-  "Cargo.toml",
+-  "Cargo.lock",
+-  "LICENSE*",
+-  "README.md",
+-  "examples/**/*"
+-]
++# [package]
++# repository = "https://github.com/rust-lang/annotate-snippets-rs"
++# license = "MIT OR Apache-2.0"
++# package.edition = "2021"
++# rust-version = "1.66.0"  # MSRV
++# include = [
++#   "build.rs",
++#   "src/**/*",
++#   "Cargo.toml",
++#   "Cargo.lock",
++#   "LICENSE*",
++#   "README.md",
++#   "examples/**/*"
++# ]
+ 
+-[workspace.lints.rust]
++[lints.rust]
+ rust_2018_idioms = { level = "warn", priority = -1 }
+ unnameable_types = "warn"
+ unreachable_pub = "warn"
+@@ -25,7 +25,7 @@
+ unused_macro_rules = "warn"
+ unused_qualifications = "warn"
+ 
+-[workspace.lints.clippy]
++[lints.clippy]
+ bool_assert_comparison = "allow"
+ branches_sharing_code = "allow"
+ checked_conversions = "warn"
+@@ -85,13 +85,13 @@
+ wildcard_imports = "warn"
+ zero_sized_map_values = "warn"
+ 
+-[profile.dev]
+-panic = "abort"
++# [profile.dev]
++# panic = "abort"
+ 
+-[profile.release]
+-panic = "abort"
+-codegen-units = 1
+-lto = true
++# [profile.release]
++# panic = "abort"
++# codegen-units = 1
++# lto = true
+ # debug = "line-tables-only"  # requires Cargo 1.71
+ 
+ [package]
+@@ -100,11 +100,11 @@
+ description = "Format diagnostic reports, including highlighting snippets of text"
+ categories = []
+ keywords = ["code", "analysis", "ascii", "errors", "debug"]
+-repository.workspace = true
+-license.workspace = true
+-edition.workspace = true
+-rust-version.workspace = true
+-include.workspace = true
++# repository.workspace = true
++# license.workspace = true
++edition = "2021"
++# rust-version.workspace = true
++# include.workspace = true
+ 
+ [package.metadata.docs.rs]
+ all-features = true
+@@ -134,9 +134,9 @@
+ divan = "0.1.14"
+ snapbox = { version = "0.6.0", features = ["diff", "term-svg", "cmd", "examples"] }
+ 
+-[[bench]]
+-name = "bench"
+-harness = false
++# [[bench]]
++# name = "bench"
++# harness = false
+ 
+ [features]
+ default = []
+@@ -144,4 +144,4 @@
+ testing-colors = []
+ 
+ [lints]
+-workspace = true
++# workspace = true

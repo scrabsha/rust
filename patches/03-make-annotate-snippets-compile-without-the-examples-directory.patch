@@ -1,0 +1,107 @@
+diff --git a/compiler/_annotate-snippets-rs/src/level.rs b/compiler/_annotate-snippets-rs/src/level.rs
+index ebc4a70da2..c9e040eb23 100644
+--- a/compiler/_annotate-snippets-rs/src/level.rs
++++ b/compiler/_annotate-snippets-rs/src/level.rs
+@@ -157,9 +157,9 @@
+     ///
+     /// ```rust
+     /// # #[allow(clippy::needless_doctest_main)]
+-    #[doc = include_str!("../examples/custom_level.rs")]
++    #[cfg_attr(doc, doc = include_str!("../examples/custom_level.rs"))]
+     /// ```
+-    #[doc = include_str!("../examples/custom_level.svg")]
++    #[cfg_attr(doc, doc = include_str!("../examples/custom_level.svg"))]
+     pub fn with_name(self, name: impl Into<OptionCow<'a>>) -> Level<'a> {
+         Level {
+             name: Some(name.into().0),
+diff --git a/compiler/_annotate-snippets-rs/src/lib.rs b/compiler/_annotate-snippets-rs/src/lib.rs
+index 5be58c8d87..47ec9137f8 100644
+--- a/compiler/_annotate-snippets-rs/src/lib.rs
++++ b/compiler/_annotate-snippets-rs/src/lib.rs
+@@ -4,16 +4,16 @@
+ //!
+ //! ```rust
+ //! # #[allow(clippy::needless_doctest_main)]
+-#![doc = include_str!("../examples/expected_type.rs")]
++#![cfg_attr(doc, doc = include_str!("../examples/expected_type.rs"))]
+ //! ```
+ //!
+-#![doc = include_str!("../examples/expected_type.svg")]
++#![cfg_attr(doc, doc = include_str!("../examples/expected_type.svg"))]
+ //!
+ //! # Visual overview
+ //!
+ //! [`Report`]
+ //!
+-#![doc = include_str!("../examples/multi_suggestion.svg")]
++#![cfg_attr(doc, doc = include_str!("../examples/multi_suggestion.svg"))]
+ //!
+ //! ### Primary group
+ //!
+diff --git a/compiler/_annotate-snippets-rs/src/snippet.rs b/compiler/_annotate-snippets-rs/src/snippet.rs
+index 02dfccf7c0..1db4b336bb 100644
+--- a/compiler/_annotate-snippets-rs/src/snippet.rs
++++ b/compiler/_annotate-snippets-rs/src/snippet.rs
+@@ -39,9 +39,9 @@
+ ///
+ /// ```rust
+ /// # #[allow(clippy::needless_doctest_main)]
+-#[doc = include_str!("../examples/highlight_message.rs")]
++#[cfg_attr(doc, doc = include_str!("../examples/highlight_message.rs"))]
+ /// ```
+-#[doc = include_str!("../examples/highlight_message.svg")]
++#[cfg_attr(doc, doc = include_str!("../examples/highlight_message.svg"))]
+ #[derive(Clone, Debug)]
+ pub struct Group<'a> {
+     pub(crate) primary_level: Level<'a>,
+@@ -64,9 +64,9 @@
+     ///
+     /// ```rust
+     /// # #[allow(clippy::needless_doctest_main)]
+-    #[doc = include_str!("../examples/elide_header.rs")]
++    #[cfg_attr(doc, doc = include_str!("../examples/elide_header.rs"))]
+     /// ```
+-    #[doc = include_str!("../examples/elide_header.svg")]
++    #[cfg_attr(doc, doc = include_str!("../examples/elide_header.svg"))]
+     pub fn with_level(level: Level<'a>) -> Self {
+         Self {
+             primary_level: level,
+@@ -315,10 +315,10 @@
+ ///
+ /// ```rust
+ /// # #[allow(clippy::needless_doctest_main)]
+-#[doc = include_str!("../examples/expected_type.rs")]
++#[cfg_attr(doc, doc = include_str!("../examples/expected_type.rs"))]
+ /// ```
+ ///
+-#[doc = include_str!("../examples/expected_type.svg")]
++#[cfg_attr(doc, doc = include_str!("../examples/expected_type.svg"))]
+ #[derive(Clone, Debug)]
+ pub struct Annotation<'a> {
+     pub(crate) span: Range<usize>,
+@@ -380,10 +380,10 @@
+     ///
+     /// ```rust
+     /// # #[allow(clippy::needless_doctest_main)]
+-    #[doc = include_str!("../examples/struct_name_as_context.rs")]
++    #[cfg_attr(doc, doc = include_str!("../examples/struct_name_as_context.rs"))]
+     /// ```
+     ///
+-    #[doc = include_str!("../examples/struct_name_as_context.svg")]
++    #[cfg_attr(doc, doc = include_str!("../examples/struct_name_as_context.svg"))]
+     ///
+     Visible,
+ }
+@@ -412,10 +412,10 @@
+ ///
+ /// ```rust
+ /// # #[allow(clippy::needless_doctest_main)]
+-#[doc = include_str!("../examples/multi_suggestion.rs")]
++#[cfg_attr(doc, doc = include_str!("../examples/multi_suggestion.rs"))]
+ /// ```
+ ///
+-#[doc = include_str!("../examples/multi_suggestion.svg")]
++#[cfg_attr(doc, doc = include_str!("../examples/multi_suggestion.svg"))]
+ #[derive(Clone, Debug)]
+ pub struct Patch<'a> {
+     pub(crate) span: Range<usize>,

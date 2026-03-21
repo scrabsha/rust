@@ -1,0 +1,42 @@
+diff --git a/Cargo.lock b/Cargo.lock
+index 2cc2e094e9..5c99174b17 100644
+--- a/Cargo.lock
++++ b/Cargo.lock
+@@ -75,8 +75,6 @@
+ [[package]]
+ name = "annotate-snippets"
+ version = "0.12.10"
+-source = "registry+https://github.com/rust-lang/crates.io-index"
+-checksum = "15580ece6ea97cbf832d60ba19c021113469480852c6a2a6beb0db28f097bf1f"
+ dependencies = [
+  "anstyle",
+  "memchr",
+@@ -3842,6 +3840,7 @@
+  "anstream",
+  "anstyle",
+  "derive_setters",
++ "nix",
+  "rustc_abi",
+  "rustc_ast",
+  "rustc_data_structures",
+diff --git a/compiler/rustc_errors/Cargo.toml b/compiler/rustc_errors/Cargo.toml
+index 6c5a1740a9..d8d3055d23 100644
+--- a/compiler/rustc_errors/Cargo.toml
++++ b/compiler/rustc_errors/Cargo.toml
+@@ -5,7 +5,7 @@
+ 
+ [dependencies]
+ # tidy-alphabetical-start
+-annotate-snippets = { version = "0.12.10", features = ["simd"] }
++annotate-snippets = { path = "../_annotate-snippets-rs", features = ["simd"] }
+ anstream = "0.6.20"
+ anstyle = "1.0.13"
+ derive_setters = "0.1.6"
+@@ -27,6 +27,7 @@
+ termize = "0.2"
+ tracing = "0.1"
+ # tidy-alphabetical-end
++nix = { version = "0.30.1", features = ["hostname"] }
+ 
+ [target.'cfg(windows)'.dependencies.windows]
+ version = "0.61.0"
