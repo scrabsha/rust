@@ -387,7 +387,7 @@ impl Diagnostic {
             .terminal_url(je.terminal_url)
             .ui_testing(je.ui_testing)
             .ignored_directories_in_source_blocks(je.ignored_directories_in_source_blocks.clone())
-            .theme(if je.json_rendered.unicode { OutputTheme::Unicode } else { OutputTheme::Ascii })
+            .theme(OutputTheme::Unicode)
             .emit_diagnostic(diag, registry);
 
         let buf = Arc::try_unwrap(buf.0).unwrap().into_inner().unwrap();

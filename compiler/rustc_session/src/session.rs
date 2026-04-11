@@ -1450,7 +1450,8 @@ fn mk_emitter(output: ErrorOutputType) -> Box<DynEmitter> {
                     .short_message(short),
             ),
         },
-        config::ErrorOutputType::Json { pretty, json_rendered, color_config } => {
+        config::ErrorOutputType::Json { json_rendered, color_config, .. } => {
+            let pretty = true;
             Box::new(JsonEmitter::new(
                 Box::new(io::BufWriter::new(io::stderr())),
                 Some(Arc::new(SourceMap::new(FilePathMapping::empty()))),
