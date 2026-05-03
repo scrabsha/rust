@@ -476,6 +476,16 @@ impl<'a> State<'a> {
                 self.print_ident(*field);
                 self.word(")");
             }
+            hir::TyKind::View(ty, fields) => {
+                self.print_type(ty);
+                self.word(".{");
+                if !fields.is_empty() {
+                    self.space();
+                    self.commasep(Breaks::Inconsistent, fields, |s, f| s.print_ident(*f));
+                    self.space();
+                }
+                self.word("}");
+            }
         }
         self.end(ib)
     }
