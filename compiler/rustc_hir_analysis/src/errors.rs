@@ -2028,3 +2028,13 @@ pub(crate) struct PinV2WithoutPinDrop {
     pub pin_v2_span: Option<Span>,
     pub adt_name: Symbol,
 }
+
+#[derive(Diagnostic)]
+#[diag("field `{$name}` is already part of the view")]
+pub(crate) struct ViewedFieldIsAlreadyPartOfTheView {
+    #[primary_span]
+    pub span: Span,
+    pub name: Symbol,
+    #[label("field `{$name}` is declared as viewed here")]
+    pub previous_field_span: Span,
+}
