@@ -11,7 +11,7 @@ LL |     fn not_a_field(&mut self.{ _ }, _: &mut Foo.{ _ }) {}
    |                                                   ^ expected identifier, found reserved identifier
 
 error: expected identifier, found keyword `where`
-  --> $DIR/syntax-errors.rs:14:28
+  --> $DIR/syntax-errors.rs:16:28
    |
 LL |     fn keyword(&mut self.{ where }, _: &mut Foo.{ for }) {}
    |                            ^^^^^ expected identifier, found keyword
@@ -22,7 +22,7 @@ LL |     fn keyword(&mut self.{ r#where }, _: &mut Foo.{ for }) {}
    |                            ++
 
 error: expected identifier, found keyword `for`
-  --> $DIR/syntax-errors.rs:14:51
+  --> $DIR/syntax-errors.rs:16:51
    |
 LL |     fn keyword(&mut self.{ where }, _: &mut Foo.{ for }) {}
    |                                                   ^^^ expected identifier, found keyword
@@ -33,7 +33,7 @@ LL |     fn keyword(&mut self.{ where }, _: &mut Foo.{ r#for }) {}
    |                                                   ++
 
 error: expected one of `,` or `}`, found `baz`
-  --> $DIR/syntax-errors.rs:18:33
+  --> $DIR/syntax-errors.rs:22:33
    |
 LL |     fn no_comma(&mut self.{ bar baz }, _: &mut Foo.{ bar baz }) {}
    |                                -^^^ expected one of `,` or `}`
@@ -41,12 +41,37 @@ LL |     fn no_comma(&mut self.{ bar baz }, _: &mut Foo.{ bar baz }) {}
    |                                help: missing `,`
 
 error: expected one of `,` or `}`, found `baz`
-  --> $DIR/syntax-errors.rs:18:58
+  --> $DIR/syntax-errors.rs:22:58
    |
 LL |     fn no_comma(&mut self.{ bar baz }, _: &mut Foo.{ bar baz }) {}
    |                                                         -^^^ expected one of `,` or `}`
    |                                                         |
    |                                                         help: missing `,`
 
-error: aborting due to 6 previous errors
+error[E0609]: no field `_` on type `Foo`
+  --> $DIR/syntax-errors.rs:10:32
+   |
+LL |     fn not_a_field(&mut self.{ _ }, _: &mut Foo.{ _ }) {}
+   |                                ^
 
+error[E0609]: no field `_` on type `Foo`
+  --> $DIR/syntax-errors.rs:10:51
+   |
+LL |     fn not_a_field(&mut self.{ _ }, _: &mut Foo.{ _ }) {}
+   |                                                   ^
+
+error[E0609]: no field `r#where` on type `Foo`
+  --> $DIR/syntax-errors.rs:16:28
+   |
+LL |     fn keyword(&mut self.{ where }, _: &mut Foo.{ for }) {}
+   |                            ^^^^^
+
+error[E0609]: no field `r#for` on type `Foo`
+  --> $DIR/syntax-errors.rs:16:51
+   |
+LL |     fn keyword(&mut self.{ where }, _: &mut Foo.{ for }) {}
+   |                                                   ^^^
+
+error: aborting due to 10 previous errors
+
+For more information about this error, try `rustc --explain E0609`.

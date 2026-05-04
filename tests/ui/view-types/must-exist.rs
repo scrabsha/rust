@@ -1,6 +1,3 @@
-//@ known-bug: unknown
-//@ check-pass
-
 #![feature(view_types)]
 #![allow(unused)]
 
@@ -9,6 +6,8 @@ struct S {
 }
 
 fn f(_: S.{ bar }) {}
+//~^ ERROR no field `bar` on type `S`
 fn g(_: S.{ foo, bar }) {}
+//~^ ERROR no field `bar` on type `S`
 
 fn main() {}

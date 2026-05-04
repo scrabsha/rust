@@ -1,0 +1,15 @@
+error[E0609]: no field `bar` on type `S`
+  --> $DIR/must-exist.rs:8:13
+   |
+LL | fn f(_: S.{ bar }) {}
+   |             ^^^
+
+error[E0609]: no field `bar` on type `S`
+  --> $DIR/must-exist.rs:10:18
+   |
+LL | fn g(_: S.{ foo, bar }) {}
+   |                  ^^^
+
+error: aborting due to 2 previous errors
+
+For more information about this error, try `rustc --explain E0609`.
