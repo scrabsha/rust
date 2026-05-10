@@ -1,0 +1,20 @@
+error: only structs can be viewed
+  --> $DIR/must-be-struct.rs:14:9
+   |
+LL | fn f(_: Foo.{}) {}
+   |         ^^^^^^ `Foo` is an enum, it cannot be viewed
+
+error: only structs can be viewed
+  --> $DIR/must-be-struct.rs:16:9
+   |
+LL | fn g(_: u8.{}) {}
+   |         ^^^^^ type `u8` cannot be viewed
+
+error: only structs can be viewed
+  --> $DIR/must-be-struct.rs:18:9
+   |
+LL | fn h(_: char.{}) {}
+   |         ^^^^^^^ type `char` cannot be viewed
+
+error: aborting due to 3 previous errors
+

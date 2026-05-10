@@ -1,6 +1,3 @@
-//@ known-bug: unknown
-//@ check-pass
-
 #![feature(view_types)]
 #![allow(unused)]
 
@@ -15,8 +12,11 @@ struct Cat  {
 }
 
 fn f(_: Foo.{}) {}
+//~^ ERROR only structs can be viewed
 fn g(_: u8.{}) {}
+//~^ ERROR only structs can be viewed
 fn h(_: char.{}) {}
+//~^ ERROR only structs can be viewed
 
 fn i(_: Cat.{ mrow, mrrp }) {}
 

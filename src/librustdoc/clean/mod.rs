@@ -1936,7 +1936,7 @@ pub(crate) fn clean_ty<'tcx>(ty: &hir::Ty<'tcx>, cx: &mut DocContext<'tcx>) -> T
         TyKind::View(ty, _) => {
             // FIXME(scrabsha): propagate view types to `rustdoc`.
             clean_ty(ty, cx)
-        },
+        }
         // Rustdoc handles `TyKind::Err`s by turning them into `Type::Infer`s.
         TyKind::Infer(())
         | TyKind::Err(_)

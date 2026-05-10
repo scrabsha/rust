@@ -3355,7 +3355,7 @@ impl<'tcx> dyn HirTyLowerer<'tcx> + '_ {
                 *field,
             ),
             hir::TyKind::View(ty, fields) => {
-                self.lower_view(self.lower_ty(ty), fields)
+                self.lower_view(self.lower_ty(ty), fields, hir_ty.span)
             }
             hir::TyKind::Err(guar) => Ty::new_error(tcx, *guar),
         };
@@ -3810,14 +3810,16 @@ impl<'tcx> dyn HirTyLowerer<'tcx> + '_ {
         ty::Const::new_value(tcx, valtree, adt_ty)
     }
 
-    fn lower_view(&self, inner_ty: Ty<'tcx>, fields: &'tcx [Ident]) -> Ty<'tcx> {
+    fn lower_view(&self, inner_ty: Ty<'tcx>, fields: &[Ident], ty_span: Span) -> Ty<'tcx> {
         // Step 1: check that every field is unique, and keep a list of field that we know are
         // unique.
         let mut viewed_fields = Vec::<Ident>::with_capacity(fields.len());
 
         for f in fields {
             // PERF: this is quadratic, but ~fine since the amount of fields is very low.
-            if let Some(previous_field_span) = viewed_fields.iter().find_map(|f_| (f_.name == f.name).then_some(f_.span)) {
+            if let Some(previous_field_span) =
+                viewed_fields.iter().find_map(|f_| (f_.name == f.name).then_some(f_.span))
+            {
                 self.dcx().emit_err(crate::errors::ViewedFieldIsAlreadyPartOfTheView {
                     name: f.name,
                     span: f.span,
@@ -3828,7 +3830,29 @@ impl<'tcx> dyn HirTyLowerer<'tcx> + '_ {
             viewed_fields.push(*f);
         }
 
-        // FIXME(scrabsha): check that `inner_ty` is a struct.
+        // Step 2: check that the viewed type is a struct.
+        match inner_ty.kind() {
+            ty::Adt(def, _) if def.is_struct() => {}
+
+            ty::Adt(def, _) => {
+                let guar = self.dcx().emit_err(crate::errors::OnlyStructsCanBeViewedAdt {
+                    ty: inner_ty,
+                    span: ty_span,
+                    article: def.article(),
+                    kind: def.descr(),
+                });
+                return Ty::new_error(self.tcx(), guar);
+            }
+
+            _ => {
+                let guar = self.dcx().emit_err(crate::errors::OnlyStructsCanBeViewedNonAdt {
+                    ty: inner_ty,
+                    span: ty_span,
+                });
+                return Ty::new_error(self.tcx(), guar);
+            }
+        }
+
         // FIXME(scrabsha): resolve the fields in `viewed_fields` to actual fields.
         // FIXME(scrabsha): lower views to MIR.
         inner_ty
