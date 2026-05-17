@@ -65,7 +65,7 @@ impl<'tcx> Article for TyKind<'tcx> {
     fn article(&self) -> &'static str {
         match self {
             Int(_) | Float(_) | Array(_, _) => "an",
-            Adt(def, _) if def.is_enum() => "an",
+            Adt(def, _, _) if def.is_enum() => "an",
             // This should never happen, but ICEing and causing the user's code
             // to not compile felt too harsh.
             Error(_) => "a",
@@ -631,45 +631,20 @@ impl<'tcx> Ty<'tcx> {
         Ty::new_ptr(tcx, ty, hir::Mutability::Not)
     }
 
+    pub fn new_adt_with_view(
+        tcx: TyCtxt<'tcx>,
+        def: AdtDef<'tcx>,
+        args: GenericArgsRef<'tcx>,
+        view: &'tcx List<ty::Field>,
+    ) -> Ty<'tcx> {
+        check_adt_def_kind(tcx, def, args);
+        Ty::new(tcx, Adt(def, args, Some(view)))
+    }
+
     #[inline]
     pub fn new_adt(tcx: TyCtxt<'tcx>, def: AdtDef<'tcx>, args: GenericArgsRef<'tcx>) -> Ty<'tcx> {
-        tcx.debug_assert_args_compatible(def.did(), args);
-        if cfg!(debug_assertions) {
-            match tcx.def_kind(def.did()) {
-                DefKind::Struct | DefKind::Union | DefKind::Enum => {}
-                DefKind::Mod
-                | DefKind::Variant
-                | DefKind::Trait
-                | DefKind::TyAlias
-                | DefKind::ForeignTy
-                | DefKind::TraitAlias
-                | DefKind::AssocTy
-                | DefKind::TyParam
-                | DefKind::Fn
-                | DefKind::Const { .. }
-                | DefKind::ConstParam
-                | DefKind::Static { .. }
-                | DefKind::Ctor(..)
-                | DefKind::AssocFn
-                | DefKind::AssocConst { .. }
-                | DefKind::Macro(..)
-                | DefKind::ExternCrate
-                | DefKind::Use
-                | DefKind::ForeignMod
-                | DefKind::AnonConst
-                | DefKind::InlineConst
-                | DefKind::OpaqueTy
-                | DefKind::Field
-                | DefKind::LifetimeParam
-                | DefKind::GlobalAsm
-                | DefKind::Impl { .. }
-                | DefKind::Closure
-                | DefKind::SyntheticCoroutineBody => {
-                    bug!("not an adt: {def:?} ({:?})", tcx.def_kind(def.did()))
-                }
-            }
-        }
-        Ty::new(tcx, Adt(def, args))
+        check_adt_def_kind(tcx, def, args);
+        Ty::new(tcx, Adt(def, args, None))
     }
 
     #[inline]
@@ -926,6 +901,49 @@ impl<'tcx> Ty<'tcx> {
     }
 }
 
+fn check_adt_def_kind<'tcx>(
+    tcx: TyCtxt<'tcx>,
+    def: AdtDef<'tcx>,
+    args: &'tcx ty::RawList<(), GenericArg<'tcx>>,
+) {
+    tcx.debug_assert_args_compatible(def.did(), args);
+    if cfg!(debug_assertions) {
+        match tcx.def_kind(def.did()) {
+            DefKind::Struct | DefKind::Union | DefKind::Enum => {}
+            DefKind::Mod
+            | DefKind::Variant
+            | DefKind::Trait
+            | DefKind::TyAlias
+            | DefKind::ForeignTy
+            | DefKind::TraitAlias
+            | DefKind::AssocTy
+            | DefKind::TyParam
+            | DefKind::Fn
+            | DefKind::Const { .. }
+            | DefKind::ConstParam
+            | DefKind::Static { .. }
+            | DefKind::Ctor(..)
+            | DefKind::AssocFn
+            | DefKind::AssocConst { .. }
+            | DefKind::Macro(..)
+            | DefKind::ExternCrate
+            | DefKind::Use
+            | DefKind::ForeignMod
+            | DefKind::AnonConst
+            | DefKind::InlineConst
+            | DefKind::OpaqueTy
+            | DefKind::Field
+            | DefKind::LifetimeParam
+            | DefKind::GlobalAsm
+            | DefKind::Impl { .. }
+            | DefKind::Closure
+            | DefKind::SyntheticCoroutineBody => {
+                bug!("not an adt: {def:?} ({:?})", tcx.def_kind(def.did()))
+            }
+        }
+    }
+}
+
 impl<'tcx> rustc_type_ir::inherent::Ty<TyCtxt<'tcx>> for Ty<'tcx> {
     fn new_bool(tcx: TyCtxt<'tcx>) -> Self {
         tcx.types.bool
@@ -973,6 +991,15 @@ impl<'tcx> rustc_type_ir::inherent::Ty<TyCtxt<'tcx>> for Ty<'tcx> {
 
     fn new_error(interner: TyCtxt<'tcx>, guar: ErrorGuaranteed) -> Self {
         Ty::new_error(interner, guar)
+    }
+
+    fn new_adt_with_view(
+        interner: TyCtxt<'tcx>,
+        adt_def: ty::AdtDef<'tcx>,
+        args: ty::GenericArgsRef<'tcx>,
+        view: &'tcx List<ty::Field>,
+    ) -> Self {
+        Ty::new_adt_with_view(interner, adt_def, args, view)
     }
 
     fn new_adt(
@@ -1195,7 +1222,7 @@ impl<'tcx> Ty<'tcx> {
 
     #[inline]
     pub fn is_phantom_data(self) -> bool {
-        if let Adt(def, _) = self.kind() { def.is_phantom_data() } else { false }
+        if let Adt(def, _, _) = self.kind() { def.is_phantom_data() } else { false }
     }
 
     #[inline]
@@ -1245,7 +1272,7 @@ impl<'tcx> Ty<'tcx> {
     #[inline]
     pub fn is_simd(self) -> bool {
         match self.kind() {
-            Adt(def, _) => def.repr().simd(),
+            Adt(def, _, _) => def.repr().simd(),
             _ => false,
         }
     }
@@ -1253,7 +1280,7 @@ impl<'tcx> Ty<'tcx> {
     #[inline]
     pub fn is_scalable_vector(self) -> bool {
         match self.kind() {
-            Adt(def, _) => def.repr().scalable(),
+            Adt(def, _, _) => def.repr().scalable(),
             _ => false,
         }
     }
@@ -1270,7 +1297,7 @@ impl<'tcx> Ty<'tcx> {
         self,
         tcx: TyCtxt<'tcx>,
     ) -> Option<(u16, Ty<'tcx>, NumScalableVectors)> {
-        let Adt(def, args) = self.kind() else {
+        let Adt(def, args, _) = self.kind() else {
             return None;
         };
         let (num_vectors, vec_def) = match def.repr().scalable? {
@@ -1293,7 +1320,7 @@ impl<'tcx> Ty<'tcx> {
     }
 
     pub fn simd_size_and_type(self, tcx: TyCtxt<'tcx>) -> (u64, Ty<'tcx>) {
-        let Adt(def, args) = self.kind() else {
+        let Adt(def, args, _) = self.kind() else {
             bug!("`simd_size_and_type` called on invalid type")
         };
         assert!(def.repr().simd(), "`simd_size_and_type` called on non-SIMD type");
@@ -1344,7 +1371,7 @@ impl<'tcx> Ty<'tcx> {
     #[inline]
     pub fn is_box(self) -> bool {
         match self.kind() {
-            Adt(def, _) => def.is_box(),
+            Adt(def, _, _) => def.is_box(),
             _ => false,
         }
     }
@@ -1356,7 +1383,7 @@ impl<'tcx> Ty<'tcx> {
     #[inline]
     pub fn is_box_global(self, tcx: TyCtxt<'tcx>) -> bool {
         match self.kind() {
-            Adt(def, args) if def.is_box() => {
+            Adt(def, args, _) if def.is_box() => {
                 let Some(alloc) = args.get(1) else {
                     // Single-argument Box is always global. (for "minicore" tests)
                     return true;
@@ -1371,14 +1398,14 @@ impl<'tcx> Ty<'tcx> {
 
     pub fn boxed_ty(self) -> Option<Ty<'tcx>> {
         match self.kind() {
-            Adt(def, args) if def.is_box() => Some(args.type_at(0)),
+            Adt(def, args, _) if def.is_box() => Some(args.type_at(0)),
             _ => None,
         }
     }
 
     pub fn pinned_ty(self) -> Option<Ty<'tcx>> {
         match self.kind() {
-            Adt(def, args) if def.is_pin() => Some(args.type_at(0)),
+            Adt(def, args, _) if def.is_pin() => Some(args.type_at(0)),
             _ => None,
         }
     }
@@ -1395,7 +1422,7 @@ impl<'tcx> Ty<'tcx> {
         self,
     ) -> Option<(Ty<'tcx>, ty::Pinnedness, ty::Mutability, Region<'tcx>)> {
         match self.kind() {
-            Adt(def, args)
+            Adt(def, args, _)
                 if def.is_pin()
                     && let &ty::Ref(region, ty, mutbl) = args.type_at(0).kind() =>
             {
@@ -1443,12 +1470,12 @@ impl<'tcx> Ty<'tcx> {
 
     #[inline]
     pub fn is_enum(self) -> bool {
-        matches!(self.kind(), Adt(adt_def, _) if adt_def.is_enum())
+        matches!(self.kind(), Adt(adt_def, _, _) if adt_def.is_enum())
     }
 
     #[inline]
     pub fn is_union(self) -> bool {
-        matches!(self.kind(), Adt(adt_def, _) if adt_def.is_union())
+        matches!(self.kind(), Adt(adt_def, _, _) if adt_def.is_union())
     }
 
     #[inline]
@@ -1613,7 +1640,7 @@ impl<'tcx> Ty<'tcx> {
     #[inline]
     pub fn ty_adt_def(self) -> Option<AdtDef<'tcx>> {
         match self.kind() {
-            Adt(adt, _) => Some(*adt),
+            Adt(adt, _, _) => Some(*adt),
             _ => None,
         }
     }
@@ -1644,7 +1671,7 @@ impl<'tcx> Ty<'tcx> {
     #[inline]
     pub fn variant_range(self, tcx: TyCtxt<'tcx>) -> Option<Range<VariantIdx>> {
         match self.kind() {
-            TyKind::Adt(adt, _) => Some(adt.variant_range()),
+            TyKind::Adt(adt, _, _) => Some(adt.variant_range()),
             TyKind::Coroutine(def_id, args) => {
                 Some(args.as_coroutine().variant_range(*def_id, tcx))
             }
@@ -1666,7 +1693,7 @@ impl<'tcx> Ty<'tcx> {
         variant_index: VariantIdx,
     ) -> Option<Discr<'tcx>> {
         match self.kind() {
-            TyKind::Adt(adt, _) if adt.is_enum() => {
+            TyKind::Adt(adt, _, _) if adt.is_enum() => {
                 Some(adt.discriminant_for_variant(tcx, variant_index))
             }
             TyKind::Coroutine(def_id, args) => {
@@ -1682,7 +1709,7 @@ impl<'tcx> Ty<'tcx> {
     /// Returns the type of the discriminant of this type.
     pub fn discriminant_ty(self, tcx: TyCtxt<'tcx>) -> Ty<'tcx> {
         match self.kind() {
-            ty::Adt(adt, _) if adt.is_enum() => adt.repr().discr_type().to_ty(tcx),
+            ty::Adt(adt, _, _) if adt.is_enum() => adt.repr().discr_type().to_ty(tcx),
             ty::Coroutine(_, args) => args.as_coroutine().discr_ty(tcx),
 
             ty::Param(_) | ty::Alias(..) | ty::Infer(ty::TyVar(_)) => {
@@ -1959,7 +1986,7 @@ impl<'tcx> Ty<'tcx> {
 
             ty::Tuple(tys) => tys.last().is_none_or(|ty| ty.has_trivial_sizedness(tcx, sizedness)),
 
-            ty::Adt(def, args) => def.sizedness_constraint(tcx, sizedness).is_none_or(|ty| {
+            ty::Adt(def, args, _) => def.sizedness_constraint(tcx, sizedness).is_none_or(|ty| {
                 ty.instantiate(tcx, args).skip_norm_wip().has_trivial_sizedness(tcx, sizedness)
             }),
 
@@ -2061,7 +2088,7 @@ impl<'tcx> Ty<'tcx> {
                 ty::FreshTy(_) | ty::FreshIntTy(_) | ty::FreshFloatTy(_) => true,
             },
 
-            ty::Adt(_, _)
+            ty::Adt(_, _, _)
             | ty::Tuple(_)
             | ty::Array(..)
             | ty::Foreign(_)
@@ -2112,7 +2139,7 @@ impl<'tcx> Ty<'tcx> {
 
     pub fn is_c_void(self, tcx: TyCtxt<'_>) -> bool {
         match self.kind() {
-            ty::Adt(adt, _) => tcx.is_lang_item(adt.did(), LangItem::CVoid),
+            ty::Adt(adt, _, _) => tcx.is_lang_item(adt.did(), LangItem::CVoid),
             _ => false,
         }
     }

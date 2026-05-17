@@ -815,7 +815,7 @@ impl<'a, 'tcx> TypeVisitor<TyCtxt<'tcx>> for WfPredicates<'a, 'tcx> {
                 return; // Subtree handled by compute_inherent_projection.
             }
 
-            ty::Adt(def, args) => {
+            ty::Adt(def, args, _) => {
                 // WfNominalType
                 let obligations = self.nominal_obligations(def.did(), args);
                 self.out.extend(obligations);
@@ -1136,7 +1136,7 @@ impl<'a, 'tcx> TypeVisitor<TyCtxt<'tcx>> for WfPredicates<'a, 'tcx> {
                 // FIXME(mgca): no need to feature-gate once valtree lifetimes are not erased
                 if tcx.features().min_generic_const_args() {
                     match val.ty.kind() {
-                        ty::Adt(adt_def, args) => {
+                        ty::Adt(adt_def, args, _) => {
                             let adt_val = val.destructure_adt_const();
                             let variant_def = adt_def.variant(adt_val.variant);
                             let cause = self.cause(ObligationCauseCode::WellFormed(None));

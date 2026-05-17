@@ -65,7 +65,7 @@ fn fn_eagerness(cx: &LateContext<'_>, fn_id: DefId, name: Symbol, have_one_arg: 
         } else {
             NoChange
         }
-    } else if let ty::Adt(def, subs) = ty.kind() {
+    } else if let ty::Adt(def, subs, _) = ty.kind() {
         // Types where the only fields are generic types (or references to) with no trait bounds other
         // than marker traits.
         // Due to the limited operations on these types functions should be fairly cheap.

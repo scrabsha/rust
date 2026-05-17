@@ -85,7 +85,7 @@ fn uncached_llvm_type<'a, 'tcx>(
             if !cx.sess().fewer_names() =>
         {
             let mut name = with_no_visible_paths!(with_no_trimmed_paths!(layout.ty.to_string()));
-            if let (&ty::Adt(def, _), &Variants::Single { index }) =
+            if let (&ty::Adt(def, _, _), &Variants::Single { index }) =
                 (layout.ty.kind(), &layout.variants)
             {
                 if def.is_enum() {

@@ -123,7 +123,7 @@ pub enum TyKind<I: Interner> {
     ///
     /// Note that generic parameters in fields only get lazily instantiated
     /// by using something like `adt_def.all_fields().map(|field| field.ty(interner, args))`.
-    Adt(I::AdtDef, I::GenericArgs),
+    Adt(I::AdtDef, I::GenericArgs, Option<I::Fields>),
 
     /// An unsized FFI type that is opaque to Rust. Written as `extern type T`.
     Foreign(I::ForeignId),
@@ -335,7 +335,7 @@ impl<I: Interner> TyKind<I> {
             | ty::Int(_)
             | ty::Uint(_)
             | ty::Float(_)
-            | ty::Adt(_, _)
+            | ty::Adt(_, _, _)
             | ty::Foreign(_)
             | ty::Str
             | ty::Array(_, _)
@@ -373,20 +373,36 @@ impl<I: Interner> fmt::Debug for TyKind<I> {
             Int(i) => write!(f, "{i:?}"),
             Uint(u) => write!(f, "{u:?}"),
             Float(float) => write!(f, "{float:?}"),
-            Adt(d, s) => {
+            Adt(d, s, view) => {
                 write!(f, "{d:?}")?;
                 let mut s = s.iter();
                 let first = s.next();
-                match first {
-                    Some(first) => write!(f, "<{:?}", first)?,
-                    None => return Ok(()),
-                };
-
-                for arg in s {
-                    write!(f, ", {:?}", arg)?;
+                if let Some(first) = first {
+                    write!(f, "<{first:?}")?;
+                    for arg in s {
+                        write!(f, ", {arg:?}")?;
+                    }
+                    write!(f, ">")?;
                 }
 
-                write!(f, ">")
+                if let Some(fields) = view {
+                    write!(f, ".{{")?;
+                    if !fields.is_empty() {
+                        let mut first = true;
+                        write!(f, " ")?;
+                        for field in fields.iter() {
+                            if !first {
+                                write!(f, ", ")?;
+                            }
+                            write!(f, "{field:?}")?;
+                            first = false;
+                        }
+                        write!(f, " ")?;
+                    }
+                    write!(f, "}}")?;
+                }
+
+                Ok(())
             }
             Foreign(d) => f.debug_tuple("Foreign").field(d).finish(),
             Str => write!(f, "str"),

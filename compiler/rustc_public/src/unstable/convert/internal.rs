@@ -158,7 +158,8 @@ impl RustcInternal for RigidTy {
                 rustc_ty::TyKind::Pat(ty.internal(tables, tcx), pat.internal(tables, tcx))
             }
             RigidTy::Adt(def, args) => {
-                rustc_ty::TyKind::Adt(def.internal(tables, tcx), args.internal(tables, tcx))
+                // FIXME(scrabsha): what?
+                rustc_ty::TyKind::Adt(def.internal(tables, tcx), args.internal(tables, tcx), None)
             }
             RigidTy::Str => rustc_ty::TyKind::Str,
             RigidTy::Slice(ty) => rustc_ty::TyKind::Slice(ty.internal(tables, tcx)),

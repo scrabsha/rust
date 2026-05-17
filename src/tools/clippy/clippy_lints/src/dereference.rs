@@ -914,7 +914,7 @@ impl TyCoercionStability {
                 | ty::Placeholder(_)
                 | ty::Dynamic(..)
                 | ty::Param(_) => Self::Reborrow,
-                ty::Adt(_, args)
+                ty::Adt(_, args, _)
                     if ty.has_placeholders()
                         || ty.has_opaque_types()
                         || (!for_return && args.has_non_region_param()) =>
@@ -977,7 +977,7 @@ fn ty_contains_infer(ty: &hir::Ty<'_>) -> bool {
 }
 
 fn ty_contains_field(ty: Ty<'_>, name: Symbol) -> bool {
-    if let ty::Adt(adt, _) = *ty.kind() {
+    if let ty::Adt(adt, _, _) = *ty.kind() {
         adt.is_struct() && adt.all_fields().any(|f| f.name == name)
     } else {
         false

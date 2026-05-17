@@ -19,7 +19,7 @@ pub(super) fn check<'tcx>(
     let expr_ty = cx.typeck_results().expr_ty(expr);
     if expr_ty.is_diag_item(cx, sym::Vec)
         && let Some(slice) = derefs_to_slice(cx, recv, cx.typeck_results().expr_ty(recv))
-        && let ty::Adt(_, args) = expr_ty.kind()
+        && let ty::Adt(_, args, _) = expr_ty.kind()
         && let Some(iter_item_ty) = get_iterator_item_ty(cx, cx.typeck_results().expr_ty(recv))
         && let ty::Ref(_, iter_item_ty, _) = iter_item_ty.kind()
         && *iter_item_ty == args.type_at(0)

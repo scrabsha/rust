@@ -1864,7 +1864,7 @@ impl<'a, 'tcx> FnCtxt<'a, 'tcx> {
             self.demand_eqtype(path_span, adt_ty_hint, adt_ty);
         }
 
-        let ty::Adt(adt, args) = adt_ty.kind() else {
+        let ty::Adt(adt, args, _) = adt_ty.kind() else {
             span_bug!(path_span, "non-ADT passed to check_expr_struct_fields");
         };
         let adt_kind = adt.adt_kind();
@@ -2045,12 +2045,12 @@ impl<'a, 'tcx> FnCtxt<'a, 'tcx> {
                     return;
                 }
                 let fru_tys = match adt_ty.kind() {
-                    ty::Adt(adt, args) if adt.is_struct() => variant
+                    ty::Adt(adt, args, _) if adt.is_struct() => variant
                         .fields
                         .iter()
                         .map(|f| self.normalize(span, f.ty(self.tcx, args)))
                         .collect(),
-                    ty::Adt(adt, args) if adt.is_enum() => variant
+                    ty::Adt(adt, args, _) if adt.is_enum() => variant
                         .fields
                         .iter()
                         .map(|f| self.normalize(span, f.ty(self.tcx, args)))
@@ -2153,7 +2153,7 @@ impl<'a, 'tcx> FnCtxt<'a, 'tcx> {
                     self.check_expr_has_type_or_error(base_expr, adt_ty, |_| {
                         let base_ty = self.typeck_results.borrow().expr_ty(base_expr);
                         let same_adt = matches!((adt_ty.kind(), base_ty.kind()),
-                            (ty::Adt(adt, _), ty::Adt(base_adt, _)) if adt == base_adt);
+                            (ty::Adt(adt, _, _), ty::Adt(base_adt, _, _)) if adt == base_adt);
                         if self.tcx.sess.is_nightly_build() && same_adt {
                             feature_err(
                                 &self.tcx.sess,
@@ -2165,7 +2165,7 @@ impl<'a, 'tcx> FnCtxt<'a, 'tcx> {
                         }
                     });
                     match adt_ty.kind() {
-                        ty::Adt(adt, args) if adt.is_struct() => variant
+                        ty::Adt(adt, args, _) if adt.is_struct() => variant
                             .fields
                             .iter()
                             .map(|f| self.normalize(expr.span, f.ty(self.tcx, args)))
@@ -2434,7 +2434,7 @@ impl<'a, 'tcx> FnCtxt<'a, 'tcx> {
             .partition(|field| field.2);
         err.span_labels(used_private_fields.iter().map(|(_, span, _)| *span), "private field");
 
-        if let ty::Adt(def, _) = adt_ty.kind() {
+        if let ty::Adt(def, _, _) = adt_ty.kind() {
             if (def.did().is_local() || !used_fields.is_empty())
                 && !remaining_private_fields.is_empty()
             {
@@ -2749,7 +2749,7 @@ impl<'a, 'tcx> FnCtxt<'a, 'tcx> {
         while let Some((deref_base_ty, _)) = autoderef.next() {
             debug!("deref_base_ty: {:?}", deref_base_ty);
             match deref_base_ty.kind() {
-                ty::Adt(base_def, args) if !base_def.is_enum() => {
+                ty::Adt(base_def, args, _) if !base_def.is_enum() => {
                     debug!("struct named {:?}", deref_base_ty);
                     // we don't care to report errors for a struct if the struct itself is tainted
                     if let Err(guar) = base_def.non_enum_variant().has_errors() {
@@ -2914,7 +2914,7 @@ impl<'a, 'tcx> FnCtxt<'a, 'tcx> {
             err.span_label(field_ident.span, "unknown field");
             return;
         };
-        let ty::Adt(def, _) = output_ty.kind() else {
+        let ty::Adt(def, _, _) = output_ty.kind() else {
             err.span_label(field_ident.span, "unknown field");
             return;
         };
@@ -2985,7 +2985,7 @@ impl<'a, 'tcx> FnCtxt<'a, 'tcx> {
         }
 
         self.suggest_fn_call(&mut err, base, base_ty, |output_ty| {
-            if let ty::Adt(def, _) = output_ty.kind()
+            if let ty::Adt(def, _, _) = output_ty.kind()
                 && !def.is_enum()
             {
                 def.non_enum_variant().fields.iter().any(|field| {
@@ -3090,7 +3090,7 @@ impl<'a, 'tcx> FnCtxt<'a, 'tcx> {
                 Some(span),
             );
         } else if let ty::RawPtr(ptr_ty, _) = expr_t.kind()
-            && let ty::Adt(adt_def, _) = ptr_ty.kind()
+            && let ty::Adt(adt_def, _, _) = ptr_ty.kind()
             && let ExprKind::Field(base_expr, _) = expr.kind
             && let [variant] = &adt_def.variants().raw
             && variant.fields.iter().any(|f| f.ident(self.tcx) == field)
@@ -3212,7 +3212,7 @@ impl<'a, 'tcx> FnCtxt<'a, 'tcx> {
                         );
 
                         let ty_str = match base_ty.peel_refs().kind() {
-                            ty::Adt(def, args) => self.tcx.def_path_str_with_args(def.did(), args),
+                            ty::Adt(def, args, _) => self.tcx.def_path_str_with_args(def.did(), args),
                             _ => base_ty.peel_refs().to_string(),
                         };
                         err.multipart_suggestion(
@@ -3231,7 +3231,7 @@ impl<'a, 'tcx> FnCtxt<'a, 'tcx> {
 
         // try to add a suggestion in case the field is a nested field of a field of the Adt
         let mod_id = self.tcx.parent_module(expr.hir_id).to_def_id();
-        let (ty, unwrap) = if let ty::Adt(def, args) = base_ty.kind()
+        let (ty, unwrap) = if let ty::Adt(def, args, _) = base_ty.kind()
             && (self.tcx.is_diagnostic_item(sym::Result, def.did())
                 || self.tcx.is_diagnostic_item(sym::Option, def.did()))
             && let Some(arg) = args.get(0)
@@ -3334,7 +3334,7 @@ impl<'a, 'tcx> FnCtxt<'a, 'tcx> {
             .into_iter()
             .filter_map(move |(base_t, _)| {
                 match base_t.kind() {
-                    ty::Adt(base_def, args) if !base_def.is_enum() => {
+                    ty::Adt(base_def, args, _) if !base_def.is_enum() => {
                         let tcx = self.tcx;
                         let fields = &base_def.non_enum_variant().fields;
                         // Some struct, e.g. some that impl `Deref`, have all private fields
@@ -3755,7 +3755,7 @@ impl<'a, 'tcx> FnCtxt<'a, 'tcx> {
             let container = self.structurally_resolve_type(expr.span, current_container);
 
             match container.kind() {
-                ty::Adt(container_def, args) if container_def.is_enum() => {
+                ty::Adt(container_def, args, _) if container_def.is_enum() => {
                     let block = self.tcx.local_def_id_to_hir_id(self.body_id);
                     let (ident, _def_scope) =
                         self.tcx.adjust_ident_and_get_scope(field, container_def.did(), block);
@@ -3841,7 +3841,7 @@ impl<'a, 'tcx> FnCtxt<'a, 'tcx> {
 
                     continue;
                 }
-                ty::Adt(container_def, args) => {
+                ty::Adt(container_def, args, _) => {
                     let block = self.tcx.local_def_id_to_hir_id(self.body_id);
                     let (ident, def_scope) =
                         self.tcx.adjust_ident_and_get_scope(field, container_def.did(), block);

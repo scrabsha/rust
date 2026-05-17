@@ -200,7 +200,7 @@ fn check_arg_for_power_alignment<'tcx>(cx: &LateContext<'tcx>, ty: Ty<'tcx>) -> 
     //     4 bytes.
     if ty.is_floating_point() && ty.primitive_size(tcx).bytes() > 4 {
         return true;
-    } else if let Adt(adt_def, _) = ty.kind()
+    } else if let Adt(adt_def, _, _) = ty.kind()
         && adt_def.is_struct()
         && adt_def.repr().c()
         && !adt_def.repr().packed()
@@ -510,7 +510,7 @@ impl<'a, 'tcx> ImproperCTypesVisitor<'a, 'tcx> {
                 } else {
                     // (mid-retcon-commit-chain comment:)
                     // this is the original fallback behavior, which is wrong
-                    if let ty::Adt(def, args) = ty.kind() {
+                    if let ty::Adt(def, args, _) = ty.kind() {
                         self.visit_struct_or_union(state, ty, *def, args)
                     } else if cfg!(debug_assertions) {
                         bug!("ImproperCTypes: this retcon commit was badly written")
@@ -732,7 +732,7 @@ impl<'a, 'tcx> ImproperCTypesVisitor<'a, 'tcx> {
         }
 
         match *ty.kind() {
-            ty::Adt(def, args) => {
+            ty::Adt(def, args, _) => {
                 if let Some(inner_ty) = ty.boxed_ty() {
                     return self.visit_indirection(state, ty, inner_ty, IndirectionKind::Box);
                 }
@@ -1125,7 +1125,7 @@ impl<'tcx> ImproperCTypesLint {
             CItemKind::Declaration => "block",
             CItemKind::Definition => "fn",
         };
-        let span_note = if let ty::Adt(def, _) = ty.kind()
+        let span_note = if let ty::Adt(def, _, _) = ty.kind()
             && let Some(sp) = cx.tcx.hir_span_if_local(def.did())
         {
             Some(sp)

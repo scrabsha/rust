@@ -1624,7 +1624,7 @@ impl<'tcx> dyn HirTyLowerer<'tcx> + '_ {
                                 adt_def,
                             },
                         );
-                        let ty::Adt(_, enum_args) = self_ty.kind() else { unreachable!() };
+                        let ty::Adt(_, enum_args, _) = self_ty.kind() else { unreachable!() };
                         return Ok(TypeRelativePath::Ctor { ctor_def_id, args: enum_args });
                     }
                     if let PermitVariants::Yes = mode.permit_variants() {
@@ -2740,7 +2740,7 @@ impl<'tcx> dyn HirTyLowerer<'tcx> + '_ {
             }
         };
 
-        let ty::Adt(adt_def, adt_args) = ty.kind() else { unreachable!() };
+        let ty::Adt(adt_def, adt_args, _) = ty.kind() else { unreachable!() };
 
         let variant_def = adt_def.variant_with_id(variant_did);
         let variant_idx = adt_def.variant_index_with_id(variant_did).as_u32();
@@ -3410,7 +3410,7 @@ impl<'tcx> dyn HirTyLowerer<'tcx> + '_ {
         let dcx = self.dcx();
         let tcx = self.tcx();
         match ty.kind() {
-            ty::Adt(def, _) => {
+            ty::Adt(def, _, view) => {
                 let base_did = def.did();
                 let kind_name = tcx.def_descr(base_did);
                 let (variant_idx, variant) = if def.is_enum() {
@@ -3458,6 +3458,12 @@ impl<'tcx> dyn HirTyLowerer<'tcx> + '_ {
                     .iter_enumerated()
                     .find(|(_, f)| f.ident(tcx).normalize_to_macros_2_0() == ident)
                 {
+                    if let Some(view) = view
+                        && view.iter().all(|field| field.idx() != field_idx)
+                    {
+                        // FIXME(scrabsha): owo?
+                        todo!("access to a restricted field")
+                    }
                     if field.vis.is_accessible_from(def_scope, tcx) {
                         tcx.check_stability(field.did, Some(hir_id), ident.span, None);
                     } else {
@@ -3831,10 +3837,10 @@ impl<'tcx> dyn HirTyLowerer<'tcx> + '_ {
         }
 
         // Step 2: check that the viewed type is a struct.
-        let variant = match inner_ty.kind() {
-            ty::Adt(def, _) if def.is_struct() => def.non_enum_variant(),
+        let (adt, args, variant) = match inner_ty.kind() {
+            ty::Adt(def, args, _) if def.is_struct() => (def, args, def.non_enum_variant()),
 
-            ty::Adt(def, _) => {
+            ty::Adt(def, _, _) => {
                 let guar = self.dcx().emit_err(crate::errors::OnlyStructsCanBeViewedAdt {
                     ty: inner_ty,
                     span: ty_span,
@@ -3857,7 +3863,7 @@ impl<'tcx> dyn HirTyLowerer<'tcx> + '_ {
         let mut viewed_indices = Vec::with_capacity(viewed_fields.len());
         let mut error = None;
         for field in viewed_fields {
-            let Some((_, field)) = variant
+            let Some((field_idx, field_def)) = variant
                 .fields
                 .iter_enumerated()
                 .find(|(_, f)| f.ident(self.tcx()).normalize_to_macros_2_0() == field)
@@ -3868,14 +3874,13 @@ impl<'tcx> dyn HirTyLowerer<'tcx> + '_ {
                 continue;
             };
 
-            viewed_indices.push(field);
+            viewed_indices.push(ty::Field::new(field_idx, field_def.name));
         }
         if let Some(guar) = error {
             return Ty::new_error(self.tcx(), guar);
         }
 
-        // FIXME(scrabsha): resolve the fields in `viewed_fields` to actual fields.
-        // FIXME(scrabsha): lower views to MIR.
-        inner_ty
+        let viewed_indices = self.tcx().mk_fields_(&viewed_indices);
+        Ty::new_adt_with_view(self.tcx(), *adt, args, viewed_indices)
     }
 }

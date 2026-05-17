@@ -653,7 +653,7 @@ impl<'tcx> ConstEvalCtxt<'tcx> {
                         [.., a] => a.target == base_ty,
                     }
                     && let Some(Constant::Adt(constant)) = self.expr(base)
-                    && let ty::Adt(adt_def, _) = *base_ty.kind()
+                    && let ty::Adt(adt_def, _, _) = *base_ty.kind()
                     && adt_def.is_struct()
                     && let Some((desired_field, ty)) =
                         field_of_struct(adt_def, self.tcx, constant, base_ty, field.name) =>
@@ -1061,7 +1061,7 @@ impl<'tcx> ConstEvalCtxt<'tcx> {
 
 pub fn mir_to_const<'tcx>(tcx: TyCtxt<'tcx>, val: ConstValue, ty: Ty<'tcx>) -> Option<Constant> {
     match (val, ty.kind()) {
-        (_, &ty::Adt(adt_def, _)) if adt_def.is_struct() => Some(Constant::Adt(val)),
+        (_, &ty::Adt(adt_def, _, _)) if adt_def.is_struct() => Some(Constant::Adt(val)),
         (ConstValue::Scalar(Scalar::Int(int)), _) => match ty.kind() {
             ty::Bool => Some(Constant::Bool(int == ScalarInt::TRUE)),
             ty::Uint(_) | ty::Int(_) => Some(Constant::Int(int.to_bits(int.size()))),

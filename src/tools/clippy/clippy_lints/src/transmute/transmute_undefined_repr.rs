@@ -92,7 +92,7 @@ pub(super) fn check<'tcx>(
             },
 
             (ReducedTy::UnorderedFields(from_ty), ReducedTy::UnorderedFields(to_ty)) if from_ty != to_ty => {
-                let same_adt_did = if let (ty::Adt(from_def, from_subs), ty::Adt(to_def, to_subs)) =
+                let same_adt_did = if let (ty::Adt(from_def, from_subs, _), ty::Adt(to_def, to_subs, _)) =
                     (from_ty.kind(), to_ty.kind())
                     && from_def == to_def
                 {
@@ -268,7 +268,7 @@ fn reduce_ty<'tcx>(cx: &LateContext<'tcx>, mut ty: Ty<'tcx>) -> ReducedTy<'tcx> 
                 }
                 ReducedTy::UnorderedFields(ty)
             },
-            ty::Adt(def, args) if def.is_struct() => {
+            ty::Adt(def, args, _) if def.is_struct() => {
                 let mut iter = def
                     .non_enum_variant()
                     .fields
@@ -287,11 +287,11 @@ fn reduce_ty<'tcx>(cx: &LateContext<'tcx>, mut ty: Ty<'tcx>) -> ReducedTy<'tcx> 
                     ReducedTy::UnorderedFields(ty)
                 }
             },
-            ty::Adt(def, _) if def.is_enum() && (def.variants().is_empty() || is_c_void(cx, ty)) => {
+            ty::Adt(def, _, _) if def.is_enum() && (def.variants().is_empty() || is_c_void(cx, ty)) => {
                 ReducedTy::TypeErasure { raw_ptr_only: false }
             },
             // TODO: Check if the conversion to or from at least one of a union's fields is valid.
-            ty::Adt(def, _) if def.is_union() => ReducedTy::TypeErasure { raw_ptr_only: false },
+            ty::Adt(def, _, _) if def.is_union() => ReducedTy::TypeErasure { raw_ptr_only: false },
             ty::Foreign(_) | ty::Param(_) => ReducedTy::TypeErasure { raw_ptr_only: false },
             ty::Int(_) | ty::Uint(_) => ReducedTy::TypeErasure { raw_ptr_only: true },
             _ => ReducedTy::Other(ty),
@@ -328,7 +328,7 @@ fn same_except_params<'tcx>(subs1: GenericArgsRef<'tcx>, subs2: GenericArgsRef<'
     for (ty1, ty2) in subs1.types().zip(subs2.types()).filter(|(ty1, ty2)| ty1 != ty2) {
         match (ty1.kind(), ty2.kind()) {
             (ty::Param(_), _) | (_, ty::Param(_)) => (),
-            (ty::Adt(adt1, subs1), ty::Adt(adt2, subs2)) if adt1 == adt2 && same_except_params(subs1, subs2) => (),
+            (ty::Adt(adt1, subs1, _), ty::Adt(adt2, subs2, _)) if adt1 == adt2 && same_except_params(subs1, subs2) => (),
             _ => return false,
         }
     }

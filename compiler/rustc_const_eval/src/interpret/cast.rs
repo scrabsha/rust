@@ -474,7 +474,7 @@ impl<'tcx, M: Machine<'tcx>> InterpCx<'tcx, M> {
             }
             (&ty::Ref(_, s, _), &ty::Ref(_, c, _) | &ty::RawPtr(c, _))
             | (&ty::RawPtr(s, _), &ty::RawPtr(c, _)) => self.unsize_into_ptr(src, dest, s, c),
-            (&ty::Adt(def_a, _), &ty::Adt(def_b, _)) => {
+            (&ty::Adt(def_a, _, _), &ty::Adt(def_b, _, _)) => {
                 assert_eq!(def_a, def_b); // implies same number of fields
 
                 // Unsizing of generic struct with pointer fields, like `Arc<T>` -> `Arc<Trait>`.

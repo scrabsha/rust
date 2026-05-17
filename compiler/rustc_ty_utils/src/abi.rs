@@ -155,7 +155,7 @@ fn fn_sig_for_fn_abi<'tcx>(
                     // with `&mut Context<'_>` which is used in codegen.
                     #[cfg(debug_assertions)]
                     {
-                        if let ty::Adt(resume_ty_adt, _) = sig.resume_ty.kind() {
+                        if let ty::Adt(resume_ty_adt, _, _) = sig.resume_ty.kind() {
                             let expected_adt =
                                 tcx.adt_def(tcx.require_lang_item(LangItem::ResumeTy, DUMMY_SP));
                             assert_eq!(*resume_ty_adt, expected_adt);
@@ -191,7 +191,7 @@ fn fn_sig_for_fn_abi<'tcx>(
                     // with `&mut Context<'_>` which is used in codegen.
                     #[cfg(debug_assertions)]
                     {
-                        if let ty::Adt(resume_ty_adt, _) = sig.resume_ty.kind() {
+                        if let ty::Adt(resume_ty_adt, _, _) = sig.resume_ty.kind() {
                             let expected_adt =
                                 tcx.adt_def(tcx.require_lang_item(LangItem::ResumeTy, DUMMY_SP));
                             assert_eq!(*resume_ty_adt, expected_adt);

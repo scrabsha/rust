@@ -49,7 +49,7 @@ impl<'tcx> LateLintPass<'tcx> for UnportableVariant {
                         .skip_norm_wip();
                     let constant = cx.tcx.const_eval_poly(def_id.to_def_id()).ok();
                     if let Some(Constant::Int(val)) = constant.and_then(|c| mir_to_const(cx.tcx, c, ty)) {
-                        if let ty::Adt(adt, _) = ty.kind()
+                        if let ty::Adt(adt, _, _) = ty.kind()
                             && adt.is_enum()
                         {
                             ty = adt.repr().discr_type().to_ty(cx.tcx);

@@ -1084,7 +1084,7 @@ fn check_type_defn<'tcx>(
                     ty.into(),
                 );
 
-                if matches!(ty.kind(), ty::Adt(def, _) if def.repr().scalable())
+                if matches!(ty.kind(), ty::Adt(def, _, _) if def.repr().scalable())
                     && !matches!(adt_def.repr().scalable, Some(ScalableElt::Container))
                 {
                     // Scalable vectors can only be fields of structs if the type has a
@@ -2184,7 +2184,7 @@ impl<'tcx> TypeVisitor<TyCtxt<'tcx>> for HasErrorDeep<'tcx> {
 
     fn visit_ty(&mut self, ty: Ty<'tcx>) -> Self::Result {
         match *ty.kind() {
-            ty::Adt(def, _) => {
+            ty::Adt(def, _, _) => {
                 if self.seen.insert(def.did()) {
                     for field in def.all_fields() {
                         self.tcx
@@ -2332,7 +2332,7 @@ impl<'tcx> TypeVisitor<TyCtxt<'tcx>> for IsProbablyCyclical<'tcx> {
 
     fn visit_ty(&mut self, ty: Ty<'tcx>) -> ControlFlow<(), ()> {
         let def_id = match ty.kind() {
-            ty::Adt(adt_def, _) => Some(adt_def.did()),
+            ty::Adt(adt_def, _, _) => Some(adt_def.did()),
             &ty::Alias(ty::AliasTy { kind: ty::Free { def_id }, .. }) => Some(def_id),
             _ => None,
         };

@@ -398,7 +398,7 @@ impl<'tcx> LateLintPass<'tcx> for UselessConversion {
                     && let a = cx.typeck_results().expr_ty(e)
                     && let b = cx.typeck_results().expr_ty(recv)
                     && a.is_diag_item(cx, sym::Result)
-                    && let ty::Adt(_, args) = a.kind()
+                    && let ty::Adt(_, args, _) = a.kind()
                     && let Some(a_type) = args.types().next()
                     && same_type_modulo_regions(a_type, b)
                 {
@@ -423,7 +423,7 @@ impl<'tcx> LateLintPass<'tcx> for UselessConversion {
                     let b = cx.typeck_results().expr_ty(arg);
                     if name == sym::try_from_fn
                         && a.is_diag_item(cx, sym::Result)
-                        && let ty::Adt(_, args) = a.kind()
+                        && let ty::Adt(_, args, _) = a.kind()
                         && let Some(a_type) = args.types().next()
                         && same_type_modulo_regions(a_type, b)
                     {

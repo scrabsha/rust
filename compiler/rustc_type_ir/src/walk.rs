@@ -131,7 +131,7 @@ fn push_inner<I: Interner>(stack: &mut TypeWalkerStack<I>, parent: I::GenericArg
                         .flatten(),
                 );
             }
-            ty::Adt(_, args)
+            ty::Adt(_, args, _)
             | ty::Closure(_, args)
             | ty::CoroutineClosure(_, args)
             | ty::Coroutine(_, args)

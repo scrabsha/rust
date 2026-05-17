@@ -197,7 +197,7 @@ fn in_impl<'tcx>(
 }
 
 fn are_equal(cx: &LateContext<'_>, middle_ty: Ty<'_>, hir_ty: &rustc_hir::Ty<'_>) -> bool {
-    if let ty::Adt(adt_def, _) = middle_ty.kind()
+    if let ty::Adt(adt_def, _, _) = middle_ty.kind()
         && let Some(local_did) = adt_def.did().as_local()
         && let item = cx.tcx.hir_expect_item(local_did)
         && let middle_ty_id = item.owner_id.to_def_id()

@@ -79,7 +79,7 @@ fn find_return_type<'tcx>(cx: &LateContext<'tcx>, expr: &'tcx ExprKind<'_>) -> O
 
 /// Extracts the error type from Result<T, E>.
 fn result_error_type<'tcx>(cx: &LateContext<'tcx>, ty: Ty<'tcx>) -> Option<Ty<'tcx>> {
-    if let ty::Adt(def, subst) = ty.kind()
+    if let ty::Adt(def, subst, _) = ty.kind()
         && cx.tcx.is_diagnostic_item(sym::Result, def.did())
     {
         Some(subst.type_at(1))
@@ -90,7 +90,7 @@ fn result_error_type<'tcx>(cx: &LateContext<'tcx>, ty: Ty<'tcx>) -> Option<Ty<'t
 
 /// Extracts the error type from Poll<Result<T, E>>.
 fn poll_result_error_type<'tcx>(cx: &LateContext<'tcx>, ty: Ty<'tcx>) -> Option<Ty<'tcx>> {
-    if let ty::Adt(def, subst) = ty.kind()
+    if let ty::Adt(def, subst, _) = ty.kind()
         && cx.tcx.lang_items().get(LangItem::Poll) == Some(def.did())
     {
         let ready_ty = subst.type_at(0);
@@ -102,7 +102,7 @@ fn poll_result_error_type<'tcx>(cx: &LateContext<'tcx>, ty: Ty<'tcx>) -> Option<
 
 /// Extracts the error type from Poll<Option<Result<T, E>>>.
 fn poll_option_result_error_type<'tcx>(cx: &LateContext<'tcx>, ty: Ty<'tcx>) -> Option<Ty<'tcx>> {
-    if let ty::Adt(def, subst) = ty.kind()
+    if let ty::Adt(def, subst, _) = ty.kind()
         && cx.tcx.lang_items().get(LangItem::Poll) == Some(def.did())
         && let ready_ty = subst.type_at(0)
         && let Some(some_ty) = option_arg_ty(cx, ready_ty)

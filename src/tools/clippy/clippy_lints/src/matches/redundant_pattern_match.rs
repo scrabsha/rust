@@ -106,7 +106,7 @@ fn find_match_true<'tcx>(
 
 // Extract the generic arguments out of a type
 fn try_get_generic_ty(ty: Ty<'_>, index: usize) -> Option<Ty<'_>> {
-    if let ty::Adt(_, subs) = ty.kind()
+    if let ty::Adt(_, subs, _) = ty.kind()
         && let Some(sub) = subs.get(index)
         && let GenericArgKind::Type(sub_ty) = sub.kind()
     {

@@ -120,7 +120,7 @@ pub(super) fn check(
             format!("casting `{cast_from}` to `{cast_to}` may truncate the value{suffix}")
         },
 
-        (ty::Adt(def, _), Some(to_nbits)) if def.is_enum() => {
+        (ty::Adt(def, _, _), Some(to_nbits)) if def.is_enum() => {
             let (from_nbits, variant) = if let ExprKind::Path(p) = &cast_expr.kind
                 && let Res::Def(DefKind::Ctor(..), id) = cx.qpath_res(p, cast_expr.hir_id)
             {

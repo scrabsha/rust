@@ -453,7 +453,7 @@ impl<'tcx> SizeSkeleton<'tcx> {
                 }
             }
 
-            ty::Adt(def, args) => {
+            ty::Adt(def, args, _) => {
                 // Only newtypes and enums w/ nullable pointer optimization.
                 if def.is_union() || def.variants().is_empty() || def.variants().len() > 2 {
                     return Err(err);
@@ -772,10 +772,10 @@ where
                 }
 
                 let fields = match this.ty.kind() {
-                    ty::Adt(def, _) if def.variants().is_empty() => {
+                    ty::Adt(def, _, _) if def.variants().is_empty() => {
                         bug!("for_variant called on zero-variant enum {}", this.ty)
                     }
-                    ty::Adt(def, _) => def.variant(variant_index).fields.len(),
+                    ty::Adt(def, _, _) => def.variant(variant_index).fields.len(),
                     _ => bug!("`ty_and_layout_for_variant` on unexpected type {}", this.ty),
                 };
                 tcx.mk_layout(LayoutData::uninhabited_variant(cx, variant_index, fields))
@@ -890,7 +890,7 @@ where
                         // offers better information than `std::ptr::metadata::VTable`,
                         // and we rely on this layout information to trigger a panic in
                         // `std::mem::uninitialized::<&dyn Trait>()`, for example.
-                        if let ty::Adt(def, args) = metadata.kind()
+                        if let ty::Adt(def, args, _) = metadata.kind()
                             && tcx.is_lang_item(def.did(), LangItem::DynMetadata)
                             && let ty::Dynamic(data, _) = args.type_at(0).kind()
                         {
@@ -947,7 +947,7 @@ where
                 ty::Tuple(tys) => TyMaybeWithLayout::Ty(tys[i]),
 
                 // ADTs.
-                ty::Adt(def, args) => {
+                ty::Adt(def, args, _) => {
                     match this.variants {
                         Variants::Single { index } => {
                             let field = &def.variant(index).fields[FieldIdx::from_usize(i)];
@@ -1178,7 +1178,7 @@ where
     }
 
     fn is_transparent(this: TyAndLayout<'tcx>) -> bool {
-        matches!(this.ty.kind(), ty::Adt(def, _) if def.repr().transparent())
+        matches!(this.ty.kind(), ty::Adt(def, _, _) if def.repr().transparent())
     }
 
     fn is_scalable_vector(this: TyAndLayout<'tcx>) -> bool {
@@ -1187,7 +1187,7 @@ where
 
     /// See [`TyAndLayout::pass_indirectly_in_non_rustic_abis`] for details.
     fn is_pass_indirectly_in_non_rustic_abis_flag_set(this: TyAndLayout<'tcx>) -> bool {
-        matches!(this.ty.kind(), ty::Adt(def, _) if def.repr().flags.contains(ReprFlags::PASS_INDIRECTLY_IN_NON_RUSTIC_ABIS))
+        matches!(this.ty.kind(), ty::Adt(def, _, _) if def.repr().flags.contains(ReprFlags::PASS_INDIRECTLY_IN_NON_RUSTIC_ABIS))
     }
 }
 

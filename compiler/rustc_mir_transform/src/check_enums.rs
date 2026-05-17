@@ -168,7 +168,7 @@ impl<'a, 'tcx> EnumFinder<'a, 'tcx> {
 impl<'a, 'tcx> Visitor<'tcx> for EnumFinder<'a, 'tcx> {
     fn visit_rvalue(&mut self, rvalue: &Rvalue<'tcx>, location: Location) {
         if let Rvalue::Cast(CastKind::Transmute, op, ty) = rvalue {
-            let ty::Adt(adt_def, _) = ty.kind() else {
+            let ty::Adt(adt_def, _, _) = ty.kind() else {
                 return;
             };
             if !adt_def.is_enum() {

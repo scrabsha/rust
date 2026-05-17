@@ -523,7 +523,7 @@ impl<'infcx, 'tcx> MirBorrowckCtxt<'_, 'infcx, 'tcx> {
                                 .to_string(),
                         )
                     }
-                    ty::Adt(adt, args) => {
+                    ty::Adt(adt, args, _) => {
                         let generic_arg = args[param_index as usize];
                         let identity_args =
                             GenericArgs::identity_for_item(self.infcx.tcx, adt.did());

@@ -19,7 +19,7 @@ impl SelfKind {
                 true
             } else if let Some(boxed_ty) = ty.boxed_ty() {
                 boxed_ty == parent_ty
-            } else if let ty::Adt(adt_def, args) = ty.kind()
+            } else if let ty::Adt(adt_def, args, _) = ty.kind()
                 && matches!(cx.tcx.get_diagnostic_name(adt_def.did()), Some(sym::Rc | sym::Arc))
             {
                 args.types().next() == Some(parent_ty)

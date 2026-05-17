@@ -102,7 +102,7 @@ pub fn simplify_type<I: Interner>(
         ty::Int(int_type) => Some(SimplifiedType::Int(int_type)),
         ty::Uint(uint_type) => Some(SimplifiedType::Uint(uint_type)),
         ty::Float(float_type) => Some(SimplifiedType::Float(float_type)),
-        ty::Adt(def, _) => Some(SimplifiedType::Adt(def.def_id().into())),
+        ty::Adt(def, _, _) => Some(SimplifiedType::Adt(def.def_id().into())),
         ty::Str => Some(SimplifiedType::Str),
         ty::Array(..) => Some(SimplifiedType::Array),
         ty::Slice(..) => Some(SimplifiedType::Slice),
@@ -314,8 +314,8 @@ impl<I: Interner, const INSTANTIATE_LHS_WITH_INFER: bool, const INSTANTIATE_RHS_
                 _ => false,
             },
 
-            ty::Adt(lhs_def, lhs_args) => match rhs.kind() {
-                ty::Adt(rhs_def, rhs_args) => {
+            ty::Adt(lhs_def, lhs_args, _) => match rhs.kind() {
+                ty::Adt(rhs_def, rhs_args, _) => {
                     lhs_def == rhs_def && self.args_may_unify_inner(lhs_args, rhs_args, depth)
                 }
                 _ => false,

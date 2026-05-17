@@ -481,7 +481,7 @@ impl<'a, 'tcx> Visitor<'a, 'tcx> for UnsafetyVisitor<'a, 'tcx> {
                 let mut peeled = arg;
                 while let ExprKind::Scope { value: arg, .. } = self.thir[peeled].kind
                     && let ExprKind::Field { lhs, name: _, variant_index: _ } = self.thir[arg].kind
-                    && let ty::Adt(def, _) = &self.thir[lhs].ty.kind()
+                    && let ty::Adt(def, _, _) = &self.thir[lhs].ty.kind()
                     && def.is_union()
                 {
                     peeled = lhs;
@@ -577,7 +577,7 @@ impl<'a, 'tcx> Visitor<'a, 'tcx> for UnsafetyVisitor<'a, 'tcx> {
             }
             ExprKind::Field { lhs, variant_index, name } => {
                 let lhs = &self.thir[lhs];
-                if let ty::Adt(adt_def, _) = lhs.ty.kind() {
+                if let ty::Adt(adt_def, _, _) = lhs.ty.kind() {
                     if adt_def.variant(variant_index).fields[name].safety.is_unsafe() {
                         self.requires_unsafe(expr.span, UseOfUnsafeField);
                     } else if adt_def.is_union() {

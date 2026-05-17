@@ -130,7 +130,7 @@ enum TypeAscriptionKind<'tcx> {
 }
 
 fn check_expr<'tcx>(cx: &LateContext<'tcx>, expr: &Expr<'tcx>, ty_ascription: &TypeAscriptionKind<'tcx>, ty: Ty<'tcx>) {
-    if let ty::Adt(_, subst) = ty.kind()
+    if let ty::Adt(_, subst, _) = ty.kind()
         && ty.is_diag_item(cx, sym::Mutex)
         && let mutex_param = subst.type_at(0)
         && let Some(atomic_name) = get_atomic_name(mutex_param)

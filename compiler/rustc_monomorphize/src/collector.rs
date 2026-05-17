@@ -1159,7 +1159,7 @@ fn find_tails_for_unsizing<'tcx>(
             tcx.struct_lockstep_tails_for_codegen(source_boxed, target_boxed, typing_env)
         }
 
-        (&ty::Adt(source_adt_def, source_args), &ty::Adt(target_adt_def, target_args)) => {
+        (&ty::Adt(source_adt_def, source_args, _), &ty::Adt(target_adt_def, target_args, _)) => {
             assert_eq!(source_adt_def, target_adt_def);
             let CustomCoerceUnsized::Struct(coerce_index) =
                 match crate::custom_coerce_unsize_info(tcx, source_ty, target_ty) {

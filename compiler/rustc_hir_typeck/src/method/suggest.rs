@@ -528,11 +528,11 @@ impl<'a, 'tcx> FnCtxt<'a, 'tcx> {
         // implementation (#81576).
         let mut ty = rcvr_ty;
         let span = item_ident.span;
-        if let ty::Adt(def, generics) = rcvr_ty.kind() {
+        if let ty::Adt(def, generics, _) = rcvr_ty.kind() {
             if generics.len() > 0 {
                 let mut autoderef = self.autoderef(span, rcvr_ty).silence_errors();
                 let candidate_found = autoderef.any(|(ty, _)| {
-                    if let ty::Adt(adt_def, _) = ty.kind() {
+                    if let ty::Adt(adt_def, _, _) = ty.kind() {
                         self.tcx
                             .inherent_impls(adt_def.did())
                             .into_iter()
@@ -958,7 +958,7 @@ impl<'a, 'tcx> FnCtxt<'a, 'tcx> {
                     &mut bound_spans,
                 );
             }
-        } else if let ty::Adt(def, targs) = rcvr_ty.kind()
+        } else if let ty::Adt(def, targs, _) = rcvr_ty.kind()
             && let SelfSource::MethodCall(rcvr_expr) = source
         {
             // This is useful for methods on arbitrary self types that might have a simple
@@ -1126,7 +1126,7 @@ impl<'a, 'tcx> FnCtxt<'a, 'tcx> {
             ty::Param(param_type) => {
                 Some(param_type.span_from_generics(self.tcx, self.body_id.to_def_id()))
             }
-            ty::Adt(def, _) if def.did().is_local() => Some(self.tcx.def_span(def.did())),
+            ty::Adt(def, _, _) if def.did().is_local() => Some(self.tcx.def_span(def.did())),
             _ => None,
         };
         let rcvr_ty_str = self.tcx.short_string(rcvr_ty, err.long_ty_path());
@@ -1443,10 +1443,10 @@ impl<'a, 'tcx> FnCtxt<'a, 'tcx> {
                     ty.is_str()
                         || matches!(
                             ty.kind(),
-                            ty::Adt(adt, _) if self.tcx.is_lang_item(adt.did(), LangItem::String)
+                            ty::Adt(adt, _, _) if self.tcx.is_lang_item(adt.did(), LangItem::String)
                         )
                 }
-                ty::Adt(adt, _) => self.tcx.is_lang_item(adt.did(), LangItem::String),
+                ty::Adt(adt, _, _) => self.tcx.is_lang_item(adt.did(), LangItem::String),
                 _ => false,
             };
             if is_string_or_ref_str && item_ident.name == sym::iter {
@@ -1458,7 +1458,7 @@ impl<'a, 'tcx> FnCtxt<'a, 'tcx> {
                     Applicability::MachineApplicable,
                 );
             }
-            if let ty::Adt(adt, _) = rcvr_ty.kind() {
+            if let ty::Adt(adt, _, _) = rcvr_ty.kind() {
                 let mut inherent_impls_candidate = self
                     .tcx
                     .inherent_impls(adt.did())
@@ -1757,7 +1757,7 @@ impl<'a, 'tcx> FnCtxt<'a, 'tcx> {
                             // suggest restricting its type params.
                             Some(self.tcx.hir_node_by_def_id(self.body_id))
                         }
-                        ty::Adt(def, _) => {
+                        ty::Adt(def, _, _) => {
                             def.did().as_local().map(|def_id| self.tcx.hir_node_by_def_id(def_id))
                         }
                         _ => None,
@@ -1782,7 +1782,7 @@ impl<'a, 'tcx> FnCtxt<'a, 'tcx> {
             let msg = format!("`{}`", if obligation.len() > 50 { quiet } else { obligation });
             match self_ty.kind() {
                 // Point at the type that couldn't satisfy the bound.
-                ty::Adt(def, _) => {
+                ty::Adt(def, _, _) => {
                     bound_spans.get_mut_or_insert_default(tcx.def_span(def.did())).push(msg)
                 }
                 // Point at the trait object that couldn't satisfy the bound.
@@ -2180,7 +2180,7 @@ impl<'a, 'tcx> FnCtxt<'a, 'tcx> {
                 err.note(note);
             }
 
-            if let ty::Adt(adt_def, _) = rcvr_ty.kind() {
+            if let ty::Adt(adt_def, _, _) = rcvr_ty.kind() {
                 unsatisfied_predicates.iter().find(|(pred, _parent, _cause)| {
                     if let ty::PredicateKind::Clause(ty::ClauseKind::Trait(pred)) =
                         pred.kind().skip_binder()
@@ -2355,7 +2355,7 @@ impl<'a, 'tcx> FnCtxt<'a, 'tcx> {
         item_name: Ident,
         call_args: Option<Vec<Ty<'tcx>>>,
     ) -> Option<Symbol> {
-        if let ty::Adt(adt, adt_args) = rcvr_ty.kind() {
+        if let ty::Adt(adt, adt_args, _) = rcvr_ty.kind() {
             for &inherent_impl_did in self.tcx.inherent_impls(adt.did()).into_iter() {
                 for inherent_method in
                     self.tcx.associated_items(inherent_impl_did).in_definition_order()
@@ -2569,7 +2569,7 @@ impl<'a, 'tcx> FnCtxt<'a, 'tcx> {
     /// Look at all the associated functions without receivers in the type's inherent impls
     /// to look for builders that return `Self`, `Option<Self>` or `Result<Self, _>`.
     fn find_builder_fn(&self, err: &mut Diag<'_>, rcvr_ty: Ty<'tcx>, expr_id: hir::HirId) {
-        let ty::Adt(adt_def, _) = rcvr_ty.kind() else {
+        let ty::Adt(adt_def, _, _) = rcvr_ty.kind() else {
             return;
         };
         let mut items = self
@@ -2602,7 +2602,7 @@ impl<'a, 'tcx> FnCtxt<'a, 'tcx> {
                     .skip_norm_wip()
                     .output();
                 let ret_ty = self.tcx.instantiate_bound_regions_with_erased(ret_ty);
-                let ty::Adt(def, args) = ret_ty.kind() else {
+                let ty::Adt(def, args, _) = ret_ty.kind() else {
                     return None;
                 };
                 // Check for `-> Self`
@@ -2690,7 +2690,7 @@ impl<'a, 'tcx> FnCtxt<'a, 'tcx> {
                 })
                 .map_or(impl_ty, |(ty, _)| ty)
                 .peel_refs();
-            if let ty::Adt(def, args) = target_ty.kind() {
+            if let ty::Adt(def, args, _) = target_ty.kind() {
                 // If there are any inferred arguments, (`{integer}`), we should replace
                 // them with underscores to allow the compiler to infer them
                 let infer_args = self.tcx.mk_args_from_iter(args.into_iter().map(|arg| {
@@ -2803,7 +2803,7 @@ impl<'a, 'tcx> FnCtxt<'a, 'tcx> {
         let tcx = self.tcx;
         let field_receiver =
             self.autoderef(span, rcvr_ty).silence_errors().find_map(|(ty, _)| match ty.kind() {
-                ty::Adt(def, args) if !def.is_enum() => {
+                ty::Adt(def, args, _) if !def.is_enum() => {
                     let variant = &def.non_enum_variant();
                     tcx.find_field_index(item_name, variant).map(|index| {
                         let field = &variant.fields[index];
@@ -3260,7 +3260,7 @@ impl<'a, 'tcx> FnCtxt<'a, 'tcx> {
         };
         let call_expr = tcx.hir_expect_expr(tcx.parent_hir_id(expr.hir_id));
 
-        let ty::Adt(kind, args) = actual.kind() else {
+        let ty::Adt(kind, args, _) = actual.kind() else {
             return;
         };
         match kind.adt_kind() {
@@ -3296,7 +3296,7 @@ impl<'a, 'tcx> FnCtxt<'a, 'tcx> {
                         .ret_coercion
                         .as_ref()
                         .map(|c| self.resolve_vars_if_possible(c.borrow().expected_ty()))
-                        && let ty::Adt(kind, _) = ret_ty.kind()
+                        && let ty::Adt(kind, _, _) = ret_ty.kind()
                         && tcx.get_diagnostic_item(diagnostic_item) == Some(kind.did())
                     {
                         true
@@ -3449,7 +3449,7 @@ impl<'a, 'tcx> FnCtxt<'a, 'tcx> {
             .filter_map(|e| match e.obligation.predicate.kind().skip_binder() {
                 ty::PredicateKind::Clause(ty::ClauseKind::Trait(pred)) => {
                     match pred.self_ty().kind() {
-                        ty::Adt(_, _) => Some((e.root_obligation.predicate, pred)),
+                        ty::Adt(_, _, _) => Some((e.root_obligation.predicate, pred)),
                         _ => None,
                     }
                 }
@@ -3460,7 +3460,7 @@ impl<'a, 'tcx> FnCtxt<'a, 'tcx> {
         // Note for local items and foreign items respectively.
         let (mut local_preds, mut foreign_preds): (Vec<_>, Vec<_>) =
             preds.iter().partition(|&(_, pred)| {
-                if let ty::Adt(def, _) = pred.self_ty().kind() {
+                if let ty::Adt(def, _, _) = pred.self_ty().kind() {
                     def.did().is_local()
                 } else {
                     false
@@ -3471,7 +3471,7 @@ impl<'a, 'tcx> FnCtxt<'a, 'tcx> {
         let local_def_ids = local_preds
             .iter()
             .filter_map(|(_, pred)| match pred.self_ty().kind() {
-                ty::Adt(def, _) => Some(def.did()),
+                ty::Adt(def, _, _) => Some(def.did()),
                 _ => None,
             })
             .collect::<FxIndexSet<_>>();
@@ -3484,7 +3484,7 @@ impl<'a, 'tcx> FnCtxt<'a, 'tcx> {
             .collect::<Vec<_>>()
             .into();
         for (_, pred) in &local_preds {
-            if let ty::Adt(def, _) = pred.self_ty().kind() {
+            if let ty::Adt(def, _, _) = pred.self_ty().kind() {
                 local_spans.push_span_label(
                     self.tcx.def_span(def.did()),
                     format!("must implement `{}`", pred.trait_ref.print_trait_sugared()),
@@ -3515,7 +3515,7 @@ impl<'a, 'tcx> FnCtxt<'a, 'tcx> {
 
         for (_, pred) in &foreign_preds {
             let ty = pred.self_ty();
-            let ty::Adt(def, _) = ty.kind() else { continue };
+            let ty::Adt(def, _, _) = ty.kind() else { continue };
             let span = self.tcx.def_span(def.did());
             if span.is_dummy() {
                 continue;
@@ -3727,7 +3727,7 @@ impl<'a, 'tcx> FnCtxt<'a, 'tcx> {
                         | ty::Int(_)
                         | ty::Uint(_)
                         | ty::Float(_)
-                        | ty::Adt(_, _)
+                        | ty::Adt(_, _, _)
                         | ty::Str
                         | ty::Alias(ty::AliasTy {
                             kind: ty::Projection { .. } | ty::Inherent { .. },
@@ -3834,7 +3834,7 @@ impl<'a, 'tcx> FnCtxt<'a, 'tcx> {
     /// Print out the type for use in value namespace.
     fn ty_to_value_string(&self, ty: Ty<'tcx>) -> String {
         match ty.kind() {
-            ty::Adt(def, args) => self.tcx.def_path_str_with_args(def.did(), args),
+            ty::Adt(def, args, _) => self.tcx.def_path_str_with_args(def.did(), args),
             _ => self.ty_to_string(ty),
         }
     }
@@ -4286,7 +4286,7 @@ impl<'a, 'tcx> FnCtxt<'a, 'tcx> {
                     // Do not suggest pinning when the method is directly on `Pin`.
                     && pick.item.impl_container(self.tcx).is_none_or(|did| {
                         match self.tcx.type_of(did).skip_binder().kind() {
-                            ty::Adt(def, _) => Some(def.did()) != self.tcx.lang_items().pin_type(),
+                            ty::Adt(def, _, _) => Some(def.did()) != self.tcx.lang_items().pin_type(),
                             _ => true,
                         }
                     })
@@ -4871,7 +4871,7 @@ impl<'a, 'tcx> FnCtxt<'a, 'tcx> {
     ) -> bool {
         fn is_local(ty: Ty<'_>) -> bool {
             match ty.kind() {
-                ty::Adt(def, _) => def.did().is_local(),
+                ty::Adt(def, _, _) => def.did().is_local(),
                 ty::Foreign(did) => did.is_local(),
                 ty::Dynamic(tr, ..) => tr.principal().is_some_and(|d| d.def_id().is_local()),
                 ty::Param(_) => true,

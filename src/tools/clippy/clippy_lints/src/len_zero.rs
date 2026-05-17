@@ -340,7 +340,7 @@ fn has_is_empty(cx: &LateContext<'_>, expr: &Expr<'_>, msrv: Msrv) -> bool {
                 kind: ty::Projection { def_id },
                 ..
             }) => has_is_empty_impl(cx, def_id, msrv),
-            ty::Adt(id, _) => {
+            ty::Adt(id, _, _) => {
                 has_is_empty_impl(cx, id.did(), msrv)
                     || (cx.tcx.recursion_limit().value_within_limit(depth)
                         && cx.tcx.get_diagnostic_item(sym::Deref).is_some_and(|deref_id| {

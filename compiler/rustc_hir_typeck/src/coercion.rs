@@ -298,7 +298,7 @@ impl<'f, 'tcx> Coerce<'f, 'tcx> {
             _ if let Some(to_pin_ref) = self.maybe_to_pin_ref(a, b) => {
                 return self.coerce_to_pin_ref(to_pin_ref);
             }
-            ty::Adt(_, _)
+            ty::Adt(_, _, _)
                 if self.tcx.features().reborrow()
                     && self
                         .fcx
@@ -341,7 +341,7 @@ impl<'f, 'tcx> Coerce<'f, 'tcx> {
                 // It cannot convert closures that require unsafe.
                 self.coerce_closure_to_fn(a, b)
             }
-            ty::Adt(_, _) if self.tcx.features().reborrow() => {
+            ty::Adt(_, _, _) if self.tcx.features().reborrow() => {
                 let reborrow_coerce = self.commit_if_ok(|_| self.coerce_shared_reborrow(a, b));
                 if reborrow_coerce.is_ok() {
                     reborrow_coerce
@@ -970,7 +970,7 @@ impl<'f, 'tcx> Coerce<'f, 'tcx> {
         debug_assert!(self.shallow_resolve(b) == b);
 
         // We need to make sure the two types are compatible for reborrow.
-        let (ty::Adt(a_def, _), ty::Adt(b_def, _)) = (a.kind(), b.kind()) else {
+        let (ty::Adt(a_def, _, _), ty::Adt(b_def, _, _)) = (a.kind(), b.kind()) else {
             return Err(TypeError::Mismatch);
         };
         if a_def.did() == b_def.did() {
@@ -995,7 +995,7 @@ impl<'f, 'tcx> Coerce<'f, 'tcx> {
         debug_assert!(self.shallow_resolve(b) == b);
 
         // We need to make sure the two types are compatible for reborrow.
-        let (ty::Adt(a_def, _), ty::Adt(b_def, _)) = (a.kind(), b.kind()) else {
+        let (ty::Adt(a_def, _, _), ty::Adt(b_def, _, _)) = (a.kind(), b.kind()) else {
             return Err(TypeError::Mismatch);
         };
         if a_def.did() == b_def.did() {

@@ -99,6 +99,8 @@ impl<'tcx> Interner for TyCtxt<'tcx> {
     type FnInputTys = &'tcx [Ty<'tcx>];
     type ParamTy = ParamTy;
     type Symbol = Symbol;
+    type Fields = &'tcx List<Self::Field>;
+    type Field = ty::Field;
 
     type ErrorGuaranteed = ErrorGuaranteed;
     type BoundExistentialPredicates = &'tcx List<PolyExistentialPredicate<'tcx>>;
@@ -562,7 +564,7 @@ impl<'tcx> Interner for TyCtxt<'tcx> {
             | ty::Int(_)
             | ty::Uint(_)
             | ty::Float(_)
-            | ty::Adt(_, _)
+            | ty::Adt(_, _, _)
             | ty::Foreign(_)
             | ty::Str
             | ty::Array(_, _)

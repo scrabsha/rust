@@ -815,7 +815,7 @@ impl<'tcx> dyn HirTyLowerer<'tcx> + '_ {
             let msg = format!("`{}`", if obligation.len() > 50 { quiet } else { obligation });
             match self_ty.kind() {
                 // Point at the type that couldn't satisfy the bound.
-                ty::Adt(def, _) => {
+                ty::Adt(def, _, _) => {
                     bound_spans.get_mut_or_insert_default(tcx.def_span(def.did())).push(msg)
                 }
                 // Point at the trait object that couldn't satisfy the bound.
@@ -1791,7 +1791,7 @@ fn generics_args_err_extend<'a>(
         GenericsArgsErrExtend::SelfTyAlias { def_id, span } => {
             let ty = tcx.at(span).type_of(def_id).instantiate_identity().skip_norm_wip();
             let span_of_impl = tcx.span_of_impl(def_id);
-            let ty::Adt(self_def, _) = *ty.kind() else { return };
+            let ty::Adt(self_def, _, _) = *ty.kind() else { return };
             let def_id = self_def.did();
 
             let type_name = tcx.item_name(def_id);

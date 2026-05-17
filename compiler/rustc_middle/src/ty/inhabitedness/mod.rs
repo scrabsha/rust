@@ -107,9 +107,9 @@ impl<'tcx> Ty<'tcx> {
         debug_assert!(!self.has_infer());
         match self.kind() {
             // For now, unions are always considered inhabited
-            Adt(adt, _) if adt.is_union() => InhabitedPredicate::True,
+            Adt(adt, _, _) if adt.is_union() => InhabitedPredicate::True,
             // Non-exhaustive ADTs from other crates are always considered inhabited
-            Adt(adt, _) if adt.variant_list_has_applicable_non_exhaustive() => {
+            Adt(adt, _, _) if adt.variant_list_has_applicable_non_exhaustive() => {
                 InhabitedPredicate::True
             }
             Never => InhabitedPredicate::False,
@@ -199,7 +199,7 @@ impl<'tcx> Ty<'tcx> {
 /// N.B. this query should only be called through `Ty::inhabited_predicate`
 fn inhabited_predicate_type<'tcx>(tcx: TyCtxt<'tcx>, ty: Ty<'tcx>) -> InhabitedPredicate<'tcx> {
     match *ty.kind() {
-        Adt(adt, args) => tcx.inhabited_predicate_adt(adt.did()).instantiate(tcx, args),
+        Adt(adt, args, _) => tcx.inhabited_predicate_adt(adt.did()).instantiate(tcx, args),
 
         Tuple(tys) => {
             InhabitedPredicate::all(tcx, tys.iter().map(|ty| ty.inhabited_predicate(tcx)))

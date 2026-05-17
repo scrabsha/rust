@@ -794,7 +794,7 @@ pub trait PrettyPrinter<'tcx>: Printer<'tcx> + fmt::Write {
                     false => write!(self, "{}", self.tcx().item_name(def_id))?,
                 },
             },
-            ty::Adt(def, args)
+            ty::Adt(def, args, _)
                 if let Some(FieldInfo { base, variant, name, .. }) =
                     def.field_representing_type_info(self.tcx(), args) =>
             {
@@ -804,7 +804,7 @@ pub trait PrettyPrinter<'tcx>: Printer<'tcx> + fmt::Write {
                     write!(self, "field_of!({base}, {name})")?;
                 }
             }
-            ty::Adt(def, args) => self.print_def_path(def.did(), args)?,
+            ty::Adt(def, args, _) => self.print_def_path(def.did(), args)?,
             ty::Dynamic(data, r) => {
                 let print_r = self.should_print_optional_region(r);
                 if print_r {
@@ -1962,7 +1962,7 @@ pub trait PrettyPrinter<'tcx>: Printer<'tcx> + fmt::Write {
                 }
                 return Ok(());
             }
-            (ty::ValTreeKind::Branch(_), ty::Adt(def, args)) => {
+            (ty::ValTreeKind::Branch(_), ty::Adt(def, args, _)) => {
                 let contents = cv.destructure_adt_const();
                 let fields = contents.fields.iter().copied();
 

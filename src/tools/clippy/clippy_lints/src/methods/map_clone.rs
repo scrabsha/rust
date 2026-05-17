@@ -116,7 +116,7 @@ fn handle_path(
         && cx.tcx.lang_items().get(LangItem::CloneFn) == Some(path_def_id)
         // The `copied` and `cloned` methods are only available on `&T` and `&mut T` in `Option`
         // and `Result`.
-        && let ty::Adt(_, args) = cx.typeck_results().expr_ty(recv).kind()
+        && let ty::Adt(_, args, _) = cx.typeck_results().expr_ty(recv).kind()
         && let args = args.as_slice()
         && let Some(ty) = args.iter().find_map(|generic_arg| generic_arg.as_type())
         && let ty::Ref(_, ty, Mutability::Not) = ty.kind()

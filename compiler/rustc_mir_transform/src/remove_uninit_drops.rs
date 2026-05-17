@@ -94,7 +94,7 @@ fn is_needs_drop_and_init<'tcx>(
     // This pass is only needed for const-checking, so it doesn't handle as many cases as
     // `DropCtxt::open_drop`, since they aren't relevant in a const-context.
     match ty.kind() {
-        ty::Adt(adt, args) => {
+        ty::Adt(adt, args, _) => {
             let dont_elaborate = adt.is_union() || adt.is_manually_drop() || adt.has_dtor(tcx);
             if dont_elaborate {
                 return true;

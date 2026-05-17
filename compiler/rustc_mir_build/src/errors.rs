@@ -635,7 +635,7 @@ impl<'a, G: EmissionGuarantee> Diagnostic<'a, G> for NonExhaustivePatternsTypeNo
         diag.arg("ty", self.ty);
         diag.arg("peeled_ty", peeled_ty);
 
-        if let ty::Adt(def, _) = peeled_ty.kind() {
+        if let ty::Adt(def, _, _) = peeled_ty.kind() {
             let def_span = self
                 .cx
                 .tcx
@@ -652,7 +652,7 @@ impl<'a, G: EmissionGuarantee> Diagnostic<'a, G> for NonExhaustivePatternsTypeNo
         }
 
         let is_non_exhaustive = matches!(self.ty.kind(),
-            ty::Adt(def, _) if def.variant_list_has_applicable_non_exhaustive());
+            ty::Adt(def, _, _) if def.variant_list_has_applicable_non_exhaustive());
         if is_non_exhaustive {
             diag.note(msg!(
                 "the matched value is of type `{$ty}`, which is marked as non-exhaustive"

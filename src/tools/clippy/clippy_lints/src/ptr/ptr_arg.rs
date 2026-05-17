@@ -207,7 +207,7 @@ fn check_fn_args<'cx, 'tcx: 'cx>(
         .enumerate()
         .filter_map(move |(i, (ty, hir_ty))| {
             if let ty::Ref(_, ty, mutability) = *ty.kind()
-                && let  ty::Adt(adt, args) = *ty.kind()
+                && let  ty::Adt(adt, args, _) = *ty.kind()
                 && let TyKind::Ref(lt, ref ty) = hir_ty.kind
                 && let TyKind::Path(QPath::Resolved(None, path)) = ty.ty.kind
                 // Check that the name as typed matches the actual name of the type.

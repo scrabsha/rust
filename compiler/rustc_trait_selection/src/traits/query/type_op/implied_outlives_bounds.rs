@@ -179,7 +179,7 @@ impl<'tcx> TypeVisitor<TyCtxt<'tcx>> for ContainsBevyParamSet<'tcx> {
     fn visit_ty(&mut self, t: Ty<'tcx>) -> Self::Result {
         // We only care to match `ParamSet<T>` or `&ParamSet<T>`.
         match t.kind() {
-            ty::Adt(def, _) => {
+            ty::Adt(def, _, _) => {
                 if self.tcx.item_name(def.did()) == sym::ParamSet
                     && self.tcx.crate_name(def.did().krate) == sym::bevy_ecs
                 {

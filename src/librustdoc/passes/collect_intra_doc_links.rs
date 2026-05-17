@@ -312,7 +312,7 @@ impl<'tcx> LinkCollector<'_, 'tcx> {
         match ty_res {
             Res::Def(DefKind::Enum | DefKind::TyAlias, did) => {
                 match tcx.type_of(did).instantiate_identity().skip_norm_wip().kind() {
-                    ty::Adt(def, _) if def.is_enum() => {
+                    ty::Adt(def, _, _) if def.is_enum() => {
                         if let Some(variant) =
                             def.variants().iter().find(|v| v.name == variant_name)
                             && let Some(field) =
@@ -539,7 +539,7 @@ fn ty_to_res<'tcx>(tcx: TyCtxt<'tcx>, ty: Ty<'tcx>) -> Option<Res> {
         ty::FnDef(..) => panic!("type alias to a function definition"),
         ty::FnPtr(..) => Res::Primitive(Fn),
         ty::Never => Res::Primitive(Never),
-        ty::Adt(ty::AdtDef(Interned(&ty::AdtDefData { did, .. }, _)), _) | ty::Foreign(did) => {
+        ty::Adt(ty::AdtDef(Interned(&ty::AdtDefData { did, .. }, _)), _, _ ) | ty::Foreign(did) => {
             Res::from_def_id(tcx, did)
         }
         ty::Alias(..)
@@ -856,7 +856,7 @@ fn trait_impls_for<'tcx>(
             // e.g. this allows us to match Foo (user comment) with Foo<T> (actual type)
             let saw_impl = impl_type == ty
                 || match (impl_type.kind(), ty.kind()) {
-                    (ty::Adt(impl_def, _), ty::Adt(ty_def, _)) => {
+                    (ty::Adt(impl_def, _, _), ty::Adt(ty_def, _, _)) => {
                         debug!("impl def_id: {:?}, ty def_id: {:?}", impl_def.did(), ty_def.did());
                         impl_def.did() == ty_def.did()
                     }
@@ -2153,7 +2153,7 @@ fn resolution_failure(
                         Res::Primitive(_) => None,
                     };
                     let is_struct_variant = |did| {
-                        if let ty::Adt(def, _) =
+                        if let ty::Adt(def, _, _) =
                             tcx.type_of(did).instantiate_identity().skip_norm_wip().kind()
                             && def.is_enum()
                             && let Some(variant) =

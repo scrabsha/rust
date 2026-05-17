@@ -133,13 +133,13 @@ impl<'tcx> LateLintPass<'tcx> for LetUnderscore {
             }
             // Lint for patterns like `mutex.lock()`, which returns `Result<MutexGuard, _>` as well.
             let potential_lock_type = match ty.kind() {
-                ty::Adt(adt, args) if cx.tcx.is_diagnostic_item(sym::Result, adt.did()) => {
+                ty::Adt(adt, args, _) if cx.tcx.is_diagnostic_item(sym::Result, adt.did()) => {
                     args.type_at(0)
                 }
                 _ => ty,
             };
             let is_sync_lock = match potential_lock_type.kind() {
-                ty::Adt(adt, _) => SYNC_GUARD_SYMBOLS
+                ty::Adt(adt, _, _) => SYNC_GUARD_SYMBOLS
                     .iter()
                     .any(|guard_symbol| cx.tcx.is_diagnostic_item(*guard_symbol, adt.did())),
                 _ => false,

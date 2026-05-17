@@ -338,7 +338,7 @@ fn exported_generic_symbols_provider_local<'tcx>(
 
                     // Drop glue did is always going to be non-local outside of libcore, thus we don't need to check it's locality (which includes invoking `type_of` query).
                     let should_export = match ty.kind() {
-                        ty::Adt(_, args) => is_instantiable_downstream(None, args),
+                        ty::Adt(_, args, _) => is_instantiable_downstream(None, args),
                         ty::Closure(_, args) => is_instantiable_downstream(None, args),
                         _ => true,
                     };

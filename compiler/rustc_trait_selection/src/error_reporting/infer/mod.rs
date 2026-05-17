@@ -219,7 +219,7 @@ impl<'a, 'tcx> TypeErrCtxt<'a, 'tcx> {
             TypeError::Sorts(ref exp_found) => {
                 // if they are both "path types", there's a chance of ambiguity
                 // due to different versions of the same crate
-                if let (&ty::Adt(exp_adt, _), &ty::Adt(found_adt, _)) =
+                if let (&ty::Adt(exp_adt, _, _), &ty::Adt(found_adt, _, _)) =
                     (exp_found.expected.kind(), exp_found.found.kind())
                 {
                     return self.check_same_definition_different_crate(
@@ -350,7 +350,7 @@ impl<'a, 'tcx> TypeErrCtxt<'a, 'tcx> {
                 ) {
                     // don't show type `_`
                     if span.desugaring_kind() == Some(DesugaringKind::ForLoop)
-                        && let ty::Adt(def, args) = expected_ty.kind()
+                        && let ty::Adt(def, args, _) = expected_ty.kind()
                         && Some(def.did()) == self.tcx.get_diagnostic_item(sym::Option)
                     {
                         err.span_label(
@@ -730,7 +730,7 @@ impl<'a, 'tcx> TypeErrCtxt<'a, 'tcx> {
                     self.highlight_outer(t1_out, t2_out, path, args, i, other_ty);
                     return true;
                 }
-                if let ty::Adt(def, _) = ta.kind() {
+                if let ty::Adt(def, _, _) = ta.kind() {
                     let path_ = self.tcx.def_path_str(def.did());
                     if path_ == other_path {
                         self.highlight_outer(t1_out, t2_out, path, args, i, other_ty);
@@ -1042,7 +1042,7 @@ impl<'a, 'tcx> TypeErrCtxt<'a, 'tcx> {
 
         // process starts here
         match (t1.kind(), t2.kind()) {
-            (&ty::Adt(def1, sub1), &ty::Adt(def2, sub2)) => {
+            (&ty::Adt(def1, sub1, _), &ty::Adt(def2, sub2, _)) => {
                 let did1 = def1.did();
                 let did2 = def2.did();
 
@@ -1559,7 +1559,7 @@ impl<'a, 'tcx> TypeErrCtxt<'a, 'tcx> {
             }
 
             let similarity = |ExpectedFound { expected, found }: ExpectedFound<Ty<'tcx>>| {
-                if let ty::Adt(expected, _) = expected.kind()
+                if let ty::Adt(expected, _, _) = expected.kind()
                     && let Some(primitive) = found.primitive_symbol()
                 {
                     let path = self.tcx.def_path(expected.did()).data;
@@ -1568,15 +1568,15 @@ impl<'a, 'tcx> TypeErrCtxt<'a, 'tcx> {
                         return Some(Similar::PrimitiveFound { expected: *expected, found });
                     }
                 } else if let Some(primitive) = expected.primitive_symbol()
-                    && let ty::Adt(found, _) = found.kind()
+                    && let ty::Adt(found, _, _) = found.kind()
                 {
                     let path = self.tcx.def_path(found.did()).data;
                     let name = path.last().unwrap().data.get_opt_name();
                     if name == Some(primitive) {
                         return Some(Similar::PrimitiveExpected { expected, found: *found });
                     }
-                } else if let ty::Adt(expected, _) = expected.kind()
-                    && let ty::Adt(found, _) = found.kind()
+                } else if let ty::Adt(expected, _, _) = expected.kind()
+                    && let ty::Adt(found, _, _) = found.kind()
                 {
                     if !expected.did().is_local() && expected.did().krate == found.did().krate {
                         // Most likely types from different versions of the same crate

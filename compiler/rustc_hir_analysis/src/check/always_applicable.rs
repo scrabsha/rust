@@ -58,7 +58,7 @@ pub(crate) fn check_drop_impl(
     let self_ty = tcx.type_of(drop_impl_did).instantiate_identity().skip_norm_wip();
 
     match self_ty.kind() {
-        ty::Adt(adt_def, adt_to_impl_args) => {
+        ty::Adt(adt_def, adt_to_impl_args, _) => {
             ensure_impl_params_and_item_params_correspond(
                 tcx,
                 drop_impl_did,
@@ -106,7 +106,7 @@ pub(crate) fn check_negative_auto_trait_impl<'tcx>(
     tcx.ensure_result().orphan_check_impl(impl_def_id)?;
 
     match impl_trait_ref.self_ty().kind() {
-        ty::Adt(adt_def, adt_to_impl_args) => {
+        ty::Adt(adt_def, adt_to_impl_args, _) => {
             ensure_impl_params_and_item_params_correspond(
                 tcx,
                 impl_def_id,

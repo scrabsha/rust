@@ -216,7 +216,7 @@ pub(super) fn check_map(cx: &LateContext<'_>, expr: &Expr<'_>) {
                 && let Res::Def(DefKind::Ctor(CtorOf::Variant, CtorKind::Fn), _) = path.res
                 && let ExprKind::MethodCall(_, recv, [map_expr], _) = expr2.kind
                 && let ty = cx.typeck_results().expr_ty(expr1)
-                && let ty::Adt(adt, args) = ty.kind()
+                && let ty::Adt(adt, args, _) = ty.kind()
                 && let Some(flavor) = Flavor::new(cx, adt.did())
                 && args.type_at(0).is_bool()
                 && cx.typeck_results().expr_ty(recv).is_diag_item(cx, flavor.diag_sym())

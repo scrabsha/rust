@@ -67,7 +67,7 @@ fn sizedness_constraint_for_ty<'tcx>(
             tys.last().and_then(|&ty| sizedness_constraint_for_ty(tcx, sizedness, ty))
         }
 
-        ty::Adt(adt, args) => adt.sizedness_constraint(tcx, sizedness).and_then(|intermediate| {
+        ty::Adt(adt, args, _) => adt.sizedness_constraint(tcx, sizedness).and_then(|intermediate| {
             let ty = intermediate.instantiate(tcx, args).skip_norm_wip();
             sizedness_constraint_for_ty(tcx, sizedness, ty)
         }),
@@ -376,7 +376,7 @@ fn impl_self_is_guaranteed_unsized<'tcx>(tcx: TyCtxt<'tcx>, impl_def_id: DefId) 
         | ty::Int(_)
         | ty::Uint(_)
         | ty::Float(_)
-        | ty::Adt(_, _)
+        | ty::Adt(_, _, _)
         | ty::Foreign(_)
         | ty::Array(_, _)
         | ty::Pat(_, _)

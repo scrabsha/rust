@@ -1922,7 +1922,7 @@ fn suggest_ampmut<'tcx>(
                     .must_apply_considering_regions()
                 {
                     // Suggest `get_mut` if type is a `BTreeMap` or `HashMap`.
-                    if let ty::Adt(def, _) = trait_ref.self_ty().kind()
+                    if let ty::Adt(def, _, _) = trait_ref.self_ty().kind()
                         && [sym::BTreeMap, sym::HashMap]
                             .into_iter()
                             .any(|s| tcx.is_diagnostic_item(s, def.did()))
@@ -1987,7 +1987,7 @@ fn get_mut_span_in_struct_field<'tcx>(
 ) -> Option<Span> {
     // Expect our local to be a reference to a struct of some kind.
     if let ty::Ref(_, ty, _) = ty.kind()
-        && let ty::Adt(def, _) = ty.kind()
+        && let ty::Adt(def, _, _) = ty.kind()
         && let field = def.all_fields().nth(field.index())?
         // Now we're dealing with the actual struct that we're going to suggest a change to,
         // we can expect a field that is an immutable reference to a type.

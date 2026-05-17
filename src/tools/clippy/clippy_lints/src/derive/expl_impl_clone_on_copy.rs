@@ -24,7 +24,7 @@ pub(super) fn check<'tcx>(
     };
     let (ty_adt, ty_subs) = match *ty.kind() {
         // Unions can't derive clone.
-        ty::Adt(adt, subs) if !adt.is_union() => (adt, subs),
+        ty::Adt(adt, subs, _) if !adt.is_union() => (adt, subs),
         _ => return,
     };
     // If the current self type doesn't implement Copy (due to generic constraints), search to see if
@@ -32,7 +32,7 @@ pub(super) fn check<'tcx>(
     if !is_copy(cx, ty) {
         if ty_subs.non_erasable_generics().next().is_some() {
             let has_copy_impl = cx.tcx.local_trait_impls(copy_id).iter().any(|&id| {
-                matches!(cx.tcx.type_of(id).instantiate_identity().skip_norm_wip().kind(), ty::Adt(adt, _)
+                matches!(cx.tcx.type_of(id).instantiate_identity().skip_norm_wip().kind(), ty::Adt(adt, _, _)
                                         if ty_adt.did() == adt.did())
             });
             if !has_copy_impl {

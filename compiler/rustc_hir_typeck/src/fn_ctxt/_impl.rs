@@ -555,8 +555,8 @@ impl<'a, 'tcx> FnCtxt<'a, 'tcx> {
 
     pub(super) fn user_args_for_adt(ty: LoweredTy<'tcx>) -> UserArgs<'tcx> {
         match (ty.raw.kind(), ty.normalized.kind()) {
-            (ty::Adt(_, args), _) => UserArgs { args, user_self_ty: None },
-            (_, ty::Adt(adt, args)) => UserArgs {
+            (ty::Adt(_, args, _), _) => UserArgs { args, user_self_ty: None },
+            (_, ty::Adt(adt, args, _)) => UserArgs {
                 args,
                 user_self_ty: Some(UserSelfTy { impl_def_id: adt.did(), self_ty: ty.raw }),
             },

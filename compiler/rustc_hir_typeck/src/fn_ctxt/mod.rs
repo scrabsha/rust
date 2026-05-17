@@ -413,7 +413,7 @@ impl<'tcx> HirTyLowerer<'tcx> for FnCtxt<'_, 'tcx> {
 
     fn probe_adt(&self, span: Span, ty: Ty<'tcx>) -> Option<ty::AdtDef<'tcx>> {
         match ty.kind() {
-            ty::Adt(adt_def, _) => Some(*adt_def),
+            ty::Adt(adt_def, _, _) => Some(*adt_def),
             // FIXME(#104767): Should we handle bound regions here?
             ty::Alias(ty::AliasTy {
                 kind: ty::Projection { .. } | ty::Inherent { .. } | ty::Free { .. },

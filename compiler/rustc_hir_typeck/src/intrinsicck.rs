@@ -14,7 +14,7 @@ use tracing::trace;
 /// If the type is `Option<T>`, it will return `T`, otherwise
 /// the type itself. Works on most `Option`-like types.
 fn unpack_option_like<'tcx>(tcx: TyCtxt<'tcx>, ty: Ty<'tcx>) -> Ty<'tcx> {
-    let ty::Adt(def, args) = *ty.kind() else { return ty };
+    let ty::Adt(def, args, _) = *ty.kind() else { return ty };
 
     if def.variants().len() == 2 && !def.repr().c() && def.repr().int.is_none() {
         let data_idx;

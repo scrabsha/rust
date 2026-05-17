@@ -468,7 +468,7 @@ impl<'tcx> LateLintPass<'tcx> for MissingDoc {
                 let parent = cx.tcx.hir_get_parent_item(impl_item.hir_id());
                 let impl_ty = cx.tcx.type_of(parent).instantiate_identity().skip_norm_wip();
                 let outerdef = match impl_ty.kind() {
-                    ty::Adt(def, _) => Some(def.did()),
+                    ty::Adt(def, _, _) => Some(def.did()),
                     ty::Foreign(def_id) => Some(*def_id),
                     _ => None,
                 };
@@ -2560,7 +2560,7 @@ impl<'tcx> LateLintPass<'tcx> for InvalidValue {
                     Some("raw pointers must be initialized".into())
                 }
                 // Recurse and checks for some compound types. (but not unions)
-                ty::Adt(adt_def, args) if !adt_def.is_union() => {
+                ty::Adt(adt_def, args, _) if !adt_def.is_union() => {
                     // Handle structs.
                     if adt_def.is_struct() {
                         return variant_find_init_error(

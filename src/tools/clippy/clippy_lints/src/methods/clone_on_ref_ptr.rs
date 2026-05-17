@@ -13,7 +13,7 @@ pub(super) fn check(cx: &LateContext<'_>, expr: &hir::Expr<'_>, receiver: &hir::
     let receiver_ty = cx.typeck_results().expr_ty(receiver);
     let (receiver_ty_peeled, n_refs, _) = peel_and_count_ty_refs(receiver_ty);
 
-    if let ty::Adt(adt, subst) = receiver_ty_peeled.kind()
+    if let ty::Adt(adt, subst, _) = receiver_ty_peeled.kind()
         && let Some(name) = cx.tcx.get_diagnostic_name(adt.did())
     {
         let caller_type = match name {

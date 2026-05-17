@@ -38,7 +38,7 @@ pub(super) fn check(
 /// Given a `Result<T, E>` type, return its data (`T`).
 fn get_data_type<'a>(cx: &LateContext<'_>, ty: Ty<'a>) -> Option<Ty<'a>> {
     match ty.kind() {
-        ty::Adt(adt, args) if cx.tcx.is_diagnostic_item(sym::Result, adt.did()) => args.types().next(),
+        ty::Adt(adt, args, _) if cx.tcx.is_diagnostic_item(sym::Result, adt.did()) => args.types().next(),
         _ => None,
     }
 }

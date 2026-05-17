@@ -1163,7 +1163,7 @@ impl<'cx, 'tcx> SelectionContext<'cx, 'tcx> {
             }
 
             // `Struct<T>` -> `Struct<U>`
-            (&ty::Adt(def, args_a), &ty::Adt(_, args_b)) => {
+            (&ty::Adt(def, args_a, _), &ty::Adt(_, args_b, _)) => {
                 let unsizing_params = tcx.unsizing_params_for_adt(def.did());
                 if unsizing_params.is_empty() {
                     return Err(SelectionError::Unimplemented);
@@ -1240,7 +1240,7 @@ impl<'cx, 'tcx> SelectionContext<'cx, 'tcx> {
             // `&mut T` and `&T` always implement `BikeshedGuaranteedNoDrop`.
             ty::Ref(..) => {}
             // `ManuallyDrop<T>` always implements `BikeshedGuaranteedNoDrop`.
-            ty::Adt(def, _) if def.is_manually_drop() => {}
+            ty::Adt(def, _, _) if def.is_manually_drop() => {}
             // Arrays and tuples implement `BikeshedGuaranteedNoDrop` only if
             // their constituent types implement `BikeshedGuaranteedNoDrop`.
             ty::Tuple(tys) => {

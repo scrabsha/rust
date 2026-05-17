@@ -17,7 +17,7 @@ pub(super) fn check<'tcx>(
     arg: &'tcx Expr<'_>,
 ) -> bool {
     if let ty::Int(_) | ty::Uint(_) = from_ty.kind()
-        && let ty::Adt(adt, substs) = to_ty.kind()
+        && let ty::Adt(adt, substs, _) = to_ty.kind()
         && cx.tcx.is_diagnostic_item(sym::NonZero, adt.did())
         && let int_ty = substs.type_at(0)
         && from_ty == int_ty

@@ -42,7 +42,7 @@ pub fn const_lit_matches_ty<'tcx>(
         }
         (LitKind::Byte(..), ty::Uint(ty::UintTy::U8)) => true,
         (LitKind::CStr(..), ty::Ref(_, inner_ty, _))
-            if matches!(inner_ty.kind(), ty::Adt(def, _)
+            if matches!(inner_ty.kind(), ty::Adt(def, _, _)
                 if tcx.is_lang_item(def.did(), rustc_hir::LangItem::CStr)) =>
         {
             true

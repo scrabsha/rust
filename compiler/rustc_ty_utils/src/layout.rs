@@ -584,7 +584,7 @@ fn layout_of_uncached<'tcx>(
         // #[rustc_scalable_vector]
         // struct svuint32x2_t(svuint32_t, svuint32_t);
         // ```
-        ty::Adt(def, _args) if def.repr().scalable() => {
+        ty::Adt(def, _args, _) if def.repr().scalable() => {
             let Some((element_count, element_ty, number_of_vectors)) =
                 ty.scalable_vector_parts(tcx)
             else {
@@ -603,7 +603,7 @@ fn layout_of_uncached<'tcx>(
         }
 
         // SIMD vector types.
-        ty::Adt(def, args) if def.repr().simd() => {
+        ty::Adt(def, args, _) if def.repr().simd() => {
             // Supported SIMD vectors are ADTs with a single array field:
             //
             // * #[repr(simd)] struct S([T; 4])
@@ -646,7 +646,7 @@ fn layout_of_uncached<'tcx>(
         }
 
         // ADTs.
-        ty::Adt(def, args) => {
+        ty::Adt(def, args, _) => {
             // Cache the field layouts.
             let variants = def
                 .variants()
@@ -824,7 +824,7 @@ fn record_layout_for_printing<'tcx>(cx: &LayoutCx<'tcx>, layout: TyAndLayout<'tc
     };
 
     match *layout.ty.kind() {
-        ty::Adt(adt_def, _) => {
+        ty::Adt(adt_def, _, _) => {
             debug!("print-type-size t: `{:?}` process adt", layout.ty);
             let adt_kind = adt_def.adt_kind();
             let adt_packed = adt_def.repr().pack.is_some();

@@ -463,7 +463,7 @@ pub(crate) fn spanned_type_di_node<'ll, 'tcx>(
         // Some `Box` are newtyped pointers, make debuginfo aware of that.
         // Only works if the allocator argument is a 1-ZST and hence irrelevant for layout
         // (or if there is no allocator argument).
-        ty::Adt(def, args)
+        ty::Adt(def, args, _)
             if def.is_box()
                 && args.get(1).is_none_or(|arg| cx.layout_of(arg.expect_ty()).is_1zst()) =>
         {
@@ -703,7 +703,7 @@ fn build_cpp_f16_di_node<'ll, 'tcx>(cx: &CodegenCx<'ll, 'tcx>) -> DINodeCreation
     let bits_ty = cx.tcx.types.u16;
     let def_location = if cx.sess().opts.unstable_opts.debug_info_type_line_numbers {
         match float_ty.kind() {
-            ty::Adt(def, _) => Some(file_metadata_from_def_id(cx, Some(def.did()))),
+            ty::Adt(def, _, _) => Some(file_metadata_from_def_id(cx, Some(def.did()))),
             _ => None,
         }
     } else {
@@ -725,7 +725,7 @@ fn build_cpp_f16_di_node<'ll, 'tcx>(cx: &CodegenCx<'ll, 'tcx>) -> DINodeCreation
         |cx, float_di_node| {
             let def_id = if cx.sess().opts.unstable_opts.debug_info_type_line_numbers {
                 match bits_ty.kind() {
-                    ty::Adt(def, _) => Some(def.did()),
+                    ty::Adt(def, _, _) => Some(def.did()),
                     _ => None,
                 }
             } else {
@@ -1047,7 +1047,7 @@ fn build_struct_type_di_node<'ll, 'tcx>(
 ) -> DINodeCreationResult<'ll> {
     let struct_type = unique_type_id.expect_ty();
 
-    let ty::Adt(adt_def, _) = struct_type.kind() else {
+    let ty::Adt(adt_def, _, _) = struct_type.kind() else {
         bug!("build_struct_type_di_node() called with non-struct-type: {:?}", struct_type);
     };
     assert!(adt_def.is_struct());
@@ -1360,7 +1360,7 @@ fn build_union_type_di_node<'ll, 'tcx>(
 ) -> DINodeCreationResult<'ll> {
     let union_type = unique_type_id.expect_ty();
     let (union_def_id, variant_def) = match union_type.kind() {
-        ty::Adt(def, _) => (def.did(), def.non_enum_variant()),
+        ty::Adt(def, _, _) => (def.did(), def.non_enum_variant()),
         _ => bug!("build_union_type_di_node on a non-ADT"),
     };
     let containing_scope = get_namespace_for_item(cx, union_def_id);
@@ -1420,7 +1420,7 @@ fn build_generic_type_param_di_nodes<'ll, 'tcx>(
     cx: &CodegenCx<'ll, 'tcx>,
     ty: Ty<'tcx>,
 ) -> SmallVec<Option<&'ll DIType>> {
-    if let ty::Adt(def, args) = *ty.kind() {
+    if let ty::Adt(def, args, _) = *ty.kind() {
         if args.types().next().is_some() {
             let generics = cx.tcx.generics_of(def.did());
             let names = get_parameter_names(cx, generics);

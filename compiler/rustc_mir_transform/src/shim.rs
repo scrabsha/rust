@@ -1046,7 +1046,7 @@ pub(super) fn build_adt_ctor(tcx: TyCtxt<'_>, ctor_id: DefId) -> Body<'_> {
         .expect("LBR in ADT constructor signature");
     let sig = tcx.normalize_erasing_regions(typing_env, Unnormalized::new_wip(sig));
 
-    let ty::Adt(adt_def, args) = sig.output().kind() else {
+    let ty::Adt(adt_def, args, _) = sig.output().kind() else {
         bug!("unexpected type for ADT ctor {:?}", sig.output());
     };
 

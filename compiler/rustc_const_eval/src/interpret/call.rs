@@ -80,7 +80,7 @@ impl<'tcx, M: Machine<'tcx>> InterpCx<'tcx, M> {
         may_unfold: impl Fn(AdtDef<'tcx>) -> bool,
     ) -> TyAndLayout<'tcx> {
         match layout.ty.kind() {
-            ty::Adt(adt_def, _) if adt_def.repr().transparent() && may_unfold(*adt_def) => {
+            ty::Adt(adt_def, _, _) if adt_def.repr().transparent() && may_unfold(*adt_def) => {
                 assert_matches!(layout.variants, rustc_abi::Variants::Single { .. });
                 // Find the non-1-ZST field, and recurse.
                 let (_, field) = layout.non_1zst_field(self).unwrap();
@@ -97,7 +97,7 @@ impl<'tcx, M: Machine<'tcx>> InterpCx<'tcx, M> {
     /// Unwrap types that are guaranteed a null-pointer-optimization
     fn unfold_npo(&self, layout: TyAndLayout<'tcx>) -> InterpResult<'tcx, TyAndLayout<'tcx>> {
         // Check if this is an option-like type wrapping some type.
-        let ty::Adt(def, args) = layout.ty.kind() else {
+        let ty::Adt(def, args, _) = layout.ty.kind() else {
             // Not an ADT, so definitely no NPO.
             return interp_ok(layout);
         };
@@ -151,7 +151,7 @@ impl<'tcx, M: Machine<'tcx>> InterpCx<'tcx, M> {
                 // Option<&T> behaves like &T, and same for fn()
                 inner
             }
-            ty::Adt(def, _) if is_npo(*def) => {
+            ty::Adt(def, _, _) if is_npo(*def) => {
                 // Once we found a `nonnull_optimization_guaranteed` type, further strip off
                 // newtype structs from it to find the underlying ABI type.
                 self.unfold_transparent(inner, /* may_unfold */ |def| def.is_struct())

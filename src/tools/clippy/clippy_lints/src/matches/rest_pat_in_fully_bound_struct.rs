@@ -10,7 +10,7 @@ pub(crate) fn check(cx: &LateContext<'_>, pat: &Pat<'_>) {
         && let PatKind::Struct(QPath::Resolved(_, path), fields, Some(dotdot)) = pat.kind
         && let Some(def_id) = path.res.opt_def_id()
         && let ty = cx.tcx.type_of(def_id).instantiate_identity().skip_norm_wip()
-        && let ty::Adt(def, _) = ty.kind()
+        && let ty::Adt(def, _, _) = ty.kind()
         && (def.is_struct() || def.is_union())
         && fields.len() == def.non_enum_variant().fields.len()
         && !def.non_enum_variant().is_field_list_non_exhaustive()

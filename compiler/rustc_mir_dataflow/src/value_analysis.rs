@@ -1062,7 +1062,7 @@ pub fn iter_fields<'tcx>(
                 f(None, field.into(), ty);
             }
         }
-        ty::Adt(def, args) => {
+        ty::Adt(def, args, _) => {
             if def.is_union() {
                 return;
             }

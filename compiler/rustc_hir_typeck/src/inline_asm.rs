@@ -96,7 +96,7 @@ impl<'a, 'tcx> InlineAsmCtxt<'a, 'tcx> {
                     Err(NonAsmTypeReason::NotSizedPtr(ty))
                 }
             }
-            ty::Adt(adt, args) if adt.repr().simd() => {
+            ty::Adt(adt, args, _) if adt.repr().simd() => {
                 if !adt.is_struct() {
                     let guar = self.fcx.dcx().span_delayed_bug(
                         span,
@@ -214,7 +214,7 @@ impl<'a, 'tcx> InlineAsmCtxt<'a, 'tcx> {
             // `!` is allowed for input but not for output (issue #87802)
             ty::Never if is_input => return None,
             _ if ty.references_error() => return None,
-            ty::Adt(adt, args) if self.tcx().is_lang_item(adt.did(), LangItem::MaybeUninit) => {
+            ty::Adt(adt, args, _) if self.tcx().is_lang_item(adt.did(), LangItem::MaybeUninit) => {
                 let ty = args.type_at(0);
                 self.get_asm_ty(expr.span, ty)
             }

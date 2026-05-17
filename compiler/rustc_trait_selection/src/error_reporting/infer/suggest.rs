@@ -94,7 +94,7 @@ impl<'tcx> TypeErrCtxt<'_, 'tcx> {
         // Heavily inspired by `FnCtxt::suggest_compatible_variants`, with
         // some modifications due to that being in typeck and this being in infer.
         if let ObligationCauseCode::Pattern { .. } = cause.code()
-            && let ty::Adt(expected_adt, args) = exp_found.expected.kind()
+            && let ty::Adt(expected_adt, args, _) = exp_found.expected.kind()
         {
             let compatible_variants: Vec<_> = expected_adt
                 .variants()
@@ -278,7 +278,7 @@ impl<'tcx> TypeErrCtxt<'_, 'tcx> {
             "suggest_accessing_field_where_appropriate(cause={:?}, exp_found={:?})",
             cause, exp_found
         );
-        if let ty::Adt(expected_def, expected_args) = exp_found.expected.kind() {
+        if let ty::Adt(expected_def, expected_args, _) = exp_found.expected.kind() {
             if expected_def.is_enum() {
                 return;
             }
@@ -538,9 +538,9 @@ impl<'tcx> TypeErrCtxt<'_, 'tcx> {
         expected: Ty<'tcx>,
         found: Ty<'tcx>,
     ) -> Option<SuggestAsRefKind> {
-        if let (ty::Adt(exp_def, exp_args), ty::Ref(_, found_ty, _)) =
+        if let (ty::Adt(exp_def, exp_args, _), ty::Ref(_, found_ty, _)) =
             (expected.kind(), found.kind())
-            && let ty::Adt(found_def, found_args) = *found_ty.kind()
+            && let ty::Adt(found_def, found_args, _) = *found_ty.kind()
         {
             if exp_def == &found_def {
                 let have_as_ref = &[

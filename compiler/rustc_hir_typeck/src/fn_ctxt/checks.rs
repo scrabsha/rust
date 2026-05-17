@@ -2059,7 +2059,7 @@ impl<'a, 'tcx> FnCallDiagCtxt<'a, 'tcx> {
     }
 
     fn detect_dotdot(&self, err: &mut Diag<'_>, ty: Ty<'tcx>, expr: &hir::Expr<'tcx>) {
-        if let ty::Adt(adt, _) = ty.kind()
+        if let ty::Adt(adt, _, _) = ty.kind()
             && self.tcx().is_lang_item(adt.did(), hir::LangItem::RangeFull)
             && is_range_literal(expr)
             && let hir::ExprKind::Struct(&path, [], _) = expr.kind
@@ -2764,7 +2764,7 @@ impl<'a, 'tcx> FnCallDiagCtxt<'a, 'tcx> {
         if let Some(call_ident) = self.call_metadata.call_ident
             && call_ident.name == sym::unwrap
             && let Some(callee_ty) = self.callee_ty
-            && let ty::Adt(adt, _) = callee_ty.peel_refs().kind()
+            && let ty::Adt(adt, _, _) = callee_ty.peel_refs().kind()
             && (tcx.is_diagnostic_item(sym::Option, adt.did())
                 || tcx.is_diagnostic_item(sym::Result, adt.did()))
             && self.may_coerce(provided_ty, Ty::new_static_str(tcx))

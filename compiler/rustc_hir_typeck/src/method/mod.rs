@@ -507,7 +507,7 @@ impl<'a, 'tcx> FnCtxt<'a, 'tcx> {
 
         // Check if we have an enum variant.
         let mut struct_variant = None;
-        if let ty::Adt(adt_def, _) = self_ty.kind() {
+        if let ty::Adt(adt_def, _, _) = self_ty.kind() {
             if adt_def.is_enum() {
                 let variant_def = adt_def
                     .variants()

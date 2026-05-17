@@ -346,7 +346,7 @@ where
         let drop_arg = if call_destructor_only {
             pin_obj_place
         } else {
-            let ty::Adt(adt_def, adt_args) = pin_obj_ty.kind() else {
+            let ty::Adt(adt_def, adt_args, _) = pin_obj_ty.kind() else {
                 bug!();
             };
             let unwrap_ty =
@@ -444,7 +444,7 @@ where
             true
         } else {
             // Check if the type needing async drop comes from a dependency crate.
-            if let ty::Adt(adt_def, _) = drop_ty.kind() {
+            if let ty::Adt(adt_def, _, _) = drop_ty.kind() {
                 !adt_def.did().is_local() && adt_def.async_destructor(self.tcx()).is_some()
             } else {
                 false
@@ -1270,7 +1270,7 @@ where
             // See librustc_body/transform/coroutine.rs for more details.
             ty::Coroutine(_, args) => self.open_drop_for_tuple(args.as_coroutine().upvar_tys()),
             ty::Tuple(fields) => self.open_drop_for_tuple(fields),
-            ty::Adt(def, args) => self.open_drop_for_adt(*def, args),
+            ty::Adt(def, args, _) => self.open_drop_for_adt(*def, args),
             ty::Dynamic(..) => self.complete_drop(self.succ, self.unwind),
             ty::Array(ety, size) => {
                 let size = size.try_to_target_usize(self.tcx());

@@ -57,7 +57,7 @@ impl<'tcx> LateLintPass<'tcx> for AssertionsOnResultStates {
             && let result_type_with_refs = cx.typeck_results().expr_ty(recv)
             && let result_type = result_type_with_refs.peel_refs()
             && result_type.is_diag_item(cx, sym::Result)
-            && let ty::Adt(_, args) = result_type.kind()
+            && let ty::Adt(_, args, _) = result_type.kind()
         {
             if !is_copy(cx, result_type) {
                 if result_type_with_refs != result_type {

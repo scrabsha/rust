@@ -1669,11 +1669,11 @@ impl<'a, 'tcx> FnCtxt<'a, 'tcx> {
 
             // We don't capture derefs in case of move captures, which would have be applied to
             // access any further paths.
-            ty::Adt(def, _) if def.is_box() => unreachable!(),
+            ty::Adt(def, _, _) if def.is_box() => unreachable!(),
             ty::Ref(..) => unreachable!(),
             ty::RawPtr(..) => unreachable!(),
 
-            ty::Adt(def, args) => {
+            ty::Adt(def, args, _) => {
                 // Multi-variant enums are captured in entirety,
                 // which would've been handled in the case of single empty slice in `captured_by_move_projs`.
                 assert_eq!(def.variants().len(), 1);
@@ -2005,7 +2005,7 @@ fn restrict_repr_packed_field_ref_capture<'tcx>(
         // Return true for fields of packed structs.
         match p.kind {
             ProjectionKind::Field(..) => match ty.kind() {
-                ty::Adt(def, _) if def.repr().packed() => {
+                ty::Adt(def, _, _) if def.repr().packed() => {
                     // We stop here regardless of field alignment. Field alignment can change as
                     // types change, including the types of private fields in other crates, and that
                     // shouldn't affect how we compute our captures.
@@ -2208,7 +2208,7 @@ fn restrict_precision_for_drop_types<'a, 'tcx>(
     if let (false, UpvarCapture::ByValue) = (is_copy_type, curr_mode) {
         for i in 0..place.projections.len() {
             match place.ty_before_projection(i).kind() {
-                ty::Adt(def, _) if def.destructor(fcx.tcx).is_some() => {
+                ty::Adt(def, _, _) if def.destructor(fcx.tcx).is_some() => {
                     truncate_place_to_len_and_update_capture_kind(&mut place, &mut curr_mode, i);
                     break;
                 }

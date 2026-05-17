@@ -15,7 +15,7 @@ fn true_significant_drop_ty<'tcx>(
     tcx: TyCtxt<'tcx>,
     ty: Ty<'tcx>,
 ) -> Option<SmallVec<[Ty<'tcx>; 2]>> {
-    if let ty::Adt(def, args) = ty.kind() {
+    if let ty::Adt(def, args, _) = ty.kind() {
         let mut did = def.did();
         let mut name_rev = vec![];
         loop {
@@ -142,7 +142,7 @@ pub fn ty_dtor_span<'tcx>(tcx: TyCtxt<'tcx>, ty: Ty<'tcx>) -> Option<Span> {
         | ty::Array(_, _)
         | ty::UnsafeBinder(_) => None,
 
-        ty::Adt(adt_def, _) => {
+        ty::Adt(adt_def, _, _) => {
             if let Some(dtor) = tcx.adt_destructor(adt_def.did()) {
                 Some(tcx.def_span(tcx.parent(dtor.did)))
             } else {

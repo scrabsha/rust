@@ -685,7 +685,7 @@ impl<'tcx, Cx: TypeInformationCtxt<'tcx>, D: Delegate<'tcx>> ExprUseVisitor<'tcx
         // Select just those fields of the `with`
         // expression that will actually be used
         match self.cx.structurally_resolve_type(with_expr.span, with_place.place.ty()).kind() {
-            ty::Adt(adt, args) if adt.is_struct() => {
+            ty::Adt(adt, args, _) if adt.is_struct() => {
                 // Consume those fields of the with expression that are needed.
                 for (f_index, with_field) in adt.non_enum_variant().fields.iter_enumerated() {
                     let is_mentioned = fields.iter().any(|f| {
@@ -1535,7 +1535,7 @@ impl<'tcx, Cx: TypeInformationCtxt<'tcx>, D: Delegate<'tcx>> ExprUseVisitor<'tcx
     ) -> Result<VariantIdx, Cx::Error> {
         let res = self.cx.typeck_results().qpath_res(qpath, pat_hir_id);
         let ty = self.cx.typeck_results().node_type(pat_hir_id);
-        let ty::Adt(adt_def, _) = self.cx.structurally_resolve_type(span, ty).kind() else {
+        let ty::Adt(adt_def, _, _) = self.cx.structurally_resolve_type(span, ty).kind() else {
             return Err(self
                 .cx
                 .report_bug(span, "struct or tuple struct pattern not applied to an ADT"));
@@ -1568,7 +1568,7 @@ impl<'tcx, Cx: TypeInformationCtxt<'tcx>, D: Delegate<'tcx>> ExprUseVisitor<'tcx
     ) -> Result<usize, Cx::Error> {
         let ty = self.cx.typeck_results().node_type(pat_hir_id);
         match self.cx.structurally_resolve_type(span, ty).kind() {
-            ty::Adt(adt_def, _) => Ok(adt_def.variant(variant_index).fields.len()),
+            ty::Adt(adt_def, _, _) => Ok(adt_def.variant(variant_index).fields.len()),
             _ => {
                 self.cx
                     .tcx()
@@ -1856,7 +1856,7 @@ impl<'tcx, Cx: TypeInformationCtxt<'tcx>, D: Delegate<'tcx>> ExprUseVisitor<'tcx
     /// read of the discriminant might be necessary.
     #[instrument(skip(self, span), level = "debug")]
     fn is_multivariant_adt(&self, ty: Ty<'tcx>, span: Span) -> bool {
-        if let ty::Adt(def, _) = self.cx.structurally_resolve_type(span, ty).kind() {
+        if let ty::Adt(def, _, _) = self.cx.structurally_resolve_type(span, ty).kind() {
             // We treat non-exhaustive enums the same independent of the crate they are
             // defined in, to avoid differences in the operational semantics between crates.
             def.variants().len() > 1 || def.is_variant_list_non_exhaustive()

@@ -125,7 +125,7 @@ impl<'tcx> MutableKeyType<'tcx> {
     // generics (because the compiler cannot ensure immutability for unknown types).
     fn check_ty_(&mut self, cx: &LateContext<'tcx>, span: Span, ty: Ty<'tcx>) {
         let ty = ty.peel_refs();
-        if let ty::Adt(def, args) = ty.kind()
+        if let ty::Adt(def, args, _) = ty.kind()
             && matches!(
                 cx.tcx.get_diagnostic_name(def.did()),
                 Some(sym::HashMap | sym::BTreeMap | sym::HashSet | sym::BTreeSet)

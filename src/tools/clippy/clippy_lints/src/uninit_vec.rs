@@ -96,7 +96,7 @@ fn handle_uninit_vec_pair<'tcx>(
         && let Some((set_len_self, call_span)) = extract_set_len_self(cx, maybe_set_len)
         && vec.location.eq_expr(cx, ctxt, set_len_self)
         && let ty::Ref(_, vec_ty, _) = cx.typeck_results().expr_ty_adjusted(set_len_self).kind()
-        && let ty::Adt(_, args) = vec_ty.kind()
+        && let ty::Adt(_, args, _) = vec_ty.kind()
         // `#[allow(...)]` attribute can be set on enclosing unsafe block of `set_len()`
         && !is_lint_allowed(cx, UNINIT_VEC, maybe_set_len.hir_id)
     {

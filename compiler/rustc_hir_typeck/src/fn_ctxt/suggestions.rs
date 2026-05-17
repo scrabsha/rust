@@ -468,7 +468,7 @@ impl<'a, 'tcx> FnCtxt<'a, 'tcx> {
                 });
                 return true;
             } else if let ty::Ref(_, peeled_found_ty, _) = found_ty_inner.kind()
-                && let ty::Adt(adt, _) = peeled_found_ty.peel_refs().kind()
+                && let ty::Adt(adt, _, _) = peeled_found_ty.peel_refs().kind()
                 && self.tcx.is_lang_item(adt.did(), LangItem::String)
                 && peeled.is_str()
                 // `Result::map`, conversely, does not take ref of the error type.
@@ -530,10 +530,10 @@ impl<'a, 'tcx> FnCtxt<'a, 'tcx> {
         found_ty: Ty<'tcx>,
         expected_ty: Ty<'tcx>,
     ) -> Option<(Ty<'tcx>, Ty<'tcx>, Option<(Ty<'tcx>, Ty<'tcx>)>)> {
-        let ty::Adt(found_adt, found_args) = found_ty.peel_refs().kind() else {
+        let ty::Adt(found_adt, found_args, _) = found_ty.peel_refs().kind() else {
             return None;
         };
-        let ty::Adt(expected_adt, expected_args) = expected_ty.kind() else {
+        let ty::Adt(expected_adt, expected_args, _) = expected_ty.kind() else {
             return None;
         };
         if self.tcx.is_diagnostic_item(sym::Option, found_adt.did())
@@ -670,11 +670,11 @@ impl<'a, 'tcx> FnCtxt<'a, 'tcx> {
             return false;
         };
         match expected.kind() {
-            ty::Adt(def, _) if Some(def.did()) == pin_did => {
+            ty::Adt(def, _, _) if Some(def.did()) == pin_did => {
                 if self.may_coerce(pin_box_found, expected) {
                     debug!("can coerce {:?} to {:?}, suggesting Box::pin", pin_box_found, expected);
                     match found.kind() {
-                        ty::Adt(def, _) if def.is_box() => {
+                        ty::Adt(def, _, _) if def.is_box() => {
                             err.help("use `Box::pin`");
                         }
                         _ => {
@@ -699,7 +699,7 @@ impl<'a, 'tcx> FnCtxt<'a, 'tcx> {
                     true
                 } else if self.may_coerce(pin_found, expected) {
                     match found.kind() {
-                        ty::Adt(def, _) if def.is_box() => {
+                        ty::Adt(def, _, _) if def.is_box() => {
                             err.help("use `Box::pin`");
                             true
                         }
@@ -709,7 +709,7 @@ impl<'a, 'tcx> FnCtxt<'a, 'tcx> {
                     false
                 }
             }
-            ty::Adt(def, _) if def.is_box() && self.may_coerce(box_found, expected) => {
+            ty::Adt(def, _, _) if def.is_box() && self.may_coerce(box_found, expected) => {
                 // Check if the parent expression is a call to Pin::new. If it
                 // is and we were expecting a Box, ergo Pin<Box<expected>>, we
                 // can suggest Box::pin.
@@ -1449,10 +1449,10 @@ impl<'a, 'tcx> FnCtxt<'a, 'tcx> {
         expr_ty: Ty<'tcx>,
         expected_ty: Ty<'tcx>,
     ) -> bool {
-        let ty::Adt(adt_def, args) = expr_ty.kind() else {
+        let ty::Adt(adt_def, args, _) = expr_ty.kind() else {
             return false;
         };
-        let ty::Adt(expected_adt_def, expected_args) = expected_ty.kind() else {
+        let ty::Adt(expected_adt_def, expected_args, _) = expected_ty.kind() else {
             return false;
         };
         if adt_def != expected_adt_def {
@@ -1561,7 +1561,7 @@ impl<'a, 'tcx> FnCtxt<'a, 'tcx> {
             return false;
         }
 
-        let ty::Adt(def, _) = expr_ty.peel_refs().kind() else {
+        let ty::Adt(def, _, _) = expr_ty.peel_refs().kind() else {
             return false;
         };
         if !self.tcx.is_diagnostic_item(sym::Option, def.did()) {
@@ -1622,7 +1622,7 @@ impl<'a, 'tcx> FnCtxt<'a, 'tcx> {
         let Some(callee_ty) = callee_ty else {
             return;
         };
-        let ty::Adt(callee_adt, _) = callee_ty.peel_refs().kind() else {
+        let ty::Adt(callee_adt, _, _) = callee_ty.peel_refs().kind() else {
             return;
         };
         let adt_name = if self.tcx.is_diagnostic_item(sym::Option, callee_adt.did()) {
@@ -2204,14 +2204,14 @@ impl<'a, 'tcx> FnCtxt<'a, 'tcx> {
         expected: Ty<'tcx>,
         found: Ty<'tcx>,
     ) -> bool {
-        let ty::Adt(adt, args) = found.kind() else {
+        let ty::Adt(adt, args, _) = found.kind() else {
             return false;
         };
         let ret_ty_matches = |diagnostic_item| {
             let Some(sig) = self.body_fn_sig() else {
                 return false;
             };
-            let ty::Adt(kind, _) = sig.output().kind() else {
+            let ty::Adt(kind, _, _) = sig.output().kind() else {
                 return false;
             };
             self.tcx.is_diagnostic_item(diagnostic_item, kind.did())
@@ -2294,8 +2294,8 @@ impl<'a, 'tcx> FnCtxt<'a, 'tcx> {
             hir::Node::Expr(hir::Expr { kind: hir::ExprKind::Ret(_), .. })
         ) || self.tcx.hir_get_fn_id_for_return_block(expr.hir_id).is_some();
         if returned
-            && let ty::Adt(e, args_e) = expected.kind()
-            && let ty::Adt(f, args_f) = found.kind()
+            && let ty::Adt(e, args_e, _) = expected.kind()
+            && let ty::Adt(f, args_f, _) = found.kind()
             && e.did() == f.did()
             && Some(e.did()) == self.tcx.get_diagnostic_item(sym::Result)
             && let e_ok = args_e.type_at(0)
@@ -2503,7 +2503,7 @@ impl<'a, 'tcx> FnCtxt<'a, 'tcx> {
         if expr.span.in_external_macro(self.tcx.sess.source_map()) {
             return false;
         }
-        if let ty::Adt(expected_adt, args) = expected.kind() {
+        if let ty::Adt(expected_adt, args, _) = expected.kind() {
             if let hir::ExprKind::Field(base, ident) = expr.kind {
                 let base_ty = self.typeck_results.borrow().expr_ty(base);
                 if self.can_eq(self.param_env, base_ty, expected)
@@ -2590,7 +2590,7 @@ impl<'a, 'tcx> FnCtxt<'a, 'tcx> {
                     // When expected_ty and expr_ty are the same ADT, we prefer to compare their internal generic params,
                     // When the current variant has a sole field whose type is still an unresolved inference variable,
                     // suggestions would be often wrong. So suppress the suggestion. See #145294.
-                    if let (ty::Adt(exp_adt, _), ty::Adt(act_adt, _)) = (expected.kind(), expr_ty.kind())
+                    if let (ty::Adt(exp_adt, _, _), ty::Adt(act_adt, _, _)) = (expected.kind(), expr_ty.kind())
                         && exp_adt.did() == act_adt.did()
                         && sole_field.ty(self.tcx, args).skip_norm_wip().is_ty_var() {
                             return None;
@@ -2701,15 +2701,15 @@ impl<'a, 'tcx> FnCtxt<'a, 'tcx> {
         let tcx = self.tcx;
         let (adt, args, unwrap) = match expected.kind() {
             // In case `Option<NonZero<T>>` is wanted, but `T` is provided, suggest calling `new`.
-            ty::Adt(adt, args) if tcx.is_diagnostic_item(sym::Option, adt.did()) => {
+            ty::Adt(adt, args, _) if tcx.is_diagnostic_item(sym::Option, adt.did()) => {
                 let nonzero_type = args.type_at(0); // Unwrap option type.
-                let ty::Adt(adt, args) = nonzero_type.kind() else {
+                let ty::Adt(adt, args, _) = nonzero_type.kind() else {
                     return false;
                 };
                 (adt, args, "")
             }
             // In case `NonZero<T>` is wanted but `T` is provided, also add `.unwrap()` to satisfy types.
-            ty::Adt(adt, args) => (adt, args, ".unwrap()"),
+            ty::Adt(adt, args, _) => (adt, args, ".unwrap()"),
             _ => return false,
         };
 
@@ -2790,7 +2790,7 @@ impl<'a, 'tcx> FnCtxt<'a, 'tcx> {
         let self_ty = self.typeck_results.borrow().expr_ty_opt(receiver)?;
         let name = method_path.ident.name;
         let is_as_ref_able = match self_ty.peel_refs().kind() {
-            ty::Adt(def, _) => {
+            ty::Adt(def, _, _) => {
                 (self.tcx.is_diagnostic_item(sym::Option, def.did())
                     || self.tcx.is_diagnostic_item(sym::Result, def.did()))
                     && (name == sym::map || name == sym::and_then)
@@ -3659,13 +3659,13 @@ impl<'a, 'tcx> FnCtxt<'a, 'tcx> {
         let hir::ExprKind::Call(method_name, _) = expr.kind else {
             return;
         };
-        let ty::Adt(adt, _) = checked_ty.kind() else {
+        let ty::Adt(adt, _, _) = checked_ty.kind() else {
             return;
         };
         if self.tcx.lang_items().range_struct() != Some(adt.did()) {
             return;
         }
-        if let ty::Adt(adt, _) = expected_ty.kind()
+        if let ty::Adt(adt, _, _) = expected_ty.kind()
             && self.tcx.is_lang_item(adt.did(), LangItem::Range)
         {
             return;

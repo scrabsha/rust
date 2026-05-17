@@ -175,7 +175,7 @@ impl<'a, 'tcx> FnCtxt<'a, 'tcx> {
             sym::poll
                 // We check that the self type is `Pin<&mut _>` to avoid false positives for this common name.
                 if !span.at_least_rust_2024()
-                    && let ty::Adt(adt_def, args) = self_ty.kind()
+                    && let ty::Adt(adt_def, args, _) = self_ty.kind()
                     && self.tcx.is_lang_item(adt_def.did(), hir::LangItem::Pin)
                     && let ty::Ref(_, _, ty::Mutability::Mut) =
                         args[0].as_type().unwrap().kind() =>
@@ -334,7 +334,7 @@ impl<'a, 'tcx> FnCtxt<'a, 'tcx> {
                 // the user has written the self type with generics already which we (naively) do by looking
                 // for a "<" in `self_ty_name`.
                 if !self_ty_name.contains('<') {
-                    if let ty::Adt(def, _) = self_ty.kind() {
+                    if let ty::Adt(def, _, _) = self_ty.kind() {
                         let generics = this.tcx.generics_of(def.did());
                         if !generics.is_own_empty() {
                             let counts = generics.own_counts();

@@ -1467,10 +1467,10 @@ fn confirm_async_iterator_candidate<'cx, 'tcx>(
 
     debug_assert_eq!(tcx.associated_item(obligation.predicate.def_id()).name(), sym::Item);
 
-    let ty::Adt(_poll_adt, args) = *yield_ty.kind() else {
+    let ty::Adt(_poll_adt, args, _) = *yield_ty.kind() else {
         bug!();
     };
-    let ty::Adt(_option_adt, args) = *args.type_at(0).kind() else {
+    let ty::Adt(_option_adt, args, _) = *args.type_at(0).kind() else {
         bug!();
     };
     let item_ty = args.type_at(0);
@@ -1537,7 +1537,7 @@ fn confirm_builtin_candidate<'cx, 'tcx>(
         });
         (metadata_ty.into(), obligations)
     } else if tcx.is_lang_item(trait_def_id, LangItem::Field) {
-        let ty::Adt(def, args) = self_ty.kind() else {
+        let ty::Adt(def, args, _) = self_ty.kind() else {
             bug!("only field representing types can implement `Field`")
         };
         let Some(FieldInfo { base, ty, .. }) = def.field_representing_type_info(tcx, args) else {

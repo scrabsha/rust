@@ -750,7 +750,7 @@ fn check_static_linkage(tcx: TyCtxt<'_>, def_id: LocalDefId) {
     if tcx.codegen_fn_attrs(def_id).import_linkage.is_some() {
         if match tcx.type_of(def_id).instantiate_identity().skip_norm_wip().kind() {
             ty::RawPtr(_, _) => false,
-            ty::Adt(adt_def, args) => !is_enum_of_nonnullable_ptr(tcx, *adt_def, *args),
+            ty::Adt(adt_def, args, _) => !is_enum_of_nonnullable_ptr(tcx, *adt_def, *args),
             _ => true,
         } {
             tcx.dcx().emit_err(errors::LinkageType { span: tcx.def_span(def_id) });
@@ -1435,7 +1435,7 @@ fn check_impl_items_against_trait<'tcx>(
 
 fn check_simd(tcx: TyCtxt<'_>, sp: Span, def_id: LocalDefId) {
     let t = tcx.type_of(def_id).instantiate_identity().skip_norm_wip();
-    if let ty::Adt(def, args) = t.kind()
+    if let ty::Adt(def, args, _) = t.kind()
         && def.is_struct()
     {
         let fields = &def.non_enum_variant().fields;
@@ -1510,7 +1510,7 @@ fn check_simd(tcx: TyCtxt<'_>, sp: Span, def_id: LocalDefId) {
 #[tracing::instrument(skip(tcx), level = "debug")]
 fn check_scalable_vector(tcx: TyCtxt<'_>, span: Span, def_id: LocalDefId, scalable: ScalableElt) {
     let ty = tcx.type_of(def_id).instantiate_identity().skip_norm_wip();
-    let ty::Adt(def, args) = ty.kind() else { return };
+    let ty::Adt(def, args, _) = ty.kind() else { return };
     if !def.is_struct() {
         tcx.dcx().delayed_bug("`rustc_scalable_vector` applied to non-struct");
         return;
@@ -1571,7 +1571,7 @@ fn check_scalable_vector(tcx: TyCtxt<'_>, span: Span, def_id: LocalDefId, scalab
             let mut prev_field_ty = None;
             for field in fields.iter() {
                 let element_ty = field.ty(tcx, args).skip_norm_wip();
-                if let ty::Adt(def, _) = element_ty.kind()
+                if let ty::Adt(def, _, _) = element_ty.kind()
                     && def.repr().scalable()
                 {
                     match def
@@ -1680,7 +1680,7 @@ pub(super) fn check_packed_inner(
     def_id: DefId,
     stack: &mut Vec<DefId>,
 ) -> Option<Vec<(DefId, Span)>> {
-    if let ty::Adt(def, args) = tcx.type_of(def_id).instantiate_identity().skip_norm_wip().kind() {
+    if let ty::Adt(def, args, _) = tcx.type_of(def_id).instantiate_identity().skip_norm_wip().kind() {
         if def.is_struct() || def.is_union() {
             if def.repr().align.is_some() {
                 return Some(vec![(def.did(), DUMMY_SP)]);
@@ -1688,7 +1688,7 @@ pub(super) fn check_packed_inner(
 
             stack.push(def_id);
             for field in &def.non_enum_variant().fields {
-                if let ty::Adt(def, _) = field.ty(tcx, args).skip_norm_wip().kind()
+                if let ty::Adt(def, _, _) = field.ty(tcx, args).skip_norm_wip().kind()
                     && !stack.contains(&def.did())
                     && let Some(mut defs) = check_packed_inner(tcx, def.did(), stack)
                 {
@@ -1813,7 +1813,7 @@ pub(super) fn check_transparent<'tcx>(tcx: TyCtxt<'tcx>, adt: ty::AdtDef<'tcx>) 
         match ty.kind() {
             ty::Tuple(list) => list.iter().try_for_each(|t| check_unsuited(tcx, typing_env, t)),
             ty::Array(ty, _) => check_unsuited(tcx, typing_env, *ty),
-            ty::Adt(def, args) => {
+            ty::Adt(def, args, _) => {
                 if !def.did().is_local() && !find_attr!(tcx, def.did(), RustcPubTransparent(_)) {
                     let non_exhaustive = def.is_variant_list_non_exhaustive()
                         || def.variants().iter().any(ty::VariantDef::is_field_list_non_exhaustive);

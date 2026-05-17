@@ -226,7 +226,7 @@ impl<'tcx> AdtDef<'tcx> {
             _ => return None,
         };
         let (ty, variant, name) = match base.kind() {
-            ty::Adt(base_def, base_args) => {
+            ty::Adt(base_def, base_args, _) => {
                 let variant = base_def.variant(variant_idx);
                 let field = &variant.fields[field_idx];
                 let ty = field.ty(tcx, base_args).skip_norm_wip();

@@ -483,7 +483,7 @@ impl<'rt, 'tcx, M: Machine<'tcx>> ValidityVisitor<'rt, 'tcx, M> {
             }
 
             // other ADTs
-            ty::Adt(def, _) => {
+            ty::Adt(def, _, _) => {
                 PathElem::Field(def.non_enum_variant().fields[FieldIdx::from_usize(field)].name)
             }
 
@@ -1302,7 +1302,7 @@ impl<'rt, 'tcx, M: Machine<'tcx>> ValueVisitor<'tcx, M> for ValidityVisitor<'rt,
         new_val: &PlaceTy<'tcx, M::Provenance>,
     ) -> InterpResult<'tcx> {
         let name = match old_val.layout.ty.kind() {
-            ty::Adt(adt, _) => PathElem::Variant(adt.variant(variant_id).name),
+            ty::Adt(adt, _, _) => PathElem::Variant(adt.variant(variant_id).name),
             // Coroutines also have variants
             ty::Coroutine(..) => PathElem::CoroutineState(variant_id),
             _ => bug!("Unexpected type with variant: {:?}", old_val.layout.ty),
@@ -1536,7 +1536,7 @@ impl<'rt, 'tcx, M: Machine<'tcx>> ValueVisitor<'tcx, M> for ValidityVisitor<'rt,
                     BackendRepr::Memory { .. } => unreachable!()
                 }
             }
-            ty::Adt(adt, _) if adt.is_maybe_dangling() => {
+            ty::Adt(adt, _, _) if adt.is_maybe_dangling() => {
                 let old_may_dangle = mem::replace(&mut self.may_dangle, true);
 
                 let inner = self.ecx.project_field(val, FieldIdx::ZERO)?;

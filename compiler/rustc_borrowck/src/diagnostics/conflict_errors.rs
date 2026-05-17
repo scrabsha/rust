@@ -140,7 +140,7 @@ impl<'infcx, 'tcx> MirBorrowckCtxt<'_, 'infcx, 'tcx> {
             let partial_str = if is_partial_move { "partial " } else { "" };
             let partially_str = if is_partial_move { "partially " } else { "" };
 
-            let (on_move_message, on_move_label, on_move_notes) = if let ty::Adt(item_def, args) =
+            let (on_move_message, on_move_label, on_move_notes) = if let ty::Adt(item_def, args, _) =
                 self.body.local_decls[moved_place.local].ty.kind()
                 && let Some(Some(directive)) = find_attr!(self.infcx.tcx, item_def.did(), OnMove { directive, .. }  => directive)
             {
@@ -1206,7 +1206,7 @@ impl<'infcx, 'tcx> MirBorrowckCtxt<'_, 'infcx, 'tcx> {
         let hir::QPath::Resolved(_, path) = struct_qpath else { return };
         let hir::def::Res::Def(_, def_id) = path.res else { return };
         let Some(expr_ty) = typeck_results.node_type_opt(expr.hir_id) else { return };
-        let ty::Adt(def, args) = expr_ty.kind() else { return };
+        let ty::Adt(def, args, _) = expr_ty.kind() else { return };
         let hir::ExprKind::Path(hir::QPath::Resolved(None, path)) = base.kind else { return };
         let (hir::def::Res::Local(_)
         | hir::def::Res::Def(
@@ -1270,7 +1270,7 @@ impl<'infcx, 'tcx> MirBorrowckCtxt<'_, 'infcx, 'tcx> {
         };
         let prefix = if !self.implements_clone(ty) {
             let msg = format!("`{ty}` doesn't implement `Copy` or `Clone`");
-            if let ty::Adt(def, _) = ty.kind() {
+            if let ty::Adt(def, _, _) = ty.kind() {
                 err.span_note(self.infcx.tcx.def_span(def.did()), msg);
             } else {
                 err.note(msg);
@@ -1311,7 +1311,7 @@ impl<'infcx, 'tcx> MirBorrowckCtxt<'_, 'infcx, 'tcx> {
             } else {
                 self.suggest_cloning_inner(err, ty, expr);
             }
-        } else if let ty::Adt(def, args) = ty.kind()
+        } else if let ty::Adt(def, args, _) = ty.kind()
             && let Some(local_did) = def.did().as_local()
             && def.variants().iter().all(|variant| {
                 variant.fields.iter().all(|field| {
@@ -1392,7 +1392,7 @@ impl<'infcx, 'tcx> MirBorrowckCtxt<'_, 'infcx, 'tcx> {
                 span,
                 format!("if `{ty}` implemented `Clone`, you could clone the value"),
             );
-        } else if let ty::Adt(_, _) = ty.kind()
+        } else if let ty::Adt(_, _, _) = ty.kind()
             && let Some(clone_trait) = self.infcx.tcx.lang_items().clone_trait()
         {
             // For cases like `Option<NonClone>`, where `Option<T>: Clone` if `T: Clone`, we point
@@ -1404,7 +1404,7 @@ impl<'infcx, 'tcx> MirBorrowckCtxt<'_, 'infcx, 'tcx> {
             if errors.iter().all(|error| {
                 match error.obligation.predicate.as_clause().and_then(|c| c.as_trait_clause()) {
                     Some(clause) => match clause.self_ty().skip_binder().kind() {
-                        ty::Adt(def, _) => def.did().is_local() && clause.def_id() == clone_trait,
+                        ty::Adt(def, _, _) => def.did().is_local() && clause.def_id() == clone_trait,
                         _ => false,
                     },
                     None => false,
@@ -1417,7 +1417,7 @@ impl<'infcx, 'tcx> MirBorrowckCtxt<'_, 'infcx, 'tcx> {
                     .filter_map(|e| e.obligation.predicate.as_clause())
                     .filter_map(|c| c.as_trait_clause())
                 {
-                    let ty::Adt(def, _) = clause.self_ty().skip_binder().kind() else { continue };
+                    let ty::Adt(def, _, _) = clause.self_ty().skip_binder().kind() else { continue };
                     type_spans.push(self.infcx.tcx.def_span(def.did()));
                     types.insert(
                         self.infcx
@@ -1562,7 +1562,7 @@ impl<'infcx, 'tcx> MirBorrowckCtxt<'_, 'infcx, 'tcx> {
             expr.span.shrink_to_hi()
         };
         sugg.push((span, suggestion));
-        let msg = if let ty::Adt(def, _) = ty.kind()
+        let msg = if let ty::Adt(def, _, _) = ty.kind()
             && [tcx.get_diagnostic_item(sym::Arc), tcx.get_diagnostic_item(sym::Rc)]
                 .contains(&Some(def.did()))
         {
@@ -2265,7 +2265,7 @@ impl<'infcx, 'tcx> MirBorrowckCtxt<'_, 'infcx, 'tcx> {
             let ty = ty.peel_refs();
             match ty.kind() {
                 ty::Array(..) | ty::Slice(..) => true,
-                ty::Adt(def, _) if tcx.get_diagnostic_item(sym::Vec) == Some(def.did()) => true,
+                ty::Adt(def, _, _) if tcx.get_diagnostic_item(sym::Vec) == Some(def.did()) => true,
                 _ if ty == tcx.types.str_ => true,
                 _ => false,
             }
@@ -3165,7 +3165,7 @@ impl<'infcx, 'tcx> MirBorrowckCtxt<'_, 'infcx, 'tcx> {
             if let BorrowExplanation::UsedLater(_dropped_local, _, _, _) = explanation {
                 // Check all locals at the borrow location to find Vec<&T> types
                 for (local, local_decl) in self.body.local_decls.iter_enumerated() {
-                    if let ty::Adt(adt_def, args) = local_decl.ty.kind()
+                    if let ty::Adt(adt_def, args, _) = local_decl.ty.kind()
                         && self.infcx.tcx.is_diagnostic_item(sym::Vec, adt_def.did())
                         && args.len() > 0
                     {
@@ -3531,7 +3531,7 @@ impl<'infcx, 'tcx> MirBorrowckCtxt<'_, 'infcx, 'tcx> {
             }
 
             if let Some(cow_did) = tcx.get_diagnostic_item(sym::Cow)
-                && let ty::Adt(adt_def, _) = return_ty.kind()
+                && let ty::Adt(adt_def, _, _) = return_ty.kind()
                 && adt_def.did() == cow_did
             {
                 let typeck = tcx.typeck(self.mir_def_id());
@@ -4149,7 +4149,7 @@ impl<'infcx, 'tcx> MirBorrowckCtxt<'_, 'infcx, 'tcx> {
                         | ProjectionElem::Field(..)
                         | ProjectionElem::Downcast(..) => {
                             match place_ty.ty.kind() {
-                                ty::Adt(def, _) if def.has_dtor(tcx) => {
+                                ty::Adt(def, _, _) if def.has_dtor(tcx) => {
                                     // Report the outermost adt with a destructor
                                     match kind {
                                         StorageDeadOrDrop::Destructor(_) => kind,

@@ -266,7 +266,7 @@ fn ty_has_applicable_get_function<'tcx>(
     array_ty: Ty<'tcx>,
     index_expr: &Expr<'_>,
 ) -> bool {
-    if let ty::Adt(_, _) = array_ty.kind()
+    if let ty::Adt(_, _, _) = array_ty.kind()
         && let Some(get_output_ty) = get_adt_inherent_method(cx, ty, sym::get).map(|m| {
             cx.tcx
                 .fn_sig(m.def_id)
@@ -274,7 +274,7 @@ fn ty_has_applicable_get_function<'tcx>(
                 .output()
                 .skip_binder()
         })
-        && let ty::Adt(def, args) = get_output_ty.kind()
+        && let ty::Adt(def, args, _) = get_output_ty.kind()
         && cx.tcx.is_diagnostic_item(sym::Option, def.0.did)
         && let Some(option_generic_param) = args.first()
         && let generic_ty = option_generic_param.expect_ty().peel_refs()

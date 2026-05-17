@@ -998,7 +998,7 @@ fn clean_ty_alias_inner_type<'tcx>(
     cx: &mut DocContext<'tcx>,
     ret: &mut Vec<Item>,
 ) -> Option<TypeAliasInnerType> {
-    let ty::Adt(adt_def, args) = ty.kind() else {
+    let ty::Adt(adt_def, args, _) = ty.kind() else {
         return None;
     };
 
@@ -2168,7 +2168,7 @@ pub(crate) fn clean_middle_ty<'tcx>(
             let ty = clean_middle_ty(inner.into(), cx, None, None);
             UnsafeBinder(Box::new(UnsafeBinderTy { generic_params, ty }))
         }
-        ty::Adt(def, args) => {
+        ty::Adt(def, args, _) => {
             let did = def.did();
             let kind = match def.adt_kind() {
                 AdtKind::Struct => ItemType::Struct,

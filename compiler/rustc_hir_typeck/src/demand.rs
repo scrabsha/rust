@@ -1171,8 +1171,8 @@ impl<'a, 'tcx> FnCtxt<'a, 'tcx> {
                 {
                     err.span_label(self_ty.span, "this is the type of the `Self` literal");
                 }
-                if let ty::Adt(e_def, e_args) = expected.kind()
-                    && let ty::Adt(f_def, _f_args) = found.kind()
+                if let ty::Adt(e_def, e_args, _) = expected.kind()
+                    && let ty::Adt(f_def, _f_args, _) = found.kind()
                     && e_def == f_def
                 {
                     err.span_suggestion_verbose(

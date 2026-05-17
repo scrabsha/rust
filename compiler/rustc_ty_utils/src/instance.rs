@@ -391,7 +391,7 @@ fn resolve_associated_item<'tcx>(
                 if tcx.is_lang_item(trait_item_id, LangItem::FieldOffset) {
                     let self_ty = trait_ref.self_ty();
                     match self_ty.kind() {
-                        ty::Adt(def, _) if def.is_field_representing_type() => {}
+                        ty::Adt(def, _, _) if def.is_field_representing_type() => {}
                         _ => bug!("expected field representing type, found {self_ty}"),
                     }
                     Some(Instance {

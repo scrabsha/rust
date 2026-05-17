@@ -62,7 +62,7 @@ pub enum MonoItem<'tcx> {
 fn opt_incr_drop_glue_mode<'tcx>(tcx: TyCtxt<'tcx>, ty: Ty<'tcx>) -> InstantiationMode {
     // Non-ADTs can't have a Drop impl. This case is mostly hit by closures whose captures require
     // dropping.
-    let ty::Adt(adt_def, _) = ty.kind() else {
+    let ty::Adt(adt_def, _, _) = ty.kind() else {
         return InstantiationMode::LocalCopy;
     };
 

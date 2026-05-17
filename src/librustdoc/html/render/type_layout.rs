@@ -50,7 +50,7 @@ pub(crate) fn document_type_layout(cx: &Context<'_>, ty_def_id: DefId) -> impl f
             variants
                 .iter_enumerated()
                 .map(|(variant_idx, variant_layout)| {
-                    let ty::Adt(adt, _) = type_layout.ty.kind() else {
+                    let ty::Adt(adt, _, _) = type_layout.ty.kind() else {
                         span_bug!(tcx.def_span(ty_def_id), "not an adt")
                     };
                     let name = adt.variant(variant_idx).name;

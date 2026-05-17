@@ -81,7 +81,7 @@ fn unsize_ptr<'tcx>(
         (&ty::Ref(_, a, _), &ty::Ref(_, b, _))
         | (&ty::Ref(_, a, _), &ty::RawPtr(b, _))
         | (&ty::RawPtr(a, _), &ty::RawPtr(b, _)) => (src, unsized_info(fx, *a, *b, old_info)),
-        (&ty::Adt(def_a, _), &ty::Adt(def_b, _)) => {
+        (&ty::Adt(def_a, _, _), &ty::Adt(def_b, _, _)) => {
             assert_eq!(def_a, def_b);
 
             if src_layout == dst_layout {
@@ -139,7 +139,7 @@ pub(crate) fn coerce_unsized_into<'tcx>(
         (&ty::Ref(..), &ty::Ref(..))
         | (&ty::Ref(..), &ty::RawPtr(..))
         | (&ty::RawPtr(..), &ty::RawPtr(..)) => coerce_ptr(),
-        (&ty::Adt(def_a, _), &ty::Adt(def_b, _)) => {
+        (&ty::Adt(def_a, _, _), &ty::Adt(def_b, _, _)) => {
             assert_eq!(def_a, def_b);
 
             for i in 0..def_a.variant(FIRST_VARIANT).fields.len() {
@@ -240,7 +240,7 @@ pub(crate) fn size_and_align_of<'tcx>(
             // # First compute the dynamic alignment
 
             // For packed types, we need to cap the alignment.
-            if let ty::Adt(def, _) = ty.kind() {
+            if let ty::Adt(def, _, _) = ty.kind() {
                 if let Some(packed) = def.repr().pack {
                     if packed.bytes() == 1 {
                         // We know this will be capped to 1.

@@ -1364,7 +1364,7 @@ fn try_instance_mir<'tcx>(
 ) -> Result<&'tcx Body<'tcx>, &'static str> {
     if let ty::InstanceKind::DropGlue(_, Some(ty)) | ty::InstanceKind::AsyncDropGlueCtorShim(_, ty) =
         instance
-        && let ty::Adt(def, args) = ty.kind()
+        && let ty::Adt(def, args, _) = ty.kind()
     {
         let fields = def.all_fields();
         for field in fields {

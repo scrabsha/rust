@@ -10,7 +10,7 @@ use rustc_middle::ty::{self, Ty};
 /// Returns `true` if it's triggered, otherwise returns `false`.
 pub(super) fn check<'tcx>(cx: &LateContext<'tcx>, e: &'tcx Expr<'_>, from_ty: Ty<'tcx>, to_ty: Ty<'tcx>) -> bool {
     match (&from_ty.kind(), &to_ty.kind()) {
-        (ty::Adt(from_adt, from_args), ty::Adt(to_adt, to_args)) => {
+        (ty::Adt(from_adt, from_args, _), ty::Adt(to_adt, to_args, _)) => {
             if from_adt.did() != to_adt.did() {
                 return false;
             }

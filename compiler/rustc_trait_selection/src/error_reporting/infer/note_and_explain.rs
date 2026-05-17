@@ -531,7 +531,7 @@ impl<T> Trait<T> for X {
                             }
                         }
                     }
-                    (ty::Adt(_, _), ty::Adt(def, args))
+                    (ty::Adt(_, _, _), ty::Adt(def, args, _))
                         if let ObligationCauseCode::IfExpression { expr_id, .. } = cause.code()
                             && let hir::Node::Expr(if_expr) = self.tcx.hir_node(*expr_id)
                             && let hir::ExprKind::If(_, then_expr, _) = if_expr.kind

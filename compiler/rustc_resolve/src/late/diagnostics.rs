@@ -2601,7 +2601,7 @@ impl<'ast, 'ra, 'tcx> LateResolutionVisitor<'_, 'ast, 'ra, 'tcx> {
                 let fn_sig = self.r.tcx.fn_sig(item.def_id).skip_binder();
                 // Don't normalize the return type, because that can cause cycle errors.
                 let ret_ty = fn_sig.output().skip_binder();
-                let ty::Adt(def, _args) = ret_ty.kind() else {
+                let ty::Adt(def, _args, _) = ret_ty.kind() else {
                     return None;
                 };
                 let input_len = fn_sig.inputs().skip_binder().len();

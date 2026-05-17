@@ -155,6 +155,8 @@ pub trait Interner:
     type FnInputTys: Copy + Debug + Hash + Eq + SliceLike<Item = Self::Ty> + TypeVisitable<Self>;
     type ParamTy: ParamLike;
     type Symbol: Symbol<Self>;
+    type Fields: SliceLike<Item = Self::Field> + Copy + Hash + Eq;
+    type Field: Debug;
 
     // Things stored inside of tys
     type ErrorGuaranteed: Copy + Debug + Hash + Eq;

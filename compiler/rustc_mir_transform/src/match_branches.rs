@@ -257,7 +257,7 @@ impl<'tcx, 'a> SimplifyMatch<'tcx, 'a> {
         if dest_ty.ty != src_ty.ty || dest_ty.variant_index.is_some() {
             return None;
         }
-        let ty::Adt(def, _) = dest_ty.ty.kind() else {
+        let ty::Adt(def, _, _) = dest_ty.ty.kind() else {
             return None;
         };
 

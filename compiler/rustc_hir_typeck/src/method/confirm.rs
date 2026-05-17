@@ -239,7 +239,7 @@ impl<'a, 'tcx> ConfirmContext<'a, 'tcx> {
                 let region = self.next_region_var(RegionVariableOrigin::Autoref(self.span));
 
                 target = match target.kind() {
-                    ty::Adt(pin, args) if self.tcx.is_lang_item(pin.did(), hir::LangItem::Pin) => {
+                    ty::Adt(pin, args, _) if self.tcx.is_lang_item(pin.did(), hir::LangItem::Pin) => {
                         let inner_ty = match args[0].expect_ty().kind() {
                             ty::Ref(_, ty, _) => *ty,
                             _ => bug!("Expected a reference type for argument to Pin"),

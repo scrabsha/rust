@@ -107,7 +107,7 @@ impl<'a, 'tcx> FnCtxt<'a, 'tcx> {
         Ok(match *t.kind() {
             ty::Slice(_) | ty::Str => Some(PointerKind::Length),
             ty::Dynamic(tty, _) => Some(PointerKind::VTable(tty)),
-            ty::Adt(def, args) if def.is_struct() => match def.non_enum_variant().tail_opt() {
+            ty::Adt(def, args, _) if def.is_struct() => match def.non_enum_variant().tail_opt() {
                 None => Some(PointerKind::Thin),
                 Some(f) => {
                     let field_ty = self.field_ty(span, f, args);
@@ -295,7 +295,7 @@ impl<'a, 'tcx> CastCheck<'tcx> {
                 if self.cast_ty.is_integral() {
                     if !matches!(self.expr.kind, ExprKind::AddrOf(..))
                         && let ty::Ref(_, inner_ty, _) = *self.expr_ty.kind()
-                        && let ty::Adt(adt_def, _) = *inner_ty.kind()
+                        && let ty::Adt(adt_def, _, _) = *inner_ty.kind()
                         && adt_def.is_enum()
                         && adt_def.is_payloadfree()
                     {
@@ -533,7 +533,7 @@ impl<'a, 'tcx> CastCheck<'tcx> {
                             .type_implements_trait(from_trait, [ty, expr_ty], fcx.param_env)
                             .must_apply_modulo_regions()
                         {
-                            let to_ty = if let ty::Adt(def, args) = self.cast_ty.kind() {
+                            let to_ty = if let ty::Adt(def, args, _) = self.cast_ty.kind() {
                                 fcx.tcx.value_path_str_with_args(def.did(), args)
                             } else {
                                 self.cast_ty.to_string()
@@ -552,7 +552,7 @@ impl<'a, 'tcx> CastCheck<'tcx> {
                         }
                     }
 
-                    let (msg, note) = if let ty::Adt(adt, _) = self.expr_ty.kind()
+                    let (msg, note) = if let ty::Adt(adt, _, _) = self.expr_ty.kind()
                         && adt.is_enum()
                         && self.cast_ty.is_numeric()
                     {
@@ -832,7 +832,7 @@ impl<'a, 'tcx> CastCheck<'tcx> {
             }
             _ => return Err(CastError::NonScalar),
         };
-        if let ty::Adt(adt_def, _) = *self.expr_ty.kind()
+        if let ty::Adt(adt_def, _, _) = *self.expr_ty.kind()
             && !adt_def.did().is_local()
             && adt_def.variants().iter().any(VariantDef::is_field_list_non_exhaustive)
         {
@@ -1123,7 +1123,7 @@ impl<'a, 'tcx> CastCheck<'tcx> {
     }
 
     fn err_if_cenum_impl_drop(&self, fcx: &FnCtxt<'a, 'tcx>) {
-        if let ty::Adt(d, _) = self.expr_ty.kind()
+        if let ty::Adt(d, _, _) = self.expr_ty.kind()
             && d.has_dtor(fcx.tcx)
         {
             let expr_ty = fcx.resolve_vars_if_possible(self.expr_ty);

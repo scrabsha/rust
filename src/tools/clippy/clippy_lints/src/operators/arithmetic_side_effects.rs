@@ -368,7 +368,7 @@ fn is_integer(ty: Ty<'_>) -> bool {
 }
 
 fn is_non_zero_u(cx: &LateContext<'_>, ty: Ty<'_>) -> bool {
-    if let ty::Adt(adt, substs) = ty.kind()
+    if let ty::Adt(adt, substs, _) = ty.kind()
         && cx.tcx.is_diagnostic_item(sym::NonZero, adt.did())
         && let int_type = substs.type_at(0)
         && matches!(int_type.kind(), ty::Uint(_))

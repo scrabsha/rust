@@ -81,6 +81,13 @@ pub trait Ty<I: Interner<Ty = Self>>:
 
     fn new_adt(interner: I, adt_def: I::AdtDef, args: I::GenericArgs) -> Self;
 
+    fn new_adt_with_view(
+        interner: I,
+        adt_def: I::AdtDef,
+        args: I::GenericArgs,
+        view: I::Fields,
+    ) -> Self;
+
     fn new_foreign(interner: I, def_id: I::ForeignId) -> Self;
 
     fn new_dynamic(interner: I, preds: I::BoundExistentialPredicates, region: I::Region) -> Self;
@@ -175,7 +182,7 @@ pub trait Ty<I: Interner<Ty = Self>>:
             | ty::Int(_)
             | ty::Uint(_)
             | ty::Float(_)
-            | ty::Adt(_, _)
+            | ty::Adt(_, _, _)
             | ty::Foreign(_)
             | ty::Array(_, _)
             | ty::Pat(_, _)

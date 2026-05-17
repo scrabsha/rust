@@ -27,7 +27,7 @@ fn result_err_ty<'tcx>(
             .tcx
             .instantiate_bound_regions_with_erased(cx.tcx.fn_sig(id).instantiate_identity().skip_norm_wip().output())
         && ty.is_diag_item(cx, sym::Result)
-        && let ty::Adt(_, args) = ty.kind()
+        && let ty::Adt(_, args, _) = ty.kind()
     {
         let err_ty = args.type_at(1);
         Some((hir_ty, err_ty))
@@ -113,14 +113,14 @@ fn check_result_large_err<'tcx>(
     large_err_ignored: &DefIdSet,
     is_closure: bool,
 ) {
-    if let ty::Adt(adt, _) = err_ty.kind()
+    if let ty::Adt(adt, _, _) = err_ty.kind()
         && large_err_ignored.contains(&adt.did())
     {
         return;
     }
 
     let subject = if is_closure { "closure" } else { "function" };
-    if let ty::Adt(adt, subst) = err_ty.kind()
+    if let ty::Adt(adt, subst, _) = err_ty.kind()
         && let Some(local_def_id) = adt.did().as_local()
         && let hir::Node::Item(item) = cx.tcx.hir_node_by_def_id(local_def_id)
         && let hir::ItemKind::Enum(_, _, ref def) = item.kind
@@ -184,7 +184,7 @@ pub(super) fn check_expr<'tcx>(
         && let ty::Closure(_, args) = cx.typeck_results().expr_ty(expr).kind()
         && let closure_sig = args.as_closure().sig()
         && let Ok(err_binder) = closure_sig.output().try_map_bound(|output_ty| {
-            if let ty::Adt(adt, args) = output_ty.kind()
+            if let ty::Adt(adt, args, _) = output_ty.kind()
                 && let [_, err_arg] = args.as_slice()
                 && let Some(err_ty) = err_arg.as_type()
                 && adt.is_diag_item(cx, sym::Result)

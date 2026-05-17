@@ -172,7 +172,7 @@ where
             match self.size_and_align_from_meta(&base_meta, &field_layout)? {
                 Some((_, align)) => {
                     // For packed types, we need to cap alignment.
-                    let align = if let ty::Adt(def, _) = base.layout().ty.kind()
+                    let align = if let ty::Adt(def, _, _) = base.layout().ty.kind()
                         && let Some(packed) = def.repr().pack
                     {
                         align.min(packed)

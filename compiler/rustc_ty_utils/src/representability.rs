@@ -70,7 +70,7 @@ fn check_representability_ty<'tcx>(tcx: TyCtxt<'tcx>, ty: Ty<'tcx>) {
 // because `check_representability_adt_ty(Bar<..>)` is in the cycle and
 // `check_representability(Bar)` is *not* in the cycle.
 fn check_representability_adt_ty<'tcx>(tcx: TyCtxt<'tcx>, ty: Ty<'tcx>) {
-    let ty::Adt(adt, args) = ty.kind() else { bug!("expected adt") };
+    let ty::Adt(adt, args, _) = ty.kind() else { bug!("expected adt") };
     if let Some(def_id) = adt.did().as_local() {
         tcx.ensure_ok().check_representability(def_id);
     }
@@ -104,7 +104,7 @@ fn params_in_repr(tcx: TyCtxt<'_>, def_id: LocalDefId) -> DenseBitSet<u32> {
 
 fn params_in_repr_ty<'tcx>(tcx: TyCtxt<'tcx>, ty: Ty<'tcx>, params_in_repr: &mut DenseBitSet<u32>) {
     match *ty.kind() {
-        ty::Adt(adt, args) => {
+        ty::Adt(adt, args, _) => {
             let inner_params_in_repr = tcx.params_in_repr(adt.did());
             for (i, arg) in args.iter().enumerate() {
                 if let ty::GenericArgKind::Type(ty) = arg.kind() {

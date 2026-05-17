@@ -109,7 +109,7 @@ impl<'tcx> LateLintPass<'tcx> for RedundantClone {
                 continue;
             }
 
-            if let ty::Adt(def, _) = arg_ty.kind()
+            if let ty::Adt(def, _, _) = arg_ty.kind()
                 && def.is_manually_drop()
             {
                 continue;
@@ -148,7 +148,7 @@ impl<'tcx> LateLintPass<'tcx> for RedundantClone {
                     is_call_with_ref_arg(cx, mir, &pred_terminator.kind)
                     && res == cloned
                     && cx.tcx.is_diagnostic_item(sym::deref_method, pred_fn_def_id)
-                    && let ty::Adt(pred_arg_def, _) = pred_arg_ty.kind()
+                    && let ty::Adt(pred_arg_def, _, _) = pred_arg_ty.kind()
                     && let Some(pred_arg_name) = cx.tcx.get_diagnostic_name(pred_arg_def.did())
                     && matches!(pred_arg_name, sym::PathBuf | sym::OsString)
                 {

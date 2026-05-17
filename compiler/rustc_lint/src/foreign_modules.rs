@@ -236,7 +236,7 @@ fn structurally_same_type_impl<'tcx>(
     // type unless the newtype makes the type non-null.
     let non_transparent_ty = |mut ty: Ty<'tcx>| -> Ty<'tcx> {
         loop {
-            if let ty::Adt(def, args) = *ty.kind() {
+            if let ty::Adt(def, args, _) = *ty.kind() {
                 let is_transparent = def.repr().transparent();
                 let is_non_null = types::nonnull_optimization_guaranteed(tcx, def);
                 debug!(?ty, is_transparent, is_non_null);
@@ -273,7 +273,7 @@ fn structurally_same_type_impl<'tcx>(
 
         ensure_sufficient_stack(|| {
             match (a.kind(), b.kind()) {
-                (&ty::Adt(a_def, a_gen_args), &ty::Adt(b_def, b_gen_args)) => {
+                (&ty::Adt(a_def, a_gen_args, _), &ty::Adt(b_def, b_gen_args, _)) => {
                     // Only `repr(C)` types can be compared structurally.
                     if !(a_def.repr().c() && b_def.repr().c()) {
                         return false;

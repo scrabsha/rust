@@ -112,7 +112,7 @@ pub fn size_and_align_of_dst<'a, 'tcx, Bx: BuilderMethods<'a, 'tcx>>(
             // # First compute the dynamic alignment
 
             // For packed types, we need to cap the alignment.
-            if let ty::Adt(def, _) = t.kind()
+            if let ty::Adt(def, _, _) = t.kind()
                 && let Some(packed) = def.repr().pack
             {
                 if packed.bytes() == 1 {

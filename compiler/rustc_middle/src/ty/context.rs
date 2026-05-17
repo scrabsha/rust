@@ -156,6 +156,7 @@ pub struct CtxtInterners<'tcx> {
     external_constraints: InternedSet<'tcx, ExternalConstraintsData<TyCtxt<'tcx>>>,
     predefined_opaques_in_body: InternedSet<'tcx, List<(ty::OpaqueTypeKey<'tcx>, Ty<'tcx>)>>,
     fields: InternedSet<'tcx, List<FieldIdx>>,
+    fields_: InternedSet<'tcx, List<ty::Field>>,
     local_def_ids: InternedSet<'tcx, List<LocalDefId>>,
     captures: InternedSet<'tcx, List<&'tcx ty::CapturedPlace<'tcx>>>,
     valtree: InternedSet<'tcx, ty::ValTreeKind<TyCtxt<'tcx>>>,
@@ -194,6 +195,7 @@ impl<'tcx> CtxtInterners<'tcx> {
             external_constraints: InternedSet::with_capacity(N),
             predefined_opaques_in_body: InternedSet::with_capacity(N),
             fields: InternedSet::with_capacity(N * 4),
+            fields_: InternedSet::with_capacity(N * 4),
             local_def_ids: InternedSet::with_capacity(N),
             captures: InternedSet::with_capacity(N),
             valtree: InternedSet::with_capacity(N),
@@ -1987,6 +1989,7 @@ slice_interners!(
     patterns: pub mk_patterns(Pattern<'tcx>),
     outlives: pub mk_outlives(ty::ArgOutlivesPredicate<'tcx>),
     predefined_opaques_in_body: pub mk_predefined_opaques_in_body((ty::OpaqueTypeKey<'tcx>, Ty<'tcx>)),
+    fields_: intern_fields(ty::Field),
 );
 
 impl<'tcx> TyCtxt<'tcx> {
@@ -2277,6 +2280,14 @@ impl<'tcx> TyCtxt<'tcx> {
         self.intern_local_def_ids(def_ids)
     }
 
+    // FIXME(scrabsha): name bikeshedding
+    pub fn mk_fields_(self, fields: &[ty::Field]) -> &'tcx List<ty::Field> {
+        // FIXME consider asking the input slice to be sorted to avoid
+        // re-interning permutations, in which case that would be asserted
+        // here.
+        self.intern_fields(fields)
+    }
+
     pub fn mk_patterns_from_iter<I, T>(self, iter: I) -> T::Output
     where
         I: Iterator<Item = T>,
@@ -2310,6 +2321,14 @@ impl<'tcx> TyCtxt<'tcx> {
         T: CollectAndApply<ty::Const<'tcx>, &'tcx List<ty::Const<'tcx>>>,
     {
         T::collect_and_apply(iter, |xs| self.mk_const_list(xs))
+    }
+
+    pub fn mk_fields_from_iter_<I, T>(self, iter: I) -> T::Output
+    where
+        I: Iterator<Item = T>,
+        T: CollectAndApply<ty::Field, &'tcx List<ty::Field>>,
+    {
+        T::collect_and_apply(iter, |xs| self.mk_fields_(xs))
     }
 
     // Unlike various other `mk_*_from_iter` functions, this one uses `I:

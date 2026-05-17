@@ -239,7 +239,7 @@ impl<'tcx> MarkSymbolVisitor<'tcx> {
 
     fn handle_field_access(&mut self, lhs: &hir::Expr<'_>, hir_id: hir::HirId) {
         match self.typeck_results().expr_ty_adjusted(lhs).kind() {
-            ty::Adt(def, _) => {
+            ty::Adt(def, _, _) => {
                 let index = self.typeck_results().field_index(hir_id);
                 self.insert_def_id(def.non_enum_variant().fields[index].did);
             }
@@ -316,7 +316,7 @@ impl<'tcx> MarkSymbolVisitor<'tcx> {
         pats: &[hir::PatField<'_>],
     ) {
         let variant = match self.typeck_results().node_type(lhs.hir_id).kind() {
-            ty::Adt(adt, _) => {
+            ty::Adt(adt, _, _) => {
                 // Marks the ADT live if its variant appears as the pattern,
                 // considering cases when we have `let T(x) = foo()` and `fn foo<T>() -> T;`,
                 // we will lose the liveness info of `T` cause we cannot mark it live when visiting `foo`.
@@ -343,7 +343,7 @@ impl<'tcx> MarkSymbolVisitor<'tcx> {
         dotdot: hir::DotDotPos,
     ) {
         let variant = match self.typeck_results().node_type(lhs.hir_id).kind() {
-            ty::Adt(adt, _) => {
+            ty::Adt(adt, _, _) => {
                 // Marks the ADT live if its variant appears as the pattern
                 self.check_def_id(adt.did());
                 adt.variant_of_res(res)
@@ -374,7 +374,7 @@ impl<'tcx> MarkSymbolVisitor<'tcx> {
 
         for &(current_ty, variant, field) in indices {
             match current_ty.kind() {
-                ty::Adt(def, _) => {
+                ty::Adt(def, _, _) => {
                     let field = &def.variant(variant).fields[field];
                     self.insert_def_id(field.did);
                 }
@@ -452,7 +452,7 @@ impl<'tcx> MarkSymbolVisitor<'tcx> {
                 self.tcx.impl_trait_ref(impl_of).instantiate_identity().skip_norm_wip()
             && find_attr!(self.tcx, trait_ref.def_id, RustcTrivialFieldReads)
         {
-            if let ty::Adt(adt_def, _) = trait_ref.self_ty().kind()
+            if let ty::Adt(adt_def, _, _) = trait_ref.self_ty().kind()
                 && let Some(adt_def_id) = adt_def.did().as_local()
             {
                 self.ignored_derived_traits.entry(adt_def_id).or_default().insert(trait_ref.def_id);
@@ -517,7 +517,7 @@ impl<'tcx> MarkSymbolVisitor<'tcx> {
                     //// called directly.
                     let self_ty = self.tcx.type_of(item).instantiate_identity().skip_norm_wip();
                     match *self_ty.kind() {
-                        ty::Adt(def, _) => self.check_def_id(def.did()),
+                        ty::Adt(def, _, _) => self.check_def_id(def.did()),
                         ty::Foreign(did) => self.check_def_id(did),
                         ty::Dynamic(data, ..) => {
                             if let Some(def_id) = data.principal_def_id() {
@@ -574,7 +574,7 @@ impl<'tcx> MarkSymbolVisitor<'tcx> {
         }
 
         // The impl or impl item is used if the corresponding trait or trait item is used and the ty is used.
-        if let ty::Adt(adt, _) =
+        if let ty::Adt(adt, _, _) =
             self.tcx.type_of(impl_block_id).instantiate_identity().skip_norm_wip().kind()
             && let Some(adt_def_id) = adt.did().as_local()
             && !self.live_symbols.contains(&adt_def_id)
@@ -644,7 +644,7 @@ impl<'tcx> Visitor<'tcx> for MarkSymbolVisitor<'tcx> {
             hir::ExprKind::Struct(qpath, fields, _) => {
                 let res = self.typeck_results().qpath_res(qpath, expr.hir_id);
                 self.handle_res(res);
-                if let ty::Adt(adt, _) = self.typeck_results().expr_ty(expr).kind() {
+                if let ty::Adt(adt, _, _) = self.typeck_results().expr_ty(expr).kind() {
                     self.mark_as_used_if_union(*adt, fields);
                 }
             }
@@ -700,7 +700,7 @@ impl<'tcx> Visitor<'tcx> for MarkSymbolVisitor<'tcx> {
         match &expr.kind {
             rustc_hir::PatExprKind::Path(qpath) => {
                 // mark the type of variant live when meeting E::V in expr
-                if let ty::Adt(adt, _) = self.typeck_results().node_type(expr.hir_id).kind() {
+                if let ty::Adt(adt, _, _) = self.typeck_results().node_type(expr.hir_id).kind() {
                     self.check_def_id(adt.did());
                 }
 
@@ -1217,7 +1217,7 @@ impl<'tcx> DeadVisitor<'tcx> {
                             tcx.def_kind(dead_item.def_id)
                             && let impl_did = tcx.local_parent(dead_item.def_id)
                             && let DefKind::Impl { of_trait: false } = tcx.def_kind(impl_did)
-                            && let ty::Adt(maybe_enum, _) =
+                            && let ty::Adt(maybe_enum, _, _) =
                                 tcx.type_of(impl_did).instantiate_identity().skip_norm_wip().kind()
                             && maybe_enum.is_enum()
                             && let Some(variant) =

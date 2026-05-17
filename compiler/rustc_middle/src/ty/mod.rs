@@ -122,7 +122,7 @@ use crate::middle::privacy::EffectiveVisibilities;
 use crate::mir::{Body, CoroutineLayout, CoroutineSavedLocal, SourceInfo};
 use crate::query::{IntoQueryKey, Providers};
 use crate::ty;
-use crate::ty::codec::{TyDecoder, TyEncoder};
+use crate::ty::codec::{RefDecodable, TyDecoder, TyEncoder};
 pub use crate::ty::diagnostics::*;
 use crate::ty::fast_reject::SimplifiedType;
 use crate::ty::layout::{FnAbiError, LayoutError};
@@ -2328,6 +2328,29 @@ pub struct DestructuredAdtConst<'tcx> {
     pub fields: &'tcx [ty::Const<'tcx>],
 }
 
+#[derive(Copy, Clone, Decodable, Encodable, Eq, PartialEq, StableHash, Hash)]
+pub struct Field(FieldIdx, Symbol);
+
+impl fmt::Debug for Field {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(f, "{:?}", self.1)
+    }
+}
+
+impl Field {
+    pub fn new(idx: FieldIdx, name: Symbol) -> Self {
+        Field(idx, name)
+    }
+
+    pub fn idx(self) -> FieldIdx {
+        self.0
+    }
+
+    pub fn ident(self) -> Symbol {
+        self.1
+    }
+}
+
 /// Generate TypeTree information for autodiff.
 /// This function creates TypeTree metadata that describes the memory layout
 /// of function parameters and return types for Enzyme autodiff.
@@ -2512,7 +2535,7 @@ fn typetree_from_ty_impl_inner<'tcx>(
         return TypeTree(types);
     }
 
-    if let ty::Adt(adt_def, args) = ty.kind() {
+    if let ty::Adt(adt_def, args, _) = ty.kind() {
         if adt_def.is_struct() {
             let struct_layout =
                 tcx.layout_of(ty::TypingEnv::fully_monomorphized().as_query_input(ty));

@@ -288,12 +288,12 @@ impl<'tcx> NonCopyConst<'tcx> {
                     return IsFreeze::Yes;
                 }
                 let is_freeze = match *ty.kind() {
-                    ty::Adt(adt, _) if adt.is_unsafe_cell() => {
+                    ty::Adt(adt, _, _) if adt.is_unsafe_cell() => {
                         *e = IsFreeze::No;
                         return IsFreeze::No;
                     },
-                    ty::Adt(adt, _) if self.ignore_tys.contains(&adt.did()) => return IsFreeze::Yes,
-                    ty::Adt(adt, args) if adt.is_enum() => IsFreeze::from_variants(adt.variants().iter().map(|v| {
+                    ty::Adt(adt, _, _) if self.ignore_tys.contains(&adt.did()) => return IsFreeze::Yes,
+                    ty::Adt(adt, args, _) if adt.is_enum() => IsFreeze::from_variants(adt.variants().iter().map(|v| {
                         IsFreeze::from_fields(
                             v.fields
                                 .iter()
@@ -301,7 +301,7 @@ impl<'tcx> NonCopyConst<'tcx> {
                         )
                     })),
                     // Workaround for `ManuallyDrop`-like unions.
-                    ty::Adt(adt, args)
+                    ty::Adt(adt, args, _)
                         if adt.is_union()
                             && adt.non_enum_variant().fields.iter().any(|f| {
                                 tcx.layout_of(typing_env.as_query_input(f.ty(tcx, args).skip_norm_wip()))
@@ -312,7 +312,7 @@ impl<'tcx> NonCopyConst<'tcx> {
                     },
                     // Rust doesn't have the concept of an active union field so we have
                     // to treat all fields as active.
-                    ty::Adt(adt, args) => IsFreeze::from_fields(
+                    ty::Adt(adt, args, _) => IsFreeze::from_fields(
                         adt.non_enum_variant()
                             .fields
                             .iter()

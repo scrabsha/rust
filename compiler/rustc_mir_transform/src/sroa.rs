@@ -71,7 +71,7 @@ fn escaping_locals<'tcx>(
         if ty.is_union() || ty.is_enum() {
             return true;
         }
-        if let ty::Adt(def, _args) = ty.kind()
+        if let ty::Adt(def, _args, _) = ty.kind()
             && (def.repr().simd() || tcx.is_lang_item(def.did(), LangItem::DynMetadata))
         {
             // Exclude #[repr(simd)] types so that they are not de-optimized into an array

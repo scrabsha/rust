@@ -867,7 +867,7 @@ impl<'a, 'tcx> ProbeContext<'a, 'tcx> {
                 self.assemble_inherent_impl_candidates_for_type(p.def_id(), receiver_steps);
                 self.assemble_inherent_candidates_for_incoherent_ty(raw_self_ty, receiver_steps);
             }
-            ty::Adt(def, _) => {
+            ty::Adt(def, _, _) => {
                 let def_id = def.did();
                 self.assemble_inherent_impl_candidates_for_type(def_id, receiver_steps);
                 self.assemble_inherent_candidates_for_incoherent_ty(raw_self_ty, receiver_steps);
@@ -1541,7 +1541,7 @@ impl<'a, 'tcx> ProbeContext<'a, 'tcx> {
                         })
                     }
 
-                    ty::Adt(def, args)
+                    ty::Adt(def, args, _)
                         if self.tcx.features().pin_ergonomics()
                             && self.tcx.is_lang_item(def.did(), hir::LangItem::Pin) =>
                     {
@@ -1612,7 +1612,7 @@ impl<'a, 'tcx> ProbeContext<'a, 'tcx> {
 
         // make sure self is a Pin<&mut T>
         let inner_ty = match self_ty.kind() {
-            ty::Adt(def, args) if self.tcx.is_lang_item(def.did(), hir::LangItem::Pin) => {
+            ty::Adt(def, args, _) if self.tcx.is_lang_item(def.did(), hir::LangItem::Pin) => {
                 match args[0].expect_ty().kind() {
                     ty::Ref(_, ty, hir::Mutability::Mut) => *ty,
                     _ => {

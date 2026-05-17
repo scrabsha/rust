@@ -743,7 +743,7 @@ fn find_insert_calls<'tcx>(
         map_is_mutex_guard: false,
     };
     // Check if the map is a non-async-aware `MutexGuard`
-    if let rustc_middle::ty::Adt(adt, _) = cx.typeck_results().expr_ty(contains_expr.map).kind()
+    if let rustc_middle::ty::Adt(adt, _, _) = cx.typeck_results().expr_ty(contains_expr.map).kind()
         && is_mutex_guard(cx, adt.did())
     {
         s.map_is_mutex_guard = true;

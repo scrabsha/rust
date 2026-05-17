@@ -626,7 +626,7 @@ impl<'tcx> interpret::Machine<'tcx> for CompileTimeMachine<'tcx> {
                 let frt_ty = instance.args.type_at(0);
                 ensure_monomorphic_enough(ecx.tcx.tcx, frt_ty)?;
 
-                let (ty, variant, field) = if let ty::Adt(def, args) = frt_ty.kind()
+                let (ty, variant, field) = if let ty::Adt(def, args, _) = frt_ty.kind()
                     && let Some(FieldInfo { base, variant_idx, field_idx, .. }) =
                         def.field_representing_type_info(ecx.tcx.tcx, args)
                 {

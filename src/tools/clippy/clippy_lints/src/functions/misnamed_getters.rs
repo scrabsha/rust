@@ -84,7 +84,7 @@ pub fn check_fn(cx: &LateContext<'_>, kind: FnKind<'_>, decl: &FnDecl<'_>, body:
     for adjusted_type in iter::once(typeck_results.expr_ty(self_data))
         .chain(typeck_results.expr_adjustments(self_data).iter().map(|adj| adj.target))
     {
-        let ty::Adt(def, _) = adjusted_type.kind() else {
+        let ty::Adt(def, _, _) = adjusted_type.kind() else {
             continue;
         };
 

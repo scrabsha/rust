@@ -49,7 +49,7 @@ fn try_get_caller_ty_name_and_method_name(
             Some(("Iterator", "flat_map"))
         }
     } else {
-        if let ty::Adt(adt, _) = cx.typeck_results().expr_ty(caller_expr).kind() {
+        if let ty::Adt(adt, _, _) = cx.typeck_results().expr_ty(caller_expr).kind() {
             match cx.tcx.get_diagnostic_name(adt.did()) {
                 Some(sym::Option) => return Some(("Option", "and_then")),
                 Some(sym::Result) => return Some(("Result", "and_then")),

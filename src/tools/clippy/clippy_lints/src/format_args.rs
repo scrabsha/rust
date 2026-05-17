@@ -813,7 +813,7 @@ impl<'tcx> FormatArgsExpr<'_, 'tcx> {
             ty::RawPtr(..) | ty::FnPtr(..) | ty::FnDef(..) => true,
             ty::Ref(_, t, _) | ty::Slice(t) | ty::Array(t, _) => self.has_pointer_debug(*t, depth),
             ty::Tuple(ts) => ts.iter().any(|t| self.has_pointer_debug(t, depth)),
-            ty::Adt(adt, args) => {
+            ty::Adt(adt, args, _) => {
                 match self.has_pointer_format.entry(ty) {
                     Entry::Occupied(o) => return *o.get(),
                     Entry::Vacant(v) => v.insert(false),

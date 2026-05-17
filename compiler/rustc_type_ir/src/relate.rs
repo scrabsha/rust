@@ -372,7 +372,7 @@ pub fn structurally_relate_tys<I: Interner, R: TypeRelation<I>>(
 
         (ty::Placeholder(p1), ty::Placeholder(p2)) if p1 == p2 => Ok(a),
 
-        (ty::Adt(a_def, a_args), ty::Adt(b_def, b_args)) if a_def == b_def => {
+        (ty::Adt(a_def, a_args, _), ty::Adt(b_def, b_args, _)) if a_def == b_def => {
             if a_args.is_empty() {
                 Ok(a)
             } else {

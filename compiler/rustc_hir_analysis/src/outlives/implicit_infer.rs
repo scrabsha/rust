@@ -138,7 +138,7 @@ fn insert_required_predicates_to_be_wf<'tcx>(
                 insert_outlives_predicate(tcx, rty.into(), region, span, required_predicates);
             }
 
-            ty::Adt(def, args) => {
+            ty::Adt(def, args, _) => {
                 // For ADTs (structs/enums/unions), we check inferred and explicit predicates.
                 debug!("Adt");
                 check_inferred_predicates(

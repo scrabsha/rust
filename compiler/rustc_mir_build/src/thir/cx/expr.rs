@@ -261,7 +261,7 @@ impl<'tcx> ThirBuildCx<'tcx> {
         } else if let hir::ExprKind::Path(ref qpath) = source.kind
             && let res = self.typeck_results.qpath_res(qpath, source.hir_id)
             && let ty = self.typeck_results.node_type(source.hir_id)
-            && let ty::Adt(adt_def, args) = ty.kind()
+            && let ty::Adt(adt_def, args, _) = ty.kind()
             && let Res::Def(DefKind::Ctor(CtorOf::Variant, CtorKind::Const), variant_ctor_id) = res
         {
             // Check whether this is casting an enum variant discriminant.
@@ -454,7 +454,7 @@ impl<'tcx> ThirBuildCx<'tcx> {
             // Make `&pin mut $expr` and `&pin const $expr` into
             // `Pin { __pointer: &mut { $expr } }` and `Pin { __pointer: &$expr }`.
             hir::ExprKind::AddrOf(hir::BorrowKind::Pin, mutbl, arg_expr) => match expr_ty.kind() {
-                &ty::Adt(adt_def, args) if tcx.is_lang_item(adt_def.did(), hir::LangItem::Pin) => {
+                &ty::Adt(adt_def, args, _) if tcx.is_lang_item(adt_def.did(), hir::LangItem::Pin) => {
                     let ty = args.type_at(0);
                     let arg_ty = self.typeck_results.expr_ty(arg_expr);
                     let mut arg = self.mirror_expr(arg_expr);
@@ -594,7 +594,7 @@ impl<'tcx> ThirBuildCx<'tcx> {
             }
 
             hir::ExprKind::Struct(qpath, fields, ref base) => match expr_ty.kind() {
-                ty::Adt(adt, args) => match adt.adt_kind() {
+                ty::Adt(adt, args, _) => match adt.adt_kind() {
                     AdtKind::Struct | AdtKind::Union => {
                         let user_provided_types = self.typeck_results.user_provided_types();
                         let user_ty = user_provided_types.get(expr.hir_id).copied().map(Box::new);
@@ -1219,7 +1219,7 @@ impl<'tcx> ThirBuildCx<'tcx> {
                 match ty.kind() {
                     // A unit struct/variant which is used as a value.
                     // We return a completely different ExprKind here to account for this special case.
-                    ty::Adt(adt_def, args) => ExprKind::Adt(Box::new(AdtExpr {
+                    ty::Adt(adt_def, args, _) => ExprKind::Adt(Box::new(AdtExpr {
                         adt_def: *adt_def,
                         variant_index: adt_def.variant_index_with_ctor_id(def_id),
                         args,

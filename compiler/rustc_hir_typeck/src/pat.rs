@@ -897,7 +897,7 @@ impl<'a, 'tcx> FnCtxt<'a, 'tcx> {
             // FIXME(deref_patterns): we'll get better diagnostics for users trying to
             // implicitly deref generics if we allow them here, but primitives, tuples, and
             // inference vars definitely should be stopped. Figure out what makes most sense.
-            && let ty::Adt(scrutinee_adt, _) = *expected.kind()
+            && let ty::Adt(scrutinee_adt, _, _) = *expected.kind()
             // Don't peel if the pattern type already matches the scrutinee. E.g., stop here if
             // matching on a `Cow<'a, T>` scrutinee with a `Cow::Owned(_)` pattern.
             && until_adt != Some(scrutinee_adt.did())
@@ -1554,7 +1554,7 @@ impl<'a, 'tcx> FnCtxt<'a, 'tcx> {
                 return Err(e);
             }
             Res::SelfCtor(def_id) => {
-                if let ty::Adt(adt_def, _) = *tcx.type_of(def_id).skip_binder().kind()
+                if let ty::Adt(adt_def, _, _) = *tcx.type_of(def_id).skip_binder().kind()
                     && adt_def.is_struct()
                     && let Some((CtorKind::Const, _)) = adt_def.non_enum_variant().ctor
                 {
@@ -1675,7 +1675,7 @@ impl<'a, 'tcx> FnCtxt<'a, 'tcx> {
                 }
                 _ => {
                     let (type_def_id, item_def_id) = match resolved_pat.ty.kind() {
-                        ty::Adt(def, _) => match res {
+                        ty::Adt(def, _, _) => match res {
                             Res::Def(DefKind::Const { .. }, def_id) => {
                                 (Some(def.did()), Some(def_id))
                             }
@@ -1790,7 +1790,7 @@ impl<'a, 'tcx> FnCtxt<'a, 'tcx> {
         if subpats.len() == variant.fields.len()
             || subpats.len() < variant.fields.len() && ddpos.as_opt_usize().is_some()
         {
-            let ty::Adt(_, args) = pat_ty.kind() else {
+            let ty::Adt(_, args, _) = pat_ty.kind() else {
                 bug!("unexpected pattern type {:?}", pat_ty);
             };
             for (i, subpat) in subpats.iter().enumerate_and_adjust(variant.fields.len(), ddpos) {
@@ -1890,7 +1890,7 @@ impl<'a, 'tcx> FnCtxt<'a, 'tcx> {
             // #67037: only do this if we could successfully type-check the expected type against
             // the tuple struct pattern. Otherwise the args could get out of range on e.g.,
             // `let P() = U;` where `P != U` with `struct Box<T>(T);`.
-            (ty::Adt(_, args), [field], Ok(())) => {
+            (ty::Adt(_, args, _), [field], Ok(())) => {
                 let field_ty = self.field_ty(pat_span, field, args);
                 match field_ty.kind() {
                     ty::Tuple(fields) => fields.len() == subpats.len(),
@@ -2031,7 +2031,7 @@ impl<'a, 'tcx> FnCtxt<'a, 'tcx> {
     ) -> Result<(), ErrorGuaranteed> {
         let tcx = self.tcx;
 
-        let ty::Adt(adt, args) = adt_ty.kind() else {
+        let ty::Adt(adt, args, _) = adt_ty.kind() else {
             span_bug!(pat.span, "struct pattern is not an ADT");
         };
 
@@ -3233,7 +3233,7 @@ impl<'a, 'tcx> FnCtxt<'a, 'tcx> {
             let (is_slice_or_array_or_vector, resolved_ty) =
                 self.is_slice_or_array_or_vector(resolved_ty);
             match resolved_ty.kind() {
-                ty::Adt(adt_def, _)
+                ty::Adt(adt_def, _, _)
                     if self.tcx.is_diagnostic_item(sym::Option, adt_def.did())
                         || self.tcx.is_diagnostic_item(sym::Result, adt_def.did()) =>
                 {
@@ -3259,7 +3259,7 @@ impl<'a, 'tcx> FnCtxt<'a, 'tcx> {
 
     fn is_slice_or_array_or_vector(&self, ty: Ty<'tcx>) -> (bool, Ty<'tcx>) {
         match ty.kind() {
-            ty::Adt(adt_def, _) if self.tcx.is_diagnostic_item(sym::Vec, adt_def.did()) => {
+            ty::Adt(adt_def, _, _) if self.tcx.is_diagnostic_item(sym::Vec, adt_def.did()) => {
                 (true, ty)
             }
             ty::Ref(_, ty, _) => self.is_slice_or_array_or_vector(*ty),

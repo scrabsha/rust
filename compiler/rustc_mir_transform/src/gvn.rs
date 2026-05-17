@@ -1771,7 +1771,7 @@ impl<'body, 'a, 'tcx> VnState<'body, 'a, 'tcx> {
             // field from an enum where no fields have variants, since that tag
             // field isn't in the `Aggregate` from which we're getting values.
             Some((field_idx, field_layout.ty))
-        } else if let ty::Adt(adt, args) = ty.kind()
+        } else if let ty::Adt(adt, args, _) = ty.kind()
             && adt.is_struct()
             && adt.repr().transparent()
             && let [single_field] = adt.non_enum_variant().fields.raw.as_slice()

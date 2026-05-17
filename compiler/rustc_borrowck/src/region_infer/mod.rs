@@ -1801,7 +1801,7 @@ impl<'tcx> RegionInferenceContext<'tcx> {
                     is_implicit_coercion: true,
                 } if to_region == self.universal_regions().fr_static
                     // Mirror the note's condition, to minimize how often this diverts blame.
-                    && let ty::Adt(_, args) = unsize_ty.kind()
+                    && let ty::Adt(_, args, _) = unsize_ty.kind()
                     && args.iter().any(|arg| arg.as_type().is_some_and(|ty| ty.is_trait()))
                     // Mimic old logic for this, to minimize false positives in tests.
                     && !path

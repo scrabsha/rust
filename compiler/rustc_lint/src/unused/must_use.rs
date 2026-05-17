@@ -152,12 +152,12 @@ pub fn is_ty_must_use<'tcx>(
         ty::Adt(..) if let Some(boxed) = ty.boxed_ty() => {
             is_ty_must_use(cx, boxed, expr).map(|inner| MustUsePath::Boxed(Box::new(inner)))
         }
-        ty::Adt(def, args) if cx.tcx.is_lang_item(def.did(), LangItem::Pin) => {
+        ty::Adt(def, args, _) if cx.tcx.is_lang_item(def.did(), LangItem::Pin) => {
             let pinned_ty = args.type_at(0);
             is_ty_must_use(cx, pinned_ty, expr).map(|inner| MustUsePath::Pinned(Box::new(inner)))
         }
         // Consider `Result<T, Uninhabited>` (e.g. `Result<(), !>`) equivalent to `T`.
-        ty::Adt(def, args)
+        ty::Adt(def, args, _)
             if cx.tcx.is_diagnostic_item(sym::Result, def.did())
                 && is_uninhabited(args.type_at(1)) =>
         {
@@ -165,7 +165,7 @@ pub fn is_ty_must_use<'tcx>(
             is_ty_must_use(cx, ok_ty, expr).map(|path| MustUsePath::Result(Box::new(path)))
         }
         // Consider `ControlFlow<Uninhabited, T>` (e.g. `ControlFlow<!, ()>`) equivalent to `T`.
-        ty::Adt(def, args)
+        ty::Adt(def, args, _)
             if cx.tcx.is_diagnostic_item(sym::ControlFlow, def.did())
                 && is_uninhabited(args.type_at(0)) =>
         {
@@ -173,7 +173,7 @@ pub fn is_ty_must_use<'tcx>(
             is_ty_must_use(cx, continue_ty, expr)
                 .map(|path| MustUsePath::ControlFlow(Box::new(path)))
         }
-        ty::Adt(def, _) => {
+        ty::Adt(def, _, _) => {
             is_def_must_use(cx, def.did(), expr.span).map_or(IsTyMustUse::No, IsTyMustUse::Yes)
         }
         ty::Alias(ty::AliasTy {

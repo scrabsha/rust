@@ -77,7 +77,7 @@ fn visit_implementation_of_drop(checker: &Checker<'_>) -> Result<(), ErrorGuaran
     let impl_did = checker.impl_def_id;
     // Destructors only work on local ADT types.
     match checker.impl_header.trait_ref.instantiate_identity().skip_norm_wip().self_ty().kind() {
-        ty::Adt(def, _) if def.did().is_local() => return Ok(()),
+        ty::Adt(def, _, _) if def.did().is_local() => return Ok(()),
         ty::Error(_) => return Ok(()),
         _ => {}
     }
@@ -158,14 +158,14 @@ fn visit_implementation_of_unpin(checker: &Checker<'_>) -> Result<(), ErrorGuara
             // which cannot carry safety properties), then `&mut U` could be obtained from
             // `&mut T` that dereferenced by `Pin<&mut T>`, which breaks the safety contract of
             // `Pin<&mut U>` for `U: !Unpin`.
-            ty::Adt(adt, _) if adt.is_pin_project() => {
+            ty::Adt(adt, _, _) if adt.is_pin_project() => {
                 return Err(tcx.dcx().emit_err(crate::errors::ImplUnpinForPinProjectedType {
                     span,
                     adt_span: tcx.def_span(adt.did()),
                     adt_name: tcx.item_name(adt.did()),
                 }));
             }
-            ty::Adt(_, _) => {}
+            ty::Adt(_, _, _) => {}
             _ => {
                 return Err(tcx.dcx().span_delayed_bug(span, "impl of `Unpin` for a non-adt type"));
             }
@@ -193,7 +193,7 @@ fn visit_implementation_of_const_param_ty(checker: &Checker<'_>) -> Result<(), E
 
     if !tcx.features().adt_const_params() {
         match *self_type.kind() {
-            ty::Adt(adt, _) if adt.is_struct() => {
+            ty::Adt(adt, _, _) if adt.is_struct() => {
                 let struct_vis = tcx.visibility(adt.did());
                 for variant in adt.variants() {
                     for field in &variant.fields {
@@ -353,7 +353,7 @@ fn visit_implementation_of_dispatch_from_dyn(checker: &Checker<'_>) -> Result<()
             Ok(())
         }
         (&ty::RawPtr(_, a_mutbl), &ty::RawPtr(_, b_mutbl)) if a_mutbl == b_mutbl => Ok(()),
-        (&ty::Adt(def_a, args_a), &ty::Adt(def_b, args_b))
+        (&ty::Adt(def_a, args_a, _), &ty::Adt(def_b, args_b, _))
             if def_a.is_struct() && def_b.is_struct() =>
         {
             if def_a != def_b {
@@ -525,7 +525,7 @@ pub(crate) fn reborrow_info<'tcx>(
     assert!(!source.has_escaping_bound_vars());
 
     let (def, args) = match source.kind() {
-        &ty::Adt(def, args) if def.is_struct() => (def, args),
+        &ty::Adt(def, args, _) if def.is_struct() => (def, args),
         _ => {
             // Note: reusing error here as it takes trait_name as argument.
             return Err(tcx.dcx().emit_err(errors::CoerceUnsizedNonStruct { span, trait_name }));
@@ -632,7 +632,7 @@ pub(crate) fn coerce_shared_info<'tcx>(
     assert!(!source.has_escaping_bound_vars());
 
     let data = match (source.kind(), target.kind()) {
-        (&ty::Adt(def_a, args_a), &ty::Adt(def_b, args_b))
+        (&ty::Adt(def_a, args_a, _), &ty::Adt(def_b, args_b, _))
             if def_a.is_struct() && def_b.is_struct() =>
         {
             // Check that both A and B have exactly one lifetime argument, and that they have the
@@ -865,7 +865,7 @@ pub(crate) fn coerce_unsized_info<'tcx>(
             check_mutbl(mt_a, mt_b, &|ty| Ty::new_imm_ptr(tcx, ty))
         }
 
-        (&ty::Adt(def_a, args_a), &ty::Adt(def_b, args_b))
+        (&ty::Adt(def_a, args_a, _), &ty::Adt(def_b, args_b, _))
             if def_a.is_struct() && def_b.is_struct() =>
         {
             if def_a != def_b {
@@ -1157,7 +1157,7 @@ fn visit_implementation_of_coerce_pointee_validity(
     if !tcx.is_builtin_derived(checker.impl_def_id.into()) {
         return Err(tcx.dcx().emit_err(errors::CoercePointeeNoUserValidityAssertion { span }));
     }
-    let ty::Adt(def, _args) = self_ty.kind() else {
+    let ty::Adt(def, _args, _) = self_ty.kind() else {
         return Err(tcx.dcx().emit_err(errors::CoercePointeeNotConcreteType { span }));
     };
     let did = def.did();

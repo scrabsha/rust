@@ -17,7 +17,7 @@ pub fn wants_c_like_enum_debuginfo<'tcx>(
     enum_type_and_layout: TyAndLayout<'tcx>,
 ) -> bool {
     match enum_type_and_layout.ty.kind() {
-        ty::Adt(adt_def, _) => {
+        ty::Adt(adt_def, _, _) => {
             if !adt_def.is_enum() {
                 return false;
             }
@@ -60,7 +60,7 @@ fn tag_base_type_opt<'tcx>(
 ) -> Option<Ty<'tcx>> {
     assert!(match enum_type_and_layout.ty.kind() {
         ty::Coroutine(..) => true,
-        ty::Adt(adt_def, _) => adt_def.is_enum(),
+        ty::Adt(adt_def, _, _) => adt_def.is_enum(),
         _ => false,
     });
 

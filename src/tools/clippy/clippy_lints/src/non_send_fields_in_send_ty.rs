@@ -89,7 +89,7 @@ impl<'tcx> LateLintPass<'tcx> for NonSendFieldInSendTy {
             && of_trait.polarity == ImplPolarity::Positive
             && let ty_trait_ref = cx.tcx.impl_trait_ref(item.owner_id)
             && let self_ty = ty_trait_ref.instantiate_identity().skip_norm_wip().self_ty()
-            && let ty::Adt(adt_def, impl_trait_args) = self_ty.kind()
+            && let ty::Adt(adt_def, impl_trait_args, _) = self_ty.kind()
         {
             let mut non_send_fields = Vec::new();
 
@@ -205,7 +205,7 @@ fn ty_allowed_with_raw_pointer_heuristic<'tcx>(cx: &LateContext<'tcx>, ty: Ty<'t
             .iter()
             .all(|ty| ty_allowed_with_raw_pointer_heuristic(cx, ty, send_trait)),
         ty::Array(ty, _) | ty::Slice(ty) => ty_allowed_with_raw_pointer_heuristic(cx, *ty, send_trait),
-        ty::Adt(_, args) if contains_pointer_like(cx, ty) => {
+        ty::Adt(_, args, _) if contains_pointer_like(cx, ty) => {
             // descends only if ADT contains any raw pointers
             args.iter().all(|generic_arg| match generic_arg.kind() {
                 GenericArgKind::Type(ty) => ty_allowed_with_raw_pointer_heuristic(cx, ty, send_trait),
@@ -227,7 +227,7 @@ fn contains_pointer_like<'tcx>(cx: &LateContext<'tcx>, target_ty: Ty<'tcx>) -> b
                 ty::RawPtr(_, _) => {
                     return true;
                 },
-                ty::Adt(adt_def, _) if cx.tcx.is_diagnostic_item(sym::NonNull, adt_def.did()) => {
+                ty::Adt(adt_def, _, _) if cx.tcx.is_diagnostic_item(sym::NonNull, adt_def.did()) => {
                     return true;
                 },
                 _ => (),

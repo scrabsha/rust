@@ -953,7 +953,7 @@ impl<'a, 'tcx> Builder<'a, 'tcx> {
         let state_decl = &self.local_decls[scope.state_place.as_local().unwrap()];
         let state_ty = state_decl.ty;
         let (discriminant_ty, rvalue) = match state_ty.kind() {
-            ty::Adt(adt_def, _) if adt_def.is_enum() => {
+            ty::Adt(adt_def, _, _) if adt_def.is_enum() => {
                 (state_ty.discriminant_ty(self.tcx), Rvalue::Discriminant(scope.state_place))
             }
             ty::Uint(_) | ty::Int(_) | ty::Float(_) | ty::Bool | ty::Char => {

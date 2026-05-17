@@ -140,7 +140,7 @@ pub trait EvalContextExt<'tcx>: crate::MiriInterpCxExt<'tcx> {
         // `lo.col` is 0-based - add 1 to make it 1-based for the caller.
         let colno: u32 = u32::try_from(lo.col.0.saturating_add(1)).unwrap_or(0);
 
-        if let ty::Adt(adt, _) = dest.layout.ty.kind() {
+        if let ty::Adt(adt, _, _) = dest.layout.ty.kind() {
             if !adt.repr().c() {
                 throw_ub_format!(
                     "miri_resolve_frame must be declared with a `#[repr(C)]` return type"

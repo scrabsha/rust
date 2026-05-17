@@ -68,7 +68,7 @@ impl<'tcx> LateLintPass<'tcx> for DefaultCouldBeDerived {
             return;
         }
         let ty = cx.tcx.type_of(impl_id).instantiate_identity().skip_norm_wip();
-        let ty::Adt(def, _) = ty.kind() else { return };
+        let ty::Adt(def, _, _) = ty.kind() else { return };
 
         // We now know we have a manually written definition of a `<Type as Default>::default()`.
 

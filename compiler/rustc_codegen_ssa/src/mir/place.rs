@@ -227,7 +227,7 @@ impl<'a, 'tcx, V: CodegenObject> PlaceRef<'tcx, V> {
         let (_, mut unsized_align) = size_of_val::size_and_align_of_dst(bx, field.ty, meta);
 
         // For packed types, we need to cap alignment.
-        if let ty::Adt(def, _) = self.layout.ty.kind()
+        if let ty::Adt(def, _, _) = self.layout.ty.kind()
             && let Some(packed) = def.repr().pack
         {
             let packed = bx.const_usize(packed.bytes());

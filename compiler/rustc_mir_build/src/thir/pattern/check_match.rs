@@ -300,7 +300,7 @@ impl<'p, 'tcx> MatchVisitor<'p, 'tcx> {
             Field { lhs, .. } => {
                 let lhs = &self.thir()[*lhs];
                 match lhs.ty.kind() {
-                    ty::Adt(def, _) if def.is_union() => false,
+                    ty::Adt(def, _, _) if def.is_union() => false,
                     _ => self.is_known_valid_scrutinee(lhs),
                 }
             }
@@ -706,7 +706,7 @@ impl<'p, 'tcx> MatchVisitor<'p, 'tcx> {
         // Emit an extra note if the first uncovered witness would be uninhabited
         // if we disregard visibility.
         let witness_1_is_privately_uninhabited = if let Some(witness_1) = witnesses.get(0)
-            && let ty::Adt(adt, args) = witness_1.ty().kind()
+            && let ty::Adt(adt, args, _) = witness_1.ty().kind()
             && adt.is_enum()
             && let Constructor::Variant(variant_index) = witness_1.ctor()
         {
@@ -858,7 +858,7 @@ fn check_for_bindings_named_same_as_variants(
         ty,
         ..
     } = pat.kind
-        && let ty::Adt(edef, _) = ty.peel_refs().kind()
+        && let ty::Adt(edef, _, _) = ty.peel_refs().kind()
         && edef.is_enum()
         && edef
             .variants()
@@ -1235,7 +1235,7 @@ fn report_non_exhaustive_match<'p, 'tcx>(
 ) -> ErrorGuaranteed {
     let is_empty_match = arms.is_empty();
     let non_empty_enum = match scrut_ty.kind() {
-        ty::Adt(def, _) => def.is_enum() && !def.variants().is_empty(),
+        ty::Adt(def, _, _) => def.is_enum() && !def.variants().is_empty(),
         _ => false,
     };
     // In the case of an empty match, replace the '`_` not covered' diagnostic with something more
@@ -1499,7 +1499,7 @@ fn report_adt_defined_here<'tcx>(
     point_at_non_local_ty: bool,
 ) -> Option<AdtDefinedHere<'tcx>> {
     let ty = ty.peel_refs();
-    let ty::Adt(def, _) = ty.kind() else {
+    let ty::Adt(def, _, _) = ty.kind() else {
         return None;
     };
     let adt_def_span =
@@ -1525,7 +1525,7 @@ fn maybe_point_at_variant<'a, 'p: 'a, 'tcx: 'p>(
     let mut covered = vec![];
     for pattern in patterns {
         if let Constructor::Variant(variant_index) = pattern.ctor() {
-            if let ty::Adt(this_def, _) = pattern.ty().kind()
+            if let ty::Adt(this_def, _, _) = pattern.ty().kind()
                 && this_def.did() != def.did()
             {
                 continue;

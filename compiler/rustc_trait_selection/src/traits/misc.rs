@@ -62,7 +62,7 @@ pub fn type_allowed_to_implement_copy<'tcx>(
         | ty::Ref(_, _, hir::Mutability::Not)
         | ty::Array(..) => return Ok(()),
 
-        &ty::Adt(adt, args) => (adt, args),
+        &ty::Adt(adt, args, _) => (adt, args),
 
         _ => return Err(CopyImplementationError::NotAnAdt),
     };
@@ -125,7 +125,7 @@ pub fn type_allowed_to_implement_const_param_ty<'tcx>(
         // `str` morally acts like a newtype around `[u8]`
         ty::Tuple(inner_tys) => inner_tys.into_iter().collect(),
 
-        ty::Adt(adt, args) if adt.is_enum() || adt.is_struct() => {
+        ty::Adt(adt, args, _) if adt.is_enum() || adt.is_struct() => {
             if !tcx.features().adt_const_params() {
                 for variant in adt.variants() {
                     if variant.is_field_list_non_exhaustive() {

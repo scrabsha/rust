@@ -199,14 +199,14 @@ impl<'a, 'tcx> TypeFolder<TyCtxt<'tcx>> for ClosureEraser<'a, 'tcx> {
                     self.cx().signature_unclosure(closure_sig, hir::Safety::Safe),
                 )
             }
-            ty::Adt(_, args) if !args.iter().any(|a| a.has_infer()) => {
+            ty::Adt(_, args, _) if !args.iter().any(|a| a.has_infer()) => {
                 // We have a type that doesn't have any inference variables, so we replace
                 // the whole thing with `_`. The type system already knows about this type in
                 // its entirety and it is redundant to specify it for the user. The user only
                 // needs to specify the type parameters that we *couldn't* figure out.
                 self.new_infer()
             }
-            ty::Adt(def, args) => {
+            ty::Adt(def, args, _) => {
                 let generics = self.cx().generics_of(def.did());
                 let generics: Vec<bool> = generics
                     .own_params
@@ -637,7 +637,7 @@ impl<'a, 'tcx> TypeErrCtxt<'a, 'tcx> {
                             .instantiate_identity()
                             .skip_binder()
                             .output()
-                        && let ty::Adt(adt, _args) = ret.kind()
+                        && let ty::Adt(adt, _args, _) = ret.kind()
                         && let Some(sym::Option | sym::Result) =
                             self.tcx.get_diagnostic_name(adt.did())
                     {
@@ -848,7 +848,7 @@ impl<'tcx> InferSourceKind<'tcx> {
                     || ty.is_primitive()
                     || matches!(
                         ty.kind(),
-                        ty::Adt(_, args)
+                        ty::Adt(_, args, _)
                         if args.types().count() == 0 && args.consts().count() == 0
                     )
                 {
@@ -939,7 +939,7 @@ impl<'a, 'tcx> FindInferSourceVisitor<'a, 'tcx> {
                     ty::Closure(..) => 1000,
                     ty::FnDef(..) => 150,
                     ty::FnPtr(..) => 30,
-                    ty::Adt(def, args) => {
+                    ty::Adt(def, args, _) => {
                         5 + self
                             .tcx
                             .generics_of(def.did())
@@ -1120,7 +1120,7 @@ impl<'a, 'tcx> FindInferSourceVisitor<'a, 'tcx> {
             // a example.
             if matches!(path.res, Res::Def(DefKind::Struct | DefKind::Enum | DefKind::Union, _)) => {
                 if let Some(ty) = self.opt_node_type(expr.hir_id)
-                    && let ty::Adt(_, args) = ty.kind()
+                    && let ty::Adt(_, args, _) = ty.kind()
                 {
                     return Box::new(self.resolved_path_inferred_arg_iter(path, args));
                 }
@@ -1245,7 +1245,7 @@ impl<'a, 'tcx> FindInferSourceVisitor<'a, 'tcx> {
                         tcx.type_of(parent_def_id).instantiate(tcx, args).skip_norm_wip();
                     match (parent_ty.kind(), &ty.kind) {
                         (
-                            ty::Adt(def, args),
+                            ty::Adt(def, args, _),
                             hir::TyKind::Path(hir::QPath::Resolved(_self_ty, path)),
                         ) => {
                             if tcx.res_generics_def_id(path.res) != Some(def.did()) {

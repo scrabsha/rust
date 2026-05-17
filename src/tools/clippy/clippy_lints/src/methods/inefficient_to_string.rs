@@ -56,7 +56,7 @@ fn specializes_tostring(cx: &LateContext<'_>, ty: Ty<'_>) -> bool {
         return true;
     }
 
-    if let ty::Adt(adt, args) = ty.kind() {
+    if let ty::Adt(adt, args, _) = ty.kind() {
         cx.tcx.is_diagnostic_item(sym::Cow, adt.did()) && args.type_at(1).is_str()
     } else {
         false

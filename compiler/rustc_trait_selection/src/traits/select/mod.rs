@@ -2198,7 +2198,7 @@ impl<'tcx> SelectionContext<'_, 'tcx> {
 
             ty::Pat(ty, _) => ty::Binder::dummy(vec![*ty]),
 
-            ty::Adt(def, args) => {
+            ty::Adt(def, args, _) => {
                 if let Some(crit) = def.sizedness_constraint(self.tcx(), sizedness) {
                     ty::Binder::dummy(vec![crit.instantiate(self.tcx(), args).skip_norm_wip()])
                 } else {
@@ -2412,14 +2412,14 @@ impl<'tcx> SelectionContext<'_, 'tcx> {
                 }),
 
             // For `PhantomData<T>`, we pass `T`.
-            ty::Adt(def, args) if def.is_phantom_data() => {
+            ty::Adt(def, args, _) if def.is_phantom_data() => {
                 ty::Binder::dummy(AutoImplConstituents {
                     types: args.types().collect(),
                     assumptions: vec![],
                 })
             }
 
-            ty::Adt(def, args) => ty::Binder::dummy(AutoImplConstituents {
+            ty::Adt(def, args, _) => ty::Binder::dummy(AutoImplConstituents {
                 types: def.all_fields().map(|f| f.ty(self.tcx(), args).skip_norm_wip()).collect(),
                 assumptions: vec![],
             }),

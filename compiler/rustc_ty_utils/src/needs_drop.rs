@@ -247,7 +247,7 @@ where
                     // Check for a `Drop` impl and whether this is a union or
                     // `ManuallyDrop`. If it's a struct or enum without a `Drop`
                     // impl then check whether the field types need `Drop`.
-                    ty::Adt(adt_def, args) => {
+                    ty::Adt(adt_def, args, _) => {
                         let tys = match (self.adt_components)(adt_def, args) {
                             Err(AlwaysRequiresDrop) => {
                                 return Some(self.always_drop_component(ty));
@@ -338,7 +338,7 @@ fn drop_tys_helper<'tcx>(
     ) -> NeedsDropResult<Vec<Ty<'tcx>>> {
         iter.into_iter().try_fold(Vec::new(), |mut vec, subty| {
             match subty.kind() {
-                ty::Adt(adt_id, args) => {
+                ty::Adt(adt_id, args, _) => {
                     for subty in tcx.adt_drop_tys(adt_id.did())? {
                         vec.push(EarlyBinder::bind(subty).instantiate(tcx, args).skip_norm_wip());
                     }

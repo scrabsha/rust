@@ -140,7 +140,7 @@ impl<'a, 'tcx, F: Fn(Ty<'tcx>) -> bool> MoveDataBuilder<'a, 'tcx, F> {
                             ty::Ref(..) | ty::RawPtr(..) => {
                                 return;
                             }
-                            ty::Adt(adt, _) => {
+                            ty::Adt(adt, _, _) => {
                                 if !adt.is_box() {
                                     bug!("Adt should be a box type when Place is deref");
                                 }
@@ -175,7 +175,7 @@ impl<'a, 'tcx, F: Fn(Ty<'tcx>) -> bool> MoveDataBuilder<'a, 'tcx, F> {
                             }
                         },
                         MoveSubPath::Field(_) => match place_ty.kind() {
-                            ty::Adt(adt, _) => {
+                            ty::Adt(adt, _, _) => {
                                 if adt.has_dtor(tcx) {
                                     return;
                                 }

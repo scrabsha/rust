@@ -1343,7 +1343,7 @@ pub fn is_range_full(cx: &LateContext<'_>, expr: &Expr<'_>, container_path: Opti
     let ty = cx.typeck_results().expr_ty(expr);
     if let Some(Range { start, end, limits, .. }) = Range::hir(cx, expr) {
         let start_is_none_or_min = start.is_none_or(|start| {
-            if let rustc_ty::Adt(_, subst) = ty.kind()
+            if let rustc_ty::Adt(_, subst, _) = ty.kind()
                 && let bnd_ty = subst.type_at(0)
                 && let Some(start_const) = ConstEvalCtxt::new(cx).eval(start)
             {
@@ -1354,7 +1354,7 @@ pub fn is_range_full(cx: &LateContext<'_>, expr: &Expr<'_>, container_path: Opti
         });
         let end_is_none_or_max = end.is_none_or(|end| match limits {
             RangeLimits::Closed => {
-                if let rustc_ty::Adt(_, subst) = ty.kind()
+                if let rustc_ty::Adt(_, subst, _) = ty.kind()
                     && let bnd_ty = subst.type_at(0)
                     && let Some(end_const) = ConstEvalCtxt::new(cx).eval(end)
                 {
@@ -3297,7 +3297,7 @@ pub fn get_path_from_caller_to_method_type<'tcx>(
 
 fn get_path_to_ty<'tcx>(tcx: TyCtxt<'tcx>, from: LocalDefId, ty: Ty<'tcx>, args: GenericArgsRef<'tcx>) -> String {
     match ty.kind() {
-        rustc_ty::Adt(adt, _) => get_path_to_callee(tcx, from, adt.did()),
+        rustc_ty::Adt(adt, _, _) => get_path_to_callee(tcx, from, adt.did()),
         // TODO these types need to be recursively resolved as well
         rustc_ty::Array(..)
         | rustc_ty::Dynamic(..)
@@ -3513,7 +3513,7 @@ pub fn expr_requires_coercion<'tcx>(cx: &LateContext<'tcx>, expr: &Expr<'tcx>) -
         ExprKind::Struct(qpath, _, _) => {
             let res = cx.typeck_results().qpath_res(qpath, expr.hir_id);
             if let Some((_, v_def)) = adt_and_variant_of_res(cx, res) {
-                let rustc_ty::Adt(_, generic_args) = cx.typeck_results().expr_ty_adjusted(expr).kind() else {
+                let rustc_ty::Adt(_, generic_args, _) = cx.typeck_results().expr_ty_adjusted(expr).kind() else {
                     // This should never happen, but when it does, not linting is the better option.
                     return true;
                 };

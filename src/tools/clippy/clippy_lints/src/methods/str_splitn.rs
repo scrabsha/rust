@@ -289,7 +289,7 @@ fn parse_iter_usage<'tcx>(
                 (sym::next, []) if cx.tcx.trait_of_assoc(did) == Some(iter_id) => (IterUsageKind::Nth(0), e.span),
                 (sym::next_tuple, []) => {
                     return if paths::ITERTOOLS_NEXT_TUPLE.matches(cx, did)
-                        && let ty::Adt(adt_def, subs) = cx.typeck_results().expr_ty(e).kind()
+                        && let ty::Adt(adt_def, subs, _) = cx.typeck_results().expr_ty(e).kind()
                         && cx.tcx.is_diagnostic_item(sym::Option, adt_def.did())
                         && let ty::Tuple(subs) = subs.type_at(0).kind()
                         && subs.len() == 2

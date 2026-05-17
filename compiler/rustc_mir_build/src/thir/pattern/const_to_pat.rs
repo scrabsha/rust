@@ -210,7 +210,7 @@ impl<'tcx> ConstToPat<'tcx> {
         let kind = match ty.kind() {
             // Extremely important check for all ADTs!
             // Make sure they are eligible to be used in patterns, and if not, emit an error.
-            ty::Adt(adt_def, _) if !self.type_marked_structural(ty) => {
+            ty::Adt(adt_def, _, _) if !self.type_marked_structural(ty) => {
                 // This ADT cannot be used as a constant in patterns.
                 debug!(?adt_def, ?value.ty, "ADT type in pattern is not `type_marked_structural`");
                 let PartialEqImplStatus {
@@ -314,7 +314,7 @@ impl<'tcx> ConstToPat<'tcx> {
                 };
                 return self.mk_err(tcx.dcx().create_err(err), ty);
             }
-            ty::Adt(adt_def, args) if adt_def.is_enum() => {
+            ty::Adt(adt_def, args, _) if adt_def.is_enum() => {
                 let (&variant_index, fields) = valtree.to_branch().split_first().unwrap();
                 let variant_index = VariantIdx::from_u32(variant_index.to_leaf().to_u32());
                 PatKind::Variant {
@@ -325,7 +325,7 @@ impl<'tcx> ConstToPat<'tcx> {
                         .lower_field_values_to_fieldpats(fields.iter().map(|ct| ct.to_value())),
                 }
             }
-            ty::Adt(def, _) => {
+            ty::Adt(def, _, _) => {
                 assert!(!def.is_union()); // Valtree construction would never succeed for unions.
                 PatKind::Leaf {
                     subpatterns: self.lower_field_values_to_fieldpats(
@@ -459,7 +459,7 @@ fn extend_type_not_partial_eq<'tcx>(
                 // which would require instantiating its binder with placeholders too.
                 ty::UnsafeBinder(..) => return ControlFlow::Break(()),
                 ty::FnPtr(..) => return ControlFlow::Continue(()),
-                ty::Adt(def, _args) => {
+                ty::Adt(def, _args, _) => {
                     let ty_def_id = def.did();
                     let ty_def_span = self.tcx.def_span(ty_def_id);
                     let PartialEqImplStatus {

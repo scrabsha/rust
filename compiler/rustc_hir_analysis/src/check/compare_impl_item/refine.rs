@@ -381,7 +381,7 @@ fn report_mismatched_rpitit_signature<'tcx>(
 fn type_visibility<'tcx>(tcx: TyCtxt<'tcx>, ty: Ty<'tcx>) -> Option<ty::Visibility<DefId>> {
     match *ty.kind() {
         ty::Ref(_, ty, _) => type_visibility(tcx, ty),
-        ty::Adt(def, args) => {
+        ty::Adt(def, args, _) => {
             if def.is_fundamental() {
                 type_visibility(tcx, args.type_at(0))
             } else {

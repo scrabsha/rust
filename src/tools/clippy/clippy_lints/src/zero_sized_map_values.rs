@@ -50,7 +50,7 @@ impl LateLintPass<'_> for ZeroSizedMapValues {
             // We don't care about infer vars
             && let ty = ty_from_hir_ty(cx, hir_ty.as_unambig_ty())
             && matches!(ty.opt_diag_name(cx), Some(sym::HashMap | sym::BTreeMap))
-            && let ty::Adt(_, args) = ty.kind()
+            && let ty::Adt(_, args, _) = ty.kind()
             && let ty = args.type_at(1)
             // Ensure that no type information is missing, to avoid a delayed bug in the compiler if this is not the case.
             // This might happen when computing a reference/pointer metadata on a type for which we

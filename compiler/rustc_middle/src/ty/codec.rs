@@ -488,6 +488,16 @@ impl<'tcx, D: TyDecoder<'tcx>> Decodable<D> for &'tcx ty::List<LocalDefId> {
     }
 }
 
+impl<'tcx, D: TyDecoder<'tcx>> Decodable<D> for &'tcx ty::List<ty::Field> {
+    fn decode(decoder: &mut D) -> Self {
+        let len = decoder.read_usize();
+        decoder.interner().mk_fields_from_iter_(
+            (0..len).map::<ty::Field, _>(|_| Decodable::decode(decoder)),
+        )
+    }
+}
+
+
 impl_decodable_via_ref! {
     &'tcx ty::TypeckResults<'tcx>,
     &'tcx ty::List<Ty<'tcx>>,
@@ -498,6 +508,8 @@ impl_decodable_via_ref! {
     &'tcx ty::List<ty::Pattern<'tcx>>,
     &'tcx ty::ListWithCachedTypeInfo<ty::Clause<'tcx>>,
     &'tcx ty::List<Const<'tcx>>,
+    &'tcx ty::List<FieldIdx>,
+    // &'tcx ty::List<ty::Field>,
 }
 
 #[macro_export]
@@ -566,8 +578,9 @@ impl_arena_copy_decoder! {<'tcx>
     ty::Variance,
     rustc_span::def_id::DefId,
     rustc_span::def_id::LocalDefId,
-    (rustc_middle::middle::exported_symbols::ExportedSymbol<'tcx>, rustc_middle::middle::exported_symbols::SymbolExportInfo),
+(rustc_middle::middle::exported_symbols::ExportedSymbol<'tcx>, rustc_middle::middle::exported_symbols::SymbolExportInfo),
     rustc_middle::middle::deduced_param_attrs::DeducedParamAttrs,
+    ty::Field,
 }
 
 #[macro_export]

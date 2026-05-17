@@ -18,7 +18,7 @@ pub(super) fn check<'tcx>(
     ty: Ty<'tcx>,
     adt_hir_id: HirId,
 ) {
-    if let ty::Adt(adt, args) = ty.kind()
+    if let ty::Adt(adt, args, _) = ty.kind()
         && cx.tcx.visibility(adt.did()).is_public()
         && let Some(eq_trait_def_id) = cx.tcx.get_diagnostic_item(sym::Eq)
         && let Some(def_id) = trait_ref.trait_def_id()

@@ -211,7 +211,7 @@ impl LenOutput {
 
         match *sig.output().kind() {
             ty::Int(_) | ty::Uint(_) => Some(Self::Integral),
-            ty::Adt(adt, subs) => match cx.tcx.get_diagnostic_name(adt.did()) {
+            ty::Adt(adt, subs, _) => match cx.tcx.get_diagnostic_name(adt.did()) {
                 Some(sym::Option) => subs.type_at(0).is_integral().then(|| Self::Option(adt.did())),
                 Some(sym::Result) => subs.type_at(0).is_integral().then(|| Self::Result(adt.did())),
                 _ => None,
@@ -232,8 +232,8 @@ impl LenOutput {
 
         match (self, is_empty_output.kind()) {
             (_, &ty::Bool) => true,
-            (Self::Option(id), &ty::Adt(adt, subs)) if id == adt.did() => subs.type_at(0).is_bool(),
-            (Self::Result(id), &ty::Adt(adt, subs)) if id == adt.did() => subs.type_at(0).is_bool(),
+            (Self::Option(id), &ty::Adt(adt, subs, _)) if id == adt.did() => subs.type_at(0).is_bool(),
+            (Self::Result(id), &ty::Adt(adt, subs, _)) if id == adt.did() => subs.type_at(0).is_bool(),
             _ => false,
         }
     }

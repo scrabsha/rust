@@ -880,7 +880,7 @@ fn call_inline_asm<'tcx>(
 fn asm_clif_type<'tcx>(fx: &FunctionCx<'_, '_, 'tcx>, ty: Ty<'tcx>) -> Option<types::Type> {
     match ty.kind() {
         // Adapted from https://github.com/rust-lang/rust/blob/df44a57fd29fca899ce473f85ed64efd0708dd7c/compiler/rustc_hir_typeck/src/inline_asm.rs#L180-L183
-        ty::Adt(adt, args) if fx.tcx.is_lang_item(adt.did(), LangItem::MaybeUninit) => {
+        ty::Adt(adt, args, _) if fx.tcx.is_lang_item(adt.did(), LangItem::MaybeUninit) => {
             let ty = args.type_at(0);
             fx.clif_type(ty)
         }

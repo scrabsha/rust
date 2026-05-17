@@ -235,7 +235,7 @@ pub(crate) fn unsize_ptr<'a, 'tcx, Bx: BuilderMethods<'a, 'tcx>>(
             assert_eq!(bx.cx().type_is_sized(a), old_info.is_none());
             (src, unsized_info(bx, a, b, old_info))
         }
-        (&ty::Adt(def_a, _), &ty::Adt(def_b, _)) => {
+        (&ty::Adt(def_a, _, _), &ty::Adt(def_b, _, _)) => {
             assert_eq!(def_a, def_b); // implies same number of fields
             let src_layout = bx.cx().layout_of(src_ty);
             let dst_layout = bx.cx().layout_of(dst_ty);
@@ -291,7 +291,7 @@ pub(crate) fn coerce_unsized_into<'a, 'tcx, Bx: BuilderMethods<'a, 'tcx>>(
             OperandValue::Pair(base, info).store(bx, dst);
         }
 
-        (&ty::Adt(def_a, _), &ty::Adt(def_b, _)) => {
+        (&ty::Adt(def_a, _, _), &ty::Adt(def_b, _, _)) => {
             assert_eq!(def_a, def_b); // implies same number of fields
 
             for i in def_a.variant(FIRST_VARIANT).fields.indices() {

@@ -381,7 +381,7 @@ impl<'a, 'tcx> TypeErrCtxt<'a, 'tcx> {
                         }
 
                         let ty_span = match leaf_trait_predicate.self_ty().skip_binder().kind() {
-                            ty::Adt(def, _)
+                            ty::Adt(def, _, _)
                                 if def.did().is_local()
                                     && !self
                                         .can_suggest_derive(&obligation, leaf_trait_predicate) =>
@@ -1147,7 +1147,7 @@ impl<'a, 'tcx> TypeErrCtxt<'a, 'tcx> {
         // incorrect `Result<T, E>` is because of the `T`, we'll get an E0308 on the whole
         // expression, after the `?` has "unwrapped" the `T`.
         let get_e_type = |prev_ty: Ty<'tcx>| -> Option<Ty<'tcx>> {
-            let ty::Adt(def, args) = prev_ty.kind() else {
+            let ty::Adt(def, args, _) = prev_ty.kind() else {
                 return None;
             };
             let Some(arg) = args.get(1) else {
@@ -1176,7 +1176,7 @@ impl<'a, 'tcx> TypeErrCtxt<'a, 'tcx> {
             );
 
             let is_diagnostic_item = |symbol: Symbol, ty: Ty<'tcx>| {
-                let ty::Adt(def, _) = ty.kind() else {
+                let ty::Adt(def, _, _) = ty.kind() else {
                     return false;
                 };
                 self.tcx.is_diagnostic_item(symbol, def.did())
@@ -1314,8 +1314,8 @@ impl<'a, 'tcx> TypeErrCtxt<'a, 'tcx> {
         trait_pred: ty::PolyTraitPredicate<'tcx>,
     ) -> bool {
         match (self_ty.kind(), found_ty) {
-            (ty::Adt(def, _), Some(ty))
-                if let ty::Adt(found, _) = ty.kind()
+            (ty::Adt(def, _, _), Some(ty))
+                if let ty::Adt(found, _, _) = ty.kind()
                     && def.did().is_local()
                     && found.did().is_local() =>
             {
@@ -1324,7 +1324,7 @@ impl<'a, 'tcx> TypeErrCtxt<'a, 'tcx> {
                     format!("`{self_ty}` needs to implement `From<{ty}>`"),
                 );
             }
-            (ty::Adt(def, _), None) if def.did().is_local() => {
+            (ty::Adt(def, _, _), None) if def.did().is_local() => {
                 let trait_path = self.tcx.short_string(
                     trait_pred.skip_binder().trait_ref.print_only_trait_path(),
                     err.long_ty_path(),
@@ -1334,14 +1334,14 @@ impl<'a, 'tcx> TypeErrCtxt<'a, 'tcx> {
                     format!("`{self_ty}` needs to implement `{trait_path}`"),
                 );
             }
-            (ty::Adt(def, _), Some(ty)) if def.did().is_local() => {
+            (ty::Adt(def, _, _), Some(ty)) if def.did().is_local() => {
                 err.span_note(
                     self.tcx.def_span(def.did()),
                     format!("`{self_ty}` needs to implement `From<{ty}>`"),
                 );
             }
             (_, Some(ty))
-                if let ty::Adt(def, _) = ty.kind()
+                if let ty::Adt(def, _, _) = ty.kind()
                     && def.did().is_local() =>
             {
                 err.span_note(
@@ -1389,7 +1389,7 @@ impl<'a, 'tcx> TypeErrCtxt<'a, 'tcx> {
                     "using raw pointers as const generic parameters is forbidden",
                 )
             }
-            ty::Adt(def, _) => {
+            ty::Adt(def, _, _) => {
                 // We should probably see if we're *allowed* to derive `ConstParamTy` on the type...
                 let mut diag = struct_span_code_err!(
                     self.dcx(),
@@ -1875,7 +1875,7 @@ impl<'a, 'tcx> TypeErrCtxt<'a, 'tcx> {
                 ty::Bool => Some(0),
                 ty::Char => Some(1),
                 ty::Str => Some(2),
-                ty::Adt(def, _) if tcx.is_lang_item(def.did(), LangItem::String) => Some(2),
+                ty::Adt(def, _, _) if tcx.is_lang_item(def.did(), LangItem::String) => Some(2),
                 ty::Int(..)
                 | ty::Uint(..)
                 | ty::Float(..)
@@ -1923,7 +1923,7 @@ impl<'a, 'tcx> TypeErrCtxt<'a, 'tcx> {
             Some(CandidateSimilarity::Exact { ignoring_lifetimes })
         } else if cat_a == cat_b {
             match (a.kind(), b.kind()) {
-                (ty::Adt(def_a, _), ty::Adt(def_b, _)) => def_a == def_b,
+                (ty::Adt(def_a, _, _), ty::Adt(def_b, _, _)) => def_a == def_b,
                 (ty::Foreign(def_a), ty::Foreign(def_b)) => def_a == def_b,
                 // Matching on references results in a lot of unhelpful
                 // suggestions, so let's just not do that for now.
@@ -2054,7 +2054,7 @@ impl<'a, 'tcx> TypeErrCtxt<'a, 'tcx> {
                         false
                     }
                     // Avoid mentioning types that are private to another crate
-                    else if let ty::Adt(def, _) = self_ty.peel_refs().kind() {
+                    else if let ty::Adt(def, _, _) = self_ty.peel_refs().kind() {
                         // FIXME(compiler-errors): This could be generalized, both to
                         // be more granular, and probably look past other `#[fundamental]`
                         // types, too.
@@ -2255,7 +2255,7 @@ impl<'a, 'tcx> TypeErrCtxt<'a, 'tcx> {
                         self.suggest_function_pointers_impl(None, &exp_found, err);
                     }
 
-                    if let ty::Adt(def, _) = trait_pred.self_ty().skip_binder().peel_refs().kind()
+                    if let ty::Adt(def, _, _) = trait_pred.self_ty().skip_binder().peel_refs().kind()
                         && let crates = self.tcx.duplicate_crate_names(def.did().krate)
                         && !crates.is_empty()
                     {
@@ -2417,7 +2417,7 @@ impl<'a, 'tcx> TypeErrCtxt<'a, 'tcx> {
                 ));
             }
 
-            if let ty::Adt(def, _) = trait_pred.self_ty().skip_binder().peel_refs().kind()
+            if let ty::Adt(def, _, _) = trait_pred.self_ty().skip_binder().peel_refs().kind()
                 && let crates = self.tcx.duplicate_crate_names(def.did().krate)
                 && !crates.is_empty()
             {
@@ -2604,7 +2604,7 @@ impl<'a, 'tcx> TypeErrCtxt<'a, 'tcx> {
         err: &mut Diag<'_>,
         trait_pred: ty::PolyTraitPredicate<'tcx>,
     ) {
-        let ty::Adt(impl_self_def, _) = trait_pred.self_ty().skip_binder().peel_refs().kind()
+        let ty::Adt(impl_self_def, _, _) = trait_pred.self_ty().skip_binder().peel_refs().kind()
         else {
             return;
         };
@@ -2851,10 +2851,10 @@ impl<'a, 'tcx> TypeErrCtxt<'a, 'tcx> {
             if obligated_types.iter().any(|ot| ot == &self_ty) {
                 return true;
             }
-            if let ty::Adt(def, args) = self_ty.kind()
+            if let ty::Adt(def, args, _) = self_ty.kind()
                 && let [arg] = &args[..]
                 && let ty::GenericArgKind::Type(ty) = arg.kind()
-                && let ty::Adt(inner_def, _) = ty.kind()
+                && let ty::Adt(inner_def, _, _) = ty.kind()
                 && inner_def == def
             {
                 return true;

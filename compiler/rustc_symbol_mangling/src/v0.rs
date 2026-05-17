@@ -538,7 +538,7 @@ impl<'tcx> Printer<'tcx> for V0SymbolMangler<'tcx> {
             }
 
             // Mangle all nominal types as paths.
-            ty::Adt(ty::AdtDef(Interned(&ty::AdtDefData { did: def_id, .. }, _)), args)
+            ty::Adt(ty::AdtDef(Interned(&ty::AdtDefData { did: def_id, .. }, _)), args, _)
             | ty::FnDef(def_id, args)
             | ty::Closure(def_id, args)
             | ty::CoroutineClosure(def_id, args)
@@ -790,7 +790,7 @@ impl<'tcx> Printer<'tcx> for V0SymbolMangler<'tcx> {
                     _ => unreachable!(),
                 }
             }
-            ty::Adt(def, args) => {
+            ty::Adt(def, args, _) => {
                 let contents = cv.destructure_adt_const();
                 let fields = contents.fields.iter().copied();
 

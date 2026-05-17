@@ -276,7 +276,7 @@ impl<'tcx> TyCtxt<'tcx> {
                 return Ty::new_error(self, reported);
             }
             match *ty.kind() {
-                ty::Adt(def, args) => {
+                ty::Adt(def, args, _) => {
                     if !def.is_struct() {
                         break;
                     }
@@ -347,7 +347,7 @@ impl<'tcx> TyCtxt<'tcx> {
         let (mut a, mut b) = (source, target);
         loop {
             match (a.kind(), b.kind()) {
-                (&ty::Adt(a_def, a_args), &ty::Adt(b_def, b_args))
+                (&ty::Adt(a_def, a_args, _), &ty::Adt(b_def, b_args, _))
                     if a_def == b_def && a_def.is_struct() =>
                 {
                     if let Some(f) = a_def.non_enum_variant().tail_opt() {
@@ -496,7 +496,7 @@ impl<'tcx> TyCtxt<'tcx> {
 
         let impl_args =
             match *self.type_of(impl_def_id).instantiate_identity().skip_norm_wip().kind() {
-                ty::Adt(def_, args) if def_ == def => args,
+                ty::Adt(def_, args, _) if def_ == def => args,
                 _ => span_bug!(
                     self.def_span(impl_def_id),
                     "expected ADT for self type of `Drop` impl"

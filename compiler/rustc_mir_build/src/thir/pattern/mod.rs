@@ -420,7 +420,7 @@ impl<'tcx, 'ptcx> PatCtxt<'tcx, 'ptcx> {
 
             hir::PatKind::TupleStruct(ref qpath, pats, ddpos) => {
                 let res = self.typeck_results.qpath_res(qpath, pat.hir_id);
-                let ty::Adt(adt_def, _) = ty.kind() else {
+                let ty::Adt(adt_def, _, _) = ty.kind() else {
                     span_bug!(pat.span, "tuple struct pattern not applied to an ADT {:?}", ty);
                 };
                 let variant_def = adt_def.variant_of_res(res);
@@ -548,7 +548,7 @@ impl<'tcx, 'ptcx> PatCtxt<'tcx, 'ptcx> {
                 let adt_def = self.tcx.adt_def(enum_id);
                 if adt_def.is_enum() {
                     let args = match ty.kind() {
-                        ty::Adt(_, args) | ty::FnDef(_, args) => args,
+                        ty::Adt(_, args, _) | ty::FnDef(_, args) => args,
                         ty::Error(e) => {
                             // Avoid ICE (#50585)
                             return Box::new(Pat {

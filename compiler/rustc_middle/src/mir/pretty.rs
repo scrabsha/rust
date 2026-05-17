@@ -1915,10 +1915,10 @@ fn pretty_print_const_value_tcx<'tcx>(
                         }
                         fmt.write_str(")")?;
                     }
-                    ty::Adt(def, _) if def.variants().is_empty() => {
+                    ty::Adt(def, _, _) if def.variants().is_empty() => {
                         fmt.write_str(&format!("{{unreachable(): {ty}}}"))?;
                     }
-                    ty::Adt(def, args) => {
+                    ty::Adt(def, args, _) => {
                         let variant_idx = contents
                             .variant
                             .expect("destructed mir constant of adt without variant idx");

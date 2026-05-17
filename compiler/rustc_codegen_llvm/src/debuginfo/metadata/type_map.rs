@@ -261,7 +261,7 @@ pub(super) fn build_type_with_children<'ll, 'tcx>(
 
     let mut _adt_stack_pop_guard = None;
     if let UniqueTypeId::Ty(ty, ..) = stub_info.unique_type_id
-        && let ty::Adt(adt_def, args) = ty.kind()
+        && let ty::Adt(adt_def, args, _) = ty.kind()
     {
         let def_id = adt_def.did();
         // If any child type references the original type definition and the child type has a type

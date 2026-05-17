@@ -754,7 +754,7 @@ impl<'tcx> LateContext<'tcx> {
                 trait_ref: Option<ty::TraitRef<'tcx>>,
             ) -> Result<(), PrintError> {
                 if trait_ref.is_none()
-                    && let ty::Adt(def, args) = self_ty.kind()
+                    && let ty::Adt(def, args, _) = self_ty.kind()
                 {
                     return self.print_def_path(def.did(), args);
                 }

@@ -180,7 +180,7 @@ impl EnumSizeOpt {
         alloc_cache: &mut FxHashMap<Ty<'tcx>, AllocId>,
     ) -> Option<(AdtDef<'tcx>, usize, AllocId)> {
         let adt_def = match ty.kind() {
-            ty::Adt(adt_def, _args) if adt_def.is_enum() => adt_def,
+            ty::Adt(adt_def, _args, _) if adt_def.is_enum() => adt_def,
             _ => return None,
         };
         let layout = tcx.layout_of(typing_env.as_query_input(ty)).ok()?;

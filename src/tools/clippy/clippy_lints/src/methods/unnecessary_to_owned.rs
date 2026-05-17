@@ -665,7 +665,7 @@ fn is_to_string_on_string_like<'a>(
 
 fn std_map_key<'tcx>(cx: &LateContext<'tcx>, ty: Ty<'tcx>) -> Option<Ty<'tcx>> {
     match ty.kind() {
-        ty::Adt(adt, args)
+        ty::Adt(adt, args, _)
             if matches!(
                 cx.tcx.get_diagnostic_name(adt.did()),
                 Some(sym::BTreeMap | sym::BTreeSet | sym::HashMap | sym::HashSet)

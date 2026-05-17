@@ -130,7 +130,7 @@ impl<'tcx> LateLintPass<'tcx> for Default {
                 // only when assigning `... = Default::default()`
                 && is_expr_default(cx, expr)
                 && let binding_type = cx.typeck_results().node_type(binding_id)
-                && let ty::Adt(adt, args) = *binding_type.kind()
+                && let ty::Adt(adt, args, _) = *binding_type.kind()
                 && adt.is_struct()
                 && let variant = adt.non_enum_variant()
                 && !variant.field_list_has_applicable_non_exhaustive()
@@ -210,7 +210,7 @@ impl<'tcx> LateLintPass<'tcx> for Default {
                     .join(", ");
 
                 // give correct suggestion if generics are involved (see #6944)
-                let binding_type = if let ty::Adt(adt_def, args) = binding_type.kind()
+                let binding_type = if let ty::Adt(adt_def, args, _) = binding_type.kind()
                     && !args.is_empty()
                 {
                     let adt_def_ty_name = cx.tcx.item_name(adt_def.did());

@@ -123,7 +123,7 @@ impl<'tcx> PlaceTy<'tcx> {
     ) -> Unnormalized<'tcx, Ty<'tcx>> {
         if let Some(variant_index) = variant_idx {
             match *self_ty.kind() {
-                ty::Adt(adt_def, args) if adt_def.is_enum() => {
+                ty::Adt(adt_def, args, _) if adt_def.is_enum() => {
                     adt_def.variant(variant_index).fields[f].ty(tcx, args)
                 }
                 ty::Coroutine(def_id, args) => {
@@ -140,7 +140,7 @@ impl<'tcx> PlaceTy<'tcx> {
             }
         } else {
             match self_ty.kind() {
-                ty::Adt(adt_def, args) if !adt_def.is_enum() => {
+                ty::Adt(adt_def, args, _) if !adt_def.is_enum() => {
                     adt_def.non_enum_variant().fields[f].ty(tcx, args)
                 }
                 ty::Closure(_, args) => Unnormalized::dummy(
@@ -446,7 +446,7 @@ impl<'tcx> Place<'tcx> {
         tcx: TyCtxt<'tcx>,
     ) -> Self {
         let ty = self.ty(local_decls, tcx).ty;
-        let ty::Adt(adt, args) = ty.kind() else { panic!("projecting to field of non-ADT {ty}") };
+        let ty::Adt(adt, args, _) = ty.kind() else { panic!("projecting to field of non-ADT {ty}") };
         let field = &adt.non_enum_variant().fields[idx];
         let field_ty = field.ty(tcx, args).skip_norm_wip();
         self.project_deeper(&[ProjectionElem::Field(idx, field_ty)], tcx)

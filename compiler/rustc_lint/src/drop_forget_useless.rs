@@ -203,7 +203,7 @@ impl<'tcx> LateLintPass<'tcx> for DropForgetUseless {
                     );
                 }
                 sym::mem_drop
-                    if let ty::Adt(adt, _) = arg_ty.kind()
+                    if let ty::Adt(adt, _, _) = arg_ty.kind()
                         && adt.is_manually_drop() =>
                 {
                     cx.emit_span_lint(

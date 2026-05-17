@@ -465,7 +465,7 @@ impl<'tcx, M: Machine<'tcx>> InterpCx<'tcx, M> {
                 // # First compute the dynamic alignment
 
                 // Packed type alignment needs to be capped.
-                if let ty::Adt(def, _) = layout.ty.kind()
+                if let ty::Adt(def, _, _) = layout.ty.kind()
                     && let Some(packed) = def.repr().pack
                 {
                     unsized_align = unsized_align.min(packed);

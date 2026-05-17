@@ -101,7 +101,7 @@ fn uncached_gcc_type<'gcc, 'tcx>(
             if !cx.sess().fewer_names() =>
         {
             let mut name = with_no_trimmed_paths!(layout.ty.to_string());
-            if let (&ty::Adt(def, _), &Variants::Single { index }) =
+            if let (&ty::Adt(def, _, _), &Variants::Single { index }) =
                 (layout.ty.kind(), &layout.variants)
                 && def.is_enum()
                 && !def.variants().is_empty()

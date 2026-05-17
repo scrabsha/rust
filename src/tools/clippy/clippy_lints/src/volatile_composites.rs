@@ -85,7 +85,7 @@ fn is_enum_repr_c<'tcx>(_cx: &LateContext<'tcx>, ty: Ty<'tcx>) -> bool {
 /// `#[repr(transparent)]` structures are also OK if the only non-zero
 /// sized field contains a volatile-safe type.
 fn is_struct_repr_transparent<'tcx>(cx: &LateContext<'tcx>, ty: Ty<'tcx>) -> bool {
-    if let ty::Adt(adt_def, args) = ty.kind()
+    if let ty::Adt(adt_def, args, _) = ty.kind()
         && adt_def.is_struct()
         && adt_def.repr().transparent()
         && let [fieldty] = adt_def
@@ -106,7 +106,7 @@ fn is_struct_repr_transparent<'tcx>(cx: &LateContext<'tcx>, ty: Ty<'tcx>) -> boo
 /// SIMD can be useful to get larger single loads/stores, though this is still
 /// pretty machine-dependent.
 fn is_simd_repr<'tcx>(cx: &LateContext<'tcx>, ty: Ty<'tcx>) -> bool {
-    if let ty::Adt(adt_def, _args) = ty.kind()
+    if let ty::Adt(adt_def, _args, _) = ty.kind()
         && adt_def.is_struct()
         && adt_def.repr().simd()
     {
@@ -155,7 +155,7 @@ impl<'tcx> LateLintPass<'tcx> for VolatileComposites {
                     // Raw pointers
                     ty::RawPtr(innerty, _) => report_volatile_safe(cx, expr, *innerty),
                     // std::ptr::NonNull
-                    ty::Adt(_, args) if self_ty.is_diag_item(cx, sym::NonNull) => {
+                    ty::Adt(_, args, _) if self_ty.is_diag_item(cx, sym::NonNull) => {
                         report_volatile_safe(cx, expr, args.type_at(0));
                     },
                     _ => (),

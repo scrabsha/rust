@@ -234,8 +234,8 @@ impl<'tcx> TransformVisitor<'tcx> {
             }
             // `async gen` continues to return `Poll::Ready(None)`
             CoroutineKind::Desugared(CoroutineDesugaring::AsyncGen, _) => {
-                let ty::Adt(_poll_adt, args) = *self.old_yield_ty.kind() else { bug!() };
-                let ty::Adt(_option_adt, args) = *args.type_at(0).kind() else { bug!() };
+                let ty::Adt(_poll_adt, args, _) = *self.old_yield_ty.kind() else { bug!() };
+                let ty::Adt(_option_adt, args, _) = *args.type_at(0).kind() else { bug!() };
                 let yield_ty = args.type_at(0);
                 Rvalue::Use(
                     Operand::Constant(Box::new(ConstOperand {
@@ -306,8 +306,8 @@ impl<'tcx> TransformVisitor<'tcx> {
             }
             CoroutineKind::Desugared(CoroutineDesugaring::AsyncGen, _) => {
                 if is_return {
-                    let ty::Adt(_poll_adt, args) = *self.old_yield_ty.kind() else { bug!() };
-                    let ty::Adt(_option_adt, args) = *args.type_at(0).kind() else { bug!() };
+                    let ty::Adt(_poll_adt, args, _) = *self.old_yield_ty.kind() else { bug!() };
+                    let ty::Adt(_option_adt, args, _) = *args.type_at(0).kind() else { bug!() };
                     let yield_ty = args.type_at(0);
                     Rvalue::Use(
                         Operand::Constant(Box::new(ConstOperand {
@@ -650,7 +650,7 @@ fn replace_resume_ty_local<'tcx>(
     // with `&mut Context<'_>` in MIR.
     #[cfg(debug_assertions)]
     {
-        if let ty::Adt(resume_ty_adt, _) = local_ty.kind() {
+        if let ty::Adt(resume_ty_adt, _, _) = local_ty.kind() {
             let expected_adt = tcx.adt_def(tcx.require_lang_item(LangItem::ResumeTy, body.span));
             assert_eq!(*resume_ty_adt, expected_adt);
         } else {
@@ -1870,7 +1870,7 @@ fn check_must_not_suspend_ty<'tcx>(
     debug!("Checking must_not_suspend for {}", ty);
 
     match *ty.kind() {
-        ty::Adt(_, args) if ty.is_box() => {
+        ty::Adt(_, args, _) if ty.is_box() => {
             let boxed_ty = args.type_at(0);
             let allocator_ty = args.type_at(1);
             check_must_not_suspend_ty(
@@ -1890,12 +1890,12 @@ fn check_must_not_suspend_ty<'tcx>(
         // `feature(sized_hierarchy)` is not fully implemented, but in practice are
         // non-`const Sized` and so do not have a known size at compilation time. Layout computation
         // for a coroutine containing scalable vectors would be incorrect.
-        ty::Adt(def, _) if def.repr().scalable() => {
+        ty::Adt(def, _, _) if def.repr().scalable() => {
             tcx.dcx()
                 .span_err(data.source_span, "scalable vectors cannot be held over await points");
             true
         }
-        ty::Adt(def, _) => check_must_not_suspend_def(tcx, def.did(), hir_id, data),
+        ty::Adt(def, _, _) => check_must_not_suspend_def(tcx, def.did(), hir_id, data),
         // FIXME: support adding the attribute to TAITs
         ty::Alias(ty::AliasTy { kind: ty::Opaque { def_id: def }, .. }) => {
             let mut has_emitted = false;

@@ -65,7 +65,9 @@ pub fn can_partially_move_ty<'tcx>(cx: &LateContext<'tcx>, ty: Ty<'tcx>) -> bool
     }
     match ty.kind() {
         ty::Param(_) => false,
-        ty::Adt(def, subs) => def.all_fields().any(|f| !is_copy(cx, f.ty(cx.tcx, subs).skip_norm_wip())),
+        ty::Adt(def, subs, _) => def
+            .all_fields()
+            .any(|f| !is_copy(cx, f.ty(cx.tcx, subs).skip_norm_wip())),
         _ => true,
     }
 }
@@ -205,7 +207,7 @@ pub fn has_iter_method(cx: &LateContext<'_>, probably_ref_ty: Ty<'_>) -> Option<
     let def_id = match ty_to_check.kind() {
         ty::Array(..) => return Some(sym::array),
         ty::Slice(..) => return Some(sym::slice),
-        ty::Adt(adt, _) => adt.did(),
+        ty::Adt(adt, _, _) => adt.did(),
         _ => return None,
     };
 
@@ -318,7 +320,7 @@ pub fn has_drop<'tcx>(cx: &LateContext<'tcx>, ty: Ty<'tcx>) -> bool {
 // will be used instead. See <https://github.com/rust-lang/rust/pull/148214>.
 pub fn is_must_use_ty<'tcx>(cx: &LateContext<'tcx>, ty: Ty<'tcx>) -> bool {
     match ty.kind() {
-        ty::Adt(adt, args) => match cx.tcx.get_diagnostic_name(adt.did()) {
+        ty::Adt(adt, args, _) => match cx.tcx.get_diagnostic_name(adt.did()) {
             Some(sym::Result) if args.type_at(1).is_privately_uninhabited(cx.tcx, cx.typing_env()) => {
                 is_must_use_ty(cx, args.type_at(0))
             },
@@ -407,7 +409,7 @@ pub fn needs_ordered_drop<'tcx>(cx: &LateContext<'tcx>, ty: Ty<'tcx>) -> bool {
             )
         {
             // Check all of the generic arguments.
-            if let ty::Adt(_, subs) = ty.kind() {
+            if let ty::Adt(_, subs, _) = ty.kind() {
                 subs.types().any(|ty| needs_ordered_drop_inner(cx, ty, seen))
             } else {
                 true
@@ -423,7 +425,7 @@ pub fn needs_ordered_drop<'tcx>(cx: &LateContext<'tcx>, ty: Ty<'tcx>) -> bool {
             match ty.kind() {
                 ty::Tuple(fields) => fields.iter().any(|ty| needs_ordered_drop_inner(cx, ty, seen)),
                 ty::Array(ty, _) => needs_ordered_drop_inner(cx, *ty, seen),
-                ty::Adt(adt, subs) => adt
+                ty::Adt(adt, subs, _) => adt
                     .all_fields()
                     .map(|f| f.ty(cx.tcx, subs).skip_norm_wip())
                     .any(|ty| needs_ordered_drop_inner(cx, ty, seen)),
@@ -484,7 +486,7 @@ pub fn peel_n_ty_refs(mut ty: Ty<'_>, n: usize) -> (Ty<'_>, Option<Mutability>) 
 /// - `Result<u32, String>` and `Result<usize, String>`
 pub fn same_type_modulo_regions<'tcx>(a: Ty<'tcx>, b: Ty<'tcx>) -> bool {
     match (&a.kind(), &b.kind()) {
-        (&ty::Adt(did_a, args_a), &ty::Adt(did_b, args_b)) => {
+        (&ty::Adt(did_a, args_a, _), &ty::Adt(did_b, args_b, _)) => {
             if did_a != did_b {
                 return false;
             }
@@ -518,11 +520,11 @@ fn is_uninit_value_valid_for_ty_fallback<'tcx>(cx: &LateContext<'tcx>, ty: Ty<'t
         ty::Tuple(types) => types.iter().all(|ty| is_uninit_value_valid_for_ty(cx, ty)),
         // Unions are always fine right now.
         // This includes MaybeUninit, the main way people use uninitialized memory.
-        ty::Adt(adt, _) if adt.is_union() => true,
+        ty::Adt(adt, _, _) if adt.is_union() => true,
         // Types (e.g. `UnsafeCell<MaybeUninit<T>>`) that recursively contain only types that can be uninit
         // can themselves be uninit too.
         // This purposefully ignores enums as they may have a discriminant that can't be uninit.
-        ty::Adt(adt, args) if adt.is_struct() => adt
+        ty::Adt(adt, args, _) if adt.is_struct() => adt
             .all_fields()
             .all(|field| is_uninit_value_valid_for_ty(cx, field.ty(cx.tcx, args).skip_norm_wip())),
         // For the rest, conservatively assume that they cannot be uninit.
@@ -808,7 +810,7 @@ pub fn get_discriminant_value(tcx: TyCtxt<'_>, adt: AdtDef<'_>, i: VariantIdx) -
 /// Check if the given type is either `core::ffi::c_void`, `std::os::raw::c_void`, or one of the
 /// platform specific `libc::<platform>::c_void` types in libc.
 pub fn is_c_void(cx: &LateContext<'_>, ty: Ty<'_>) -> bool {
-    if let ty::Adt(adt, _) = ty.kind()
+    if let ty::Adt(adt, _, _) = ty.kind()
         && let &[krate, .., name] = &*cx.get_def_path(adt.did())
         && let sym::libc | sym::core | sym::std = krate
         && name == sym::c_void
@@ -926,7 +928,7 @@ pub fn approx_ty_size<'tcx>(cx: &LateContext<'tcx>, ty: Ty<'tcx>) -> u64 {
         (Ok(size), _) => size,
         (Err(_), ty::Tuple(list)) => list.iter().map(|t| approx_ty_size(cx, t)).sum(),
         (Err(_), ty::Array(t, n)) => n.try_to_target_usize(cx.tcx).unwrap_or_default() * approx_ty_size(cx, *t),
-        (Err(_), ty::Adt(def, subst)) if def.is_struct() => def
+        (Err(_), ty::Adt(def, subst, _)) if def.is_struct() => def
             .variants()
             .iter()
             .map(|v| {
@@ -936,7 +938,7 @@ pub fn approx_ty_size<'tcx>(cx: &LateContext<'tcx>, ty: Ty<'tcx>) -> u64 {
                     .sum::<u64>()
             })
             .sum(),
-        (Err(_), ty::Adt(def, subst)) if def.is_enum() => def
+        (Err(_), ty::Adt(def, subst, _)) if def.is_enum() => def
             .variants()
             .iter()
             .map(|v| {
@@ -947,7 +949,7 @@ pub fn approx_ty_size<'tcx>(cx: &LateContext<'tcx>, ty: Ty<'tcx>) -> u64 {
             })
             .max()
             .unwrap_or_default(),
-        (Err(_), ty::Adt(def, subst)) if def.is_union() => def
+        (Err(_), ty::Adt(def, subst, _)) if def.is_union() => def
             .variants()
             .iter()
             .map(|v| {
@@ -1168,8 +1170,8 @@ impl<'tcx> InteriorMut<'tcx> {
             ty::Tuple(fields) => fields
                 .iter()
                 .find_map(|ty| self.interior_mut_ty_chain_inner(cx, ty, depth)),
-            ty::Adt(def, _) if def.is_unsafe_cell() => Some(ty::List::empty()),
-            ty::Adt(def, args) => {
+            ty::Adt(def, _, _) if def.is_unsafe_cell() => Some(ty::List::empty()),
+            ty::Adt(def, args, _) => {
                 let is_std_collection = matches!(
                     cx.tcx.get_diagnostic_name(def.did()),
                     Some(
@@ -1307,7 +1309,7 @@ pub fn get_adt_inherent_method<'a>(cx: &'a LateContext<'_>, ty: Ty<'_>, method_n
 /// Gets the type of a field by name.
 pub fn get_field_by_name<'tcx>(tcx: TyCtxt<'tcx>, ty: Ty<'tcx>, name: Symbol) -> Option<Ty<'tcx>> {
     match *ty.kind() {
-        ty::Adt(def, args) if def.is_union() || def.is_struct() => def
+        ty::Adt(def, args, _) if def.is_union() || def.is_struct() => def
             .non_enum_variant()
             .fields
             .iter()
@@ -1328,7 +1330,7 @@ pub fn get_field_def_id_by_name(ty: Ty<'_>, name: Symbol) -> Option<DefId> {
 /// Check if `ty` is an `Option` and return its argument type if it is.
 pub fn option_arg_ty<'tcx>(cx: &LateContext<'tcx>, ty: Ty<'tcx>) -> Option<Ty<'tcx>> {
     match *ty.kind() {
-        ty::Adt(adt, args)
+        ty::Adt(adt, args, _)
             if let [arg] = &**args
                 && let Some(arg) = arg.as_type()
                 && adt.is_diag_item(cx, sym::Option) =>
@@ -1360,13 +1362,13 @@ pub fn has_non_owning_mutable_access<'tcx>(cx: &LateContext<'tcx>, iter_ty: Ty<'
         ty: Ty<'tcx>,
     ) -> bool {
         match ty.kind() {
-            ty::Adt(adt_def, args) if adt_def.is_phantom_data() => {
+            ty::Adt(adt_def, args, _) if adt_def.is_phantom_data() => {
                 phantoms.insert(ty)
                     && args
                         .types()
                         .any(|arg_ty| has_non_owning_mutable_access_inner(cx, phantoms, arg_ty))
             },
-            ty::Adt(adt_def, args) => adt_def.all_fields().any(|field| {
+            ty::Adt(adt_def, args, _) => adt_def.all_fields().any(|field| {
                 has_non_owning_mutable_access_inner(cx, phantoms, normalize_ty(cx, field.ty(cx.tcx, args)))
             }),
             ty::Array(elem_ty, _) | ty::Slice(elem_ty) => has_non_owning_mutable_access_inner(cx, phantoms, *elem_ty),
@@ -1395,7 +1397,7 @@ pub fn is_slice_like<'tcx>(cx: &LateContext<'tcx>, ty: Ty<'tcx>) -> bool {
 
 pub fn get_field_idx_by_name(ty: Ty<'_>, name: Symbol) -> Option<usize> {
     match *ty.kind() {
-        ty::Adt(def, _) if def.is_union() || def.is_struct() => {
+        ty::Adt(def, _, _) if def.is_union() || def.is_struct() => {
             def.non_enum_variant().fields.iter().position(|f| f.name == name)
         },
         ty::Tuple(_) => name.as_str().parse::<usize>().ok(),

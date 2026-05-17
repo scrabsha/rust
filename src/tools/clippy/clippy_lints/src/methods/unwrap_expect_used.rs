@@ -53,7 +53,7 @@ pub(super) fn check(
     let (kind, none_value, none_prefix) = match ty.opt_diag_name(cx) {
         Some(sym::Option) if !is_err => ("an `Option`", "None", ""),
         Some(sym::Result)
-            if let ty::Adt(_, substs) = ty.kind()
+            if let ty::Adt(_, substs, _) = ty.kind()
                 && let Some(t_or_e_ty) = substs[usize::from(!is_err)].as_type() =>
         {
             if is_never_like(t_or_e_ty) {
@@ -67,7 +67,7 @@ pub(super) fn check(
 
     let method_suffix = if is_err { "_err" } else { "" };
 
-    if let ty::Adt(adt, _) = ty.kind()
+    if let ty::Adt(adt, _, _) = ty.kind()
         && unwrap_allowed_ids.contains(&adt.did())
     {
         return;
@@ -75,7 +75,7 @@ pub(super) fn check(
 
     for &def_id in unwrap_allowed_aliases {
         let alias_ty = cx.tcx.type_of(def_id).instantiate_identity().skip_norm_wip();
-        if let (ty::Adt(adt, substs), ty::Adt(alias_adt, alias_substs)) = (ty.kind(), alias_ty.kind())
+        if let (ty::Adt(adt, substs, _), ty::Adt(alias_adt, alias_substs, _)) = (ty.kind(), alias_ty.kind())
             && adt.did() == alias_adt.did()
         {
             let mut all_match = true;
@@ -84,7 +84,7 @@ pub(super) fn check(
                     if matches!(alias_arg_ty.kind(), ty::Param(_)) {
                         continue;
                     }
-                    if let (ty::Adt(arg_adt, _), ty::Adt(alias_arg_adt, _)) =
+                    if let (ty::Adt(arg_adt, _, _), ty::Adt(alias_arg_adt, _, _)) =
                         (arg_ty.peel_refs().kind(), alias_arg_ty.peel_refs().kind())
                     {
                         if arg_adt.did() != alias_arg_adt.did() {

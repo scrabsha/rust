@@ -631,7 +631,7 @@ impl<'tcx> MirBorrowckCtxt<'_, '_, 'tcx> {
                 }
 
                 // Match up something like `Foo<'1>`
-                (ty::Adt(_adt_def, args), hir::TyKind::Path(hir::QPath::Resolved(None, path))) => {
+                (ty::Adt(_adt_def, args, _), hir::TyKind::Path(hir::QPath::Resolved(None, path))) => {
                     match path.res {
                         // Type parameters of the type alias have no reason to
                         // be the same as those of the ADT.

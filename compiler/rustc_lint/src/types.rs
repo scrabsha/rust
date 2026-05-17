@@ -312,7 +312,7 @@ fn lint_wide_pointer<'tcx>(
         let mut modifiers = String::new();
         ty = match ty.kind() {
             ty::RawPtr(ty, _) => *ty,
-            ty::Adt(def, args) if cx.tcx.is_diagnostic_item(sym::NonNull, def.did()) => {
+            ty::Adt(def, args, _) if cx.tcx.is_diagnostic_item(sym::NonNull, def.did()) => {
                 modifiers.push_str(".as_ptr()");
                 args.type_at(0)
             }
@@ -451,8 +451,8 @@ fn lint_fn_pointer<'tcx>(
 
     if l_ty.is_fn() && r_ty.is_fn() {
         // both operands are function pointers, fallthrough
-    } else if let ty::Adt(l_def, l_args) = l_ty.kind()
-        && let ty::Adt(r_def, r_args) = r_ty.kind()
+    } else if let ty::Adt(l_def, l_args, _) = l_ty.kind()
+        && let ty::Adt(r_def, r_args, _) = r_ty.kind()
         && cx.tcx.is_lang_item(l_def.did(), LangItem::Option)
         && cx.tcx.is_lang_item(r_def.did(), LangItem::Option)
         && let Some(l_some_arg) = l_args.get(0)
@@ -716,8 +716,8 @@ fn ty_is_known_nonnull<'tcx>(
     match ty.kind() {
         ty::FnPtr(..) => true,
         ty::Ref(..) => true,
-        ty::Adt(def, _) if def.is_box() => true,
-        ty::Adt(def, args) if def.repr().transparent() && !def.is_union() => {
+        ty::Adt(def, _, _) if def.is_box() => true,
+        ty::Adt(def, args, _) if def.repr().transparent() && !def.is_union() => {
             let marked_non_null = nonnull_optimization_guaranteed(tcx, *def);
 
             if marked_non_null {
@@ -775,7 +775,7 @@ fn get_nullable_type<'tcx>(
     let ty = tcx.try_normalize_erasing_regions(typing_env, Unnormalized::new_wip(ty)).unwrap_or(ty);
 
     Some(match *ty.kind() {
-        ty::Adt(field_def, field_args) => {
+        ty::Adt(field_def, field_args, _) => {
             let inner_field_ty = {
                 let mut first_non_zst_ty =
                     field_def.variants().iter().filter_map(|v| transparent_newtype_field(tcx, v));
@@ -826,7 +826,7 @@ fn is_niche_optimization_candidate<'tcx>(
     }
 
     match ty.kind() {
-        ty::Adt(ty_def, _) => {
+        ty::Adt(ty_def, _, _) => {
             let non_exhaustive = ty_def.is_variant_list_non_exhaustive();
             let empty = (ty_def.is_struct() && ty_def.non_enum_variant().fields.is_empty())
                 || (ty_def.is_enum() && ty_def.variants().is_empty());
@@ -849,7 +849,7 @@ pub(crate) fn repr_nullable_ptr<'tcx>(
 ) -> Option<Ty<'tcx>> {
     debug!("is_repr_nullable_ptr(tcx, ty = {:?})", ty);
     match ty.kind() {
-        ty::Adt(ty_def, args) => {
+        ty::Adt(ty_def, args, _) => {
             let field_ty = match &ty_def.variants().raw[..] {
                 [var_one, var_two] => match (&var_one.fields.raw[..], &var_two.fields.raw[..]) {
                     ([], [field]) | ([field], []) => field.ty(tcx, args).skip_norm_wip(),

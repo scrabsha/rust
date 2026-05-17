@@ -130,7 +130,7 @@ impl<'tcx> LateLintPass<'tcx> for NoopMethodCall {
 
         if receiver_ty == expr_ty {
             let suggest_derive = match orig_ty.kind() {
-                ty::Adt(def, _) => Some(cx.tcx.def_span(def.did()).shrink_to_lo()),
+                ty::Adt(def, _, _) => Some(cx.tcx.def_span(def.did()).shrink_to_lo()),
                 _ => None,
             };
             cx.emit_span_lint(

@@ -309,7 +309,7 @@ impl<'a> PatState<'a> {
         single_pat: Option<&'tcx Pat<'tcx>>,
         pats: impl IntoIterator<Item = &'tcx Pat<'tcx>>,
     ) -> bool {
-        let ty::Adt(adt, _) = *cx.typeck.pat_ty(pat).kind() else {
+        let ty::Adt(adt, _, _) = *cx.typeck.pat_ty(pat).kind() else {
             // Should never happen
             *self = Self::Wild;
             return true;
@@ -358,7 +358,7 @@ impl<'a> PatState<'a> {
                 kind: PatExprKind::Path(_),
                 ..
             }) if match *cx.typeck.pat_ty(pat).peel_refs().kind() {
-                ty::Adt(adt, _) => adt.is_enum() || (adt.is_struct() && !adt.non_enum_variant().fields.is_empty()),
+                ty::Adt(adt, _, _) => adt.is_enum() || (adt.is_struct() && !adt.non_enum_variant().fields.is_empty()),
                 ty::Tuple(tys) => !tys.is_empty(),
                 ty::Array(_, len) => len.try_to_target_usize(cx.tcx) != Some(1),
                 ty::Slice(..) => true,

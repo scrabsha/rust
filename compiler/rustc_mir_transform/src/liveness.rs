@@ -176,7 +176,7 @@ fn maybe_suggest_unit_pattern_typo<'tcx>(
     span: Span,
     ty: Ty<'tcx>,
 ) -> Option<errors::PatternTypo> {
-    if let ty::Adt(adt_def, _) = ty.peel_refs().kind() {
+    if let ty::Adt(adt_def, _, _) = ty.peel_refs().kind() {
         let variant_names: Vec<_> = adt_def
             .variants()
             .iter()

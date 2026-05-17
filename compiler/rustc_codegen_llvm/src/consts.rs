@@ -171,7 +171,7 @@ fn check_and_apply_linkage<'ll, 'tcx>(
             // we extract the function signature and declare it as an extern_weak function
             // instead of an extern_weak i8.
             let instance = Instance::mono(cx.tcx, def_id);
-            if let ty::Adt(struct_def, args) = instance.ty(cx.tcx, cx.typing_env()).kind()
+            if let ty::Adt(struct_def, args, _) = instance.ty(cx.tcx, cx.typing_env()).kind()
                 && cx.tcx.is_lang_item(struct_def.did(), LangItem::Option)
                 && let ty::FnPtr(sig, header) = args.type_at(0).kind()
             {

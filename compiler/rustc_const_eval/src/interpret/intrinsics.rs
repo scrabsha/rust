@@ -252,7 +252,7 @@ impl<'tcx, M: Machine<'tcx>> InterpCx<'tcx, M> {
                 };
                 let val = match ty.kind() {
                     // Correctly handles non-monomorphic calls, so there is no need for ensure_monomorphic_enough.
-                    ty::Adt(adt, _) => {
+                    ty::Adt(adt, _, _) => {
                         ConstValue::from_target_usize(adt.variants().len() as u64, &tcx)
                     }
                     ty::Alias(..) | ty::Param(_) | ty::Placeholder(_) | ty::Infer(_) => {
@@ -1381,7 +1381,7 @@ impl<'tcx, M: Machine<'tcx>> InterpCx<'tcx, M> {
         let va_list_inner = self.project_field(va_list, FieldIdx::ZERO)?;
 
         // Find the first pointer field in this struct. The exact index is target-specific.
-        let ty::Adt(adt, substs) = va_list_inner.layout().ty.kind() else {
+        let ty::Adt(adt, substs, _) = va_list_inner.layout().ty.kind() else {
             bug!("invalid VaListImpl layout");
         };
 

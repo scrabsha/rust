@@ -51,7 +51,7 @@ impl<'tcx> Printer<'tcx> for TypeNamePrinter<'tcx> {
             }
 
             // Types with identity (print the module path).
-            ty::Adt(ty::AdtDef(Interned(&ty::AdtDefData { did: def_id, .. }, _)), args)
+            ty::Adt(ty::AdtDef(Interned(&ty::AdtDefData { did: def_id, .. }, _)), args, _)
             | ty::FnDef(def_id, args)
             | ty::Alias(ty::AliasTy {
                 kind: ty::Projection { def_id } | ty::Opaque { def_id },

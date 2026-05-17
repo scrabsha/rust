@@ -93,9 +93,9 @@ where
         ty::UnsafeBinder(bound_ty) => Ok(bound_ty.map_bound(|ty| vec![ty])),
 
         // For `PhantomData<T>`, we pass `T`.
-        ty::Adt(def, args) if def.is_phantom_data() => Ok(ty::Binder::dummy(vec![args.type_at(0)])),
+        ty::Adt(def, args, _) if def.is_phantom_data() => Ok(ty::Binder::dummy(vec![args.type_at(0)])),
 
-        ty::Adt(def, args) => Ok(ty::Binder::dummy(
+        ty::Adt(def, args , _) => Ok(ty::Binder::dummy(
             def.all_field_tys(cx)
                 .iter_instantiated(cx, args)
                 .map(Unnormalized::skip_norm_wip)
@@ -182,7 +182,7 @@ where
         //   In this case, the builtin impl will have no nested subgoals. This is a
         //   "best effort" optimization and `{meta,pointee,}sized_constraint` may return `Some`,
         //   even if the ADT is {meta,pointee,}sized for all possible args.
-        ty::Adt(def, args) => {
+        ty::Adt(def, args, _) => {
             if let Some(crit) = def.sizedness_constraint(ecx.cx(), sizedness) {
                 Ok(ty::Binder::dummy(vec![crit.instantiate(ecx.cx(), args).skip_norm_wip()]))
             } else {
@@ -226,7 +226,7 @@ where
         | ty::Slice(_)
         | ty::Foreign(..)
         | ty::Ref(_, _, Mutability::Mut)
-        | ty::Adt(_, _)
+        | ty::Adt(_, _, _)
         | ty::Alias(_)
         | ty::Param(_)
         | ty::Placeholder(..) => Err(NoSolution),
@@ -387,7 +387,7 @@ pub(in crate::solve) fn extract_tupled_inputs_and_output_from_callable<I: Intern
         | ty::Int(_)
         | ty::Uint(_)
         | ty::Float(_)
-        | ty::Adt(_, _)
+        | ty::Adt(_, _, _)
         | ty::Foreign(_)
         | ty::Str
         | ty::Array(_, _)
@@ -561,7 +561,7 @@ pub(in crate::solve) fn extract_tupled_inputs_and_output_from_async_callable<I: 
         | ty::Int(_)
         | ty::Uint(_)
         | ty::Float(_)
-        | ty::Adt(_, _)
+        | ty::Adt(_, _, _)
         | ty::Foreign(_)
         | ty::Str
         | ty::Array(_, _)
@@ -726,7 +726,7 @@ pub(in crate::solve) fn extract_fn_def_from_const_callable<I: Interner>(
         | ty::Int(_)
         | ty::Uint(_)
         | ty::Float(_)
-        | ty::Adt(_, _)
+        | ty::Adt(_, _, _)
         | ty::Foreign(_)
         | ty::Str
         | ty::Array(_, _)
@@ -763,11 +763,11 @@ pub(in crate::solve) fn const_conditions_for_destruct<I: Interner>(
 
     match self_ty.kind() {
         // `ManuallyDrop` is trivially `[const] Destruct` as we do not run any drop glue on it.
-        ty::Adt(adt_def, _) if adt_def.is_manually_drop() => Ok(vec![]),
+        ty::Adt(adt_def, _, _) if adt_def.is_manually_drop() => Ok(vec![]),
 
         // An ADT is `[const] Destruct` only if all of the fields are,
         // *and* if there is a `Drop` impl, that `Drop` impl is also `[const]`.
-        ty::Adt(adt_def, args) => {
+        ty::Adt(adt_def, args, _) => {
             let mut const_conditions: Vec<_> = adt_def
                 .all_field_tys(cx)
                 .iter_instantiated(cx, args)

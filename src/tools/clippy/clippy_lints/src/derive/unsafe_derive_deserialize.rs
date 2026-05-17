@@ -27,7 +27,7 @@ pub(super) fn check<'tcx>(
 
     if let Some(trait_def_id) = trait_ref.trait_def_id()
         && paths::SERDE_DESERIALIZE.matches(cx, trait_def_id)
-        && let ty::Adt(def, _) = ty.kind()
+        && let ty::Adt(def, _, _) = ty.kind()
         && !is_lint_allowed(cx, UNSAFE_DERIVE_DESERIALIZE, adt_hir_id)
         && cx
             .tcx

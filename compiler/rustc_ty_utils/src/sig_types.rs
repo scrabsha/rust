@@ -79,7 +79,7 @@ pub fn walk_types<'tcx, V: SpannedTypeVisitor<'tcx>>(
             let span = tcx.def_ident_span(item).unwrap();
             let ty = tcx.type_of(item).instantiate_identity().skip_norm_wip();
             try_visit!(visitor.visit(span, ty));
-            let ty::Adt(def, args) = ty.kind() else {
+            let ty::Adt(def, args, _) = ty.kind() else {
                 span_bug!(span, "invalid type for {kind:?}: {:#?}", ty.kind())
             };
             for field in def.all_fields() {

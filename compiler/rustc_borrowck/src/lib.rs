@@ -1910,7 +1910,7 @@ impl<'a, 'tcx> MirBorrowckCtxt<'a, '_, 'tcx> {
                         ));
                         return;
                     }
-                    ty::Adt(adt, _) => {
+                    ty::Adt(adt, _, _) => {
                         if !adt.is_box() {
                             bug!("Adt should be a box type when Place is deref");
                         }
@@ -1945,7 +1945,8 @@ impl<'a, 'tcx> MirBorrowckCtxt<'a, '_, 'tcx> {
                     }
                 },
                 ProjectionElem::Field(_, _) => match place_ty.ty.kind() {
-                    ty::Adt(adt, _) => {
+                    ty::Adt(adt, _, _) => {
+                        // FIXME(scrabsha): error if the field is not in the viewable set.
                         if adt.has_dtor(tcx) {
                             self.move_errors.push(MoveError::new(
                                 place,
@@ -2277,7 +2278,7 @@ impl<'a, 'tcx> MirBorrowckCtxt<'a, '_, 'tcx> {
                     let tcx = self.infcx.tcx;
                     let base_ty = place_base.ty(self.body(), tcx).ty;
                     match base_ty.kind() {
-                        ty::Adt(def, _) if def.has_dtor(tcx) => {
+                        ty::Adt(def, _, _) if def.has_dtor(tcx) => {
                             self.check_if_path_or_subpath_is_moved(
                                 location,
                                 InitializationRequiringAction::Assignment,

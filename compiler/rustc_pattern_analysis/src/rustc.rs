@@ -190,7 +190,7 @@ impl<'p, 'tcx: 'p> RustcPatCtxt<'p, 'tcx> {
         ty: RevealedTy<'tcx>,
         variant: &'tcx VariantDef,
     ) -> impl Iterator<Item = (&'tcx FieldDef, RevealedTy<'tcx>)> {
-        let ty::Adt(_, args) = ty.kind() else { bug!() };
+        let ty::Adt(_, args, _) = ty.kind() else { bug!() };
         variant.fields.iter().map(move |field| {
             let ty = field.ty(self.tcx, args);
             // `field.ty()` doesn't normalize after instantiating.
@@ -245,7 +245,7 @@ impl<'p, 'tcx: 'p> RustcPatCtxt<'p, 'tcx> {
         let slice = match ctor {
             Struct | Variant(_) | UnionField => match ty.kind() {
                 ty::Tuple(fs) => reveal_and_alloc(cx, fs.iter()),
-                ty::Adt(adt, _) => {
+                ty::Adt(adt, _, _) => {
                     let variant = &adt.variant(RustcPatCtxt::variant_index_for_adt(&ctor, *adt));
                     let tys = cx.variant_sub_tys(ty, variant).map(|(field, ty)| {
                         let is_visible =
@@ -368,7 +368,7 @@ impl<'p, 'tcx: 'p> RustcPatCtxt<'p, 'tcx> {
                     subtype_is_empty: cx.is_uninhabited(*sub_ty),
                 }
             }
-            ty::Adt(def, args) if def.is_enum() => {
+            ty::Adt(def, args, _) if def.is_enum() => {
                 let is_declared_nonexhaustive = cx.is_foreign_non_exhaustive_enum(ty);
                 if def.variants().is_empty() && !is_declared_nonexhaustive {
                     ConstructorSet::NoConstructors
@@ -406,7 +406,7 @@ impl<'p, 'tcx: 'p> RustcPatCtxt<'p, 'tcx> {
                     ConstructorSet::Variants { variants, non_exhaustive: is_declared_nonexhaustive }
                 }
             }
-            ty::Adt(def, _) if def.is_union() => ConstructorSet::Union,
+            ty::Adt(def, _, _) if def.is_union() => ConstructorSet::Union,
             ty::Adt(..) | ty::Tuple(..) => {
                 ConstructorSet::Struct { empty: cx.is_uninhabited(ty.inner()) }
             }
@@ -510,7 +510,7 @@ impl<'p, 'tcx: 'p> RustcPatCtxt<'p, 'tcx> {
                             .map(|ipat| self.lower_pat(&ipat.pattern).at_index(ipat.field.index()))
                             .collect();
                     }
-                    ty::Adt(adt, _) => {
+                    ty::Adt(adt, _, _) => {
                         ctor = match pat.kind {
                             PatKind::Leaf { .. } if adt.is_union() => UnionField,
                             PatKind::Leaf { .. } => Struct,
@@ -789,7 +789,7 @@ impl<'p, 'tcx: 'p> RustcPatCtxt<'p, 'tcx> {
             IntRange(range) => return self.print_pat_range(range, *pat.ty()),
             Struct | Variant(_) | UnionField => {
                 let enum_info = match *pat.ty().kind() {
-                    ty::Adt(adt_def, _) if adt_def.is_enum() => EnumInfo::Enum {
+                    ty::Adt(adt_def, _, _) if adt_def.is_enum() => EnumInfo::Enum {
                         adt_def,
                         variant_index: RustcPatCtxt::variant_index_for_adt(pat.ctor(), adt_def),
                     },
@@ -928,7 +928,7 @@ impl<'p, 'tcx: 'p> PatCx for RustcPatCtxt<'p, 'tcx> {
         ctor: &crate::constructor::Constructor<Self>,
         ty: &Self::Ty,
     ) -> fmt::Result {
-        if let ty::Adt(adt, _) = ty.kind() {
+        if let ty::Adt(adt, _, _) = ty.kind() {
             let variant = adt.variant(Self::variant_index_for_adt(ctor, *adt));
             write!(f, "{}", variant.name)?;
         }

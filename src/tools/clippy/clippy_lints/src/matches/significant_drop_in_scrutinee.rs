@@ -200,7 +200,7 @@ impl<'a, 'tcx> SigDropChecker<'a, 'tcx> {
         }
 
         match ty.kind() {
-            rustc_middle::ty::Adt(adt, args) => {
+            rustc_middle::ty::Adt(adt, args, _) => {
                 // if some field has significant drop,
                 adt.all_fields()
                     .map(|field| field.ty(self.cx.tcx, args))

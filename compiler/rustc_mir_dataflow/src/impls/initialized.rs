@@ -58,7 +58,7 @@ impl<'tcx> MaybePlacesSwitchIntData<'tcx> {
                     if lhs == discr =>
                 {
                     match enum_place.ty(body, tcx).ty.kind() {
-                        ty::Adt(enum_def, _) => {
+                        ty::Adt(enum_def, _, _) => {
                             // The value of each discriminant, in AdtDef order.
                             let discriminant_vals: SmallVec<[u128; 4]> =
                                 enum_def.discriminants(tcx).map(|(_, discr)| discr.val).collect();

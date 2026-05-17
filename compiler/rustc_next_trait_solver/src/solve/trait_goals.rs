@@ -727,7 +727,7 @@ where
                 // `&mut T` and `&T` always implement `BikeshedGuaranteedNoDrop`.
                 ty::Ref(..) => {}
                 // `ManuallyDrop<T>` always implements `BikeshedGuaranteedNoDrop`.
-                ty::Adt(def, _) if def.is_manually_drop() => {}
+                ty::Adt(def, _, _) if def.is_manually_drop() => {}
                 // Arrays and tuples implement `BikeshedGuaranteedNoDrop` only if
                 // their constituent types implement `BikeshedGuaranteedNoDrop`.
                 ty::Tuple(tys) => {
@@ -848,7 +848,7 @@ where
                     }
 
                     // `Struct<T>` -> `Struct<U>` where `T: Unsize<U>`
-                    (ty::Adt(a_def, a_args), ty::Adt(b_def, b_args))
+                    (ty::Adt(a_def, a_args, _), ty::Adt(b_def, b_args, _))
                         if a_def.is_struct() && a_def == b_def =>
                     {
                         Ok(vec![ecx.consider_builtin_struct_unsize(goal, a_def, a_args, b_args)?])
@@ -872,7 +872,7 @@ where
         if goal.predicate.polarity != ty::PredicatePolarity::Positive {
             return Err(NoSolution.into());
         }
-        if let ty::Adt(def, args) = goal.predicate.self_ty().kind()
+        if let ty::Adt(def, args, _) = goal.predicate.self_ty().kind()
             && let Some(FieldInfo { base, ty, .. }) =
                 def.field_representing_type_info(ecx.cx(), args)
             && {
@@ -901,7 +901,7 @@ where
                 ecx.try_evaluate_added_goals()? == Certainty::Yes
             }
             && match base.kind() {
-                ty::Adt(def, _) => def.is_struct() && !def.is_packed(),
+                ty::Adt(def, _, _) => def.is_struct() && !def.is_packed(),
                 ty::Tuple(..) => true,
                 _ => false,
             }
@@ -1341,7 +1341,7 @@ where
             | ty::CoroutineWitness(..)
             | ty::Never
             | ty::Tuple(_)
-            | ty::Adt(_, _)
+            | ty::Adt(_, _, _)
             | ty::UnsafeBinder(_) => check_impls(),
             ty::Error(_) => None,
         }

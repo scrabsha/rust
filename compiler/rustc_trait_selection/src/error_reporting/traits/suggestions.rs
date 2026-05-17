@@ -341,7 +341,7 @@ impl<'a, 'tcx> TypeErrCtxt<'a, 'tcx> {
         let mut private_candidate: Option<(Ty<'tcx>, Ty<'tcx>, Span)> = None;
 
         for (deref_base_ty, _) in (self.autoderef_steps)(base_ty) {
-            let ty::Adt(base_def, args) = deref_base_ty.kind() else {
+            let ty::Adt(base_def, args, _) = deref_base_ty.kind() else {
                 continue;
             };
 
@@ -371,7 +371,7 @@ impl<'a, 'tcx> TypeErrCtxt<'a, 'tcx> {
                     && !self.can_eq(param_env, private_field_ty, accessible_field_ty)
                 {
                     let private_struct_span = match private_base_ty.kind() {
-                        ty::Adt(private_base_def, _) => self
+                        ty::Adt(private_base_def, _, _) => self
                             .tcx
                             .def_ident_span(private_base_def.did())
                             .unwrap_or_else(|| self.tcx.def_span(private_base_def.did())),
@@ -3583,7 +3583,7 @@ impl<'a, 'tcx> TypeErrCtxt<'a, 'tcx> {
                                 // when `TraitA: TraitB` and `S` only impl TraitA,
                                 // we check if `TraitB` can be reachable from `S`
                                 // to determine whether to note `TraitA` is sealed trait.
-                                if let ty::Adt(adt, _) = ty.kind() {
+                                if let ty::Adt(adt, _, _) = ty.kind() {
                                     let visibilities = &tcx.resolutions(()).effective_visibilities;
                                     visibilities.effective_vis(local).is_none_or(|v| {
                                         v.at_level(Level::Reexported)
@@ -4039,7 +4039,7 @@ impl<'a, 'tcx> TypeErrCtxt<'a, 'tcx> {
                         format!("required because it appears within the type `{ty_str}`")
                     };
                     match *ty.kind() {
-                        ty::Adt(def, _) => {
+                        ty::Adt(def, _, _) => {
                             let msg = msg();
                             match tcx.opt_item_ident(def.did()) {
                                 Some(ident) => {
@@ -4614,7 +4614,7 @@ impl<'a, 'tcx> TypeErrCtxt<'a, 'tcx> {
             return false;
         };
         let (adt, args) = match trait_pred.skip_binder().self_ty().kind() {
-            ty::Adt(adt, args) if adt.did().is_local() => (adt, args),
+            ty::Adt(adt, args, _) if adt.did().is_local() => (adt, args),
             _ => return false,
         };
         let is_derivable_trait = match diagnostic_name {
@@ -4664,7 +4664,7 @@ impl<'a, 'tcx> TypeErrCtxt<'a, 'tcx> {
             return;
         };
         let adt = match trait_pred.skip_binder().self_ty().kind() {
-            ty::Adt(adt, _) if adt.did().is_local() => adt,
+            ty::Adt(adt, _, _) if adt.did().is_local() => adt,
             _ => return,
         };
         if self.can_suggest_derive(obligation, trait_pred) {
@@ -5520,7 +5520,7 @@ impl<'a, 'tcx> TypeErrCtxt<'a, 'tcx> {
         let rcvr_ty = self.resolve_vars_if_possible(rcvr_ty);
         let autoderef = (self.autoderef_steps)(rcvr_ty);
         for (ty, def_id) in autoderef.iter().filter_map(|(ty, obligations)| {
-            if let ty::Adt(def, _) = ty.kind()
+            if let ty::Adt(def, _, _) = ty.kind()
                 && *ty != rcvr_ty.peel_refs()
                 && obligations.iter().all(|obligation| self.predicate_may_hold(obligation))
             {
@@ -5753,22 +5753,22 @@ impl<'a, 'tcx> TypeErrCtxt<'a, 'tcx> {
             ty::Int(_) | ty::Uint(_) => "42".into(),
             ty::Float(_) => "3.14159".into(),
             ty::Slice(_) => "[]".to_string(),
-            ty::Adt(def, _) if Some(def.did()) == tcx.get_diagnostic_item(sym::Vec) => {
+            ty::Adt(def, _, _) if Some(def.did()) == tcx.get_diagnostic_item(sym::Vec) => {
                 "vec![]".to_string()
             }
-            ty::Adt(def, _) if Some(def.did()) == tcx.get_diagnostic_item(sym::String) => {
+            ty::Adt(def, _, _) if Some(def.did()) == tcx.get_diagnostic_item(sym::String) => {
                 "String::new()".to_string()
             }
-            ty::Adt(def, args) if def.is_box() => {
+            ty::Adt(def, args, _) if def.is_box() => {
                 format!("Box::new({})", self.ty_kind_suggestion(param_env, args[0].expect_ty())?)
             }
-            ty::Adt(def, _) if Some(def.did()) == tcx.get_diagnostic_item(sym::Option) => {
+            ty::Adt(def, _, _) if Some(def.did()) == tcx.get_diagnostic_item(sym::Option) => {
                 "None".to_string()
             }
-            ty::Adt(def, args) if Some(def.did()) == tcx.get_diagnostic_item(sym::Result) => {
+            ty::Adt(def, args, _) if Some(def.did()) == tcx.get_diagnostic_item(sym::Result) => {
                 format!("Ok({})", self.ty_kind_suggestion(param_env, args[0].expect_ty())?)
             }
-            ty::Adt(_, _) if implements_default(ty) => "Default::default()".to_string(),
+            ty::Adt(_, _, _) if implements_default(ty) => "Default::default()".to_string(),
             ty::Ref(_, ty, mutability) => {
                 if let (ty::Str, hir::Mutability::Not) = (ty.kind(), mutability) {
                     "\"\"".to_string()
@@ -5849,7 +5849,7 @@ impl<'a, 'tcx> TypeErrCtxt<'a, 'tcx> {
             && let hir::FnRetTy::DefaultReturn(ret_span) = fn_decl.output
             && self.tcx.is_diagnostic_item(sym::FromResidual, trait_pred.def_id())
             && trait_pred.skip_binder().trait_ref.args.type_at(0).is_unit()
-            && let ty::Adt(def, _) = trait_pred.skip_binder().trait_ref.args.type_at(1).kind()
+            && let ty::Adt(def, _, _) = trait_pred.skip_binder().trait_ref.args.type_at(1).kind()
             && self.tcx.is_diagnostic_item(sym::Result, def.did())
         {
             let mut sugg_spans =

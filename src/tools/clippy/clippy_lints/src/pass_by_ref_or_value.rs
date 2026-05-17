@@ -207,7 +207,7 @@ impl PassByRefOrValue {
                     }
                 },
 
-                ty::Adt(_, _) | ty::Array(_, _) | ty::Tuple(_) => {
+                ty::Adt(_, _, _) | ty::Array(_, _) | ty::Tuple(_) => {
                     // if function has a body and parameter is annotated with mut, ignore
                     if let Some(param) = fn_body.and_then(|body| body.params.get(index)) {
                         match param.pat.kind {

@@ -389,11 +389,11 @@ impl<'cx, 'tcx> SelectionContext<'cx, 'tcx> {
 
                 // Can only confirm this candidate if we have constrained
                 // the `Yield` type to at least `Poll<Option<?0>>`..
-                let ty::Adt(_poll_def, args) = *args.as_coroutine().yield_ty().kind() else {
+                let ty::Adt(_poll_def, args, _) = *args.as_coroutine().yield_ty().kind() else {
                     candidates.ambiguous = true;
                     return;
                 };
-                let ty::Adt(_option_def, _) = *args.type_at(0).kind() else {
+                let ty::Adt(_option_def, _, _) = *args.type_at(0).kind() else {
                     candidates.ambiguous = true;
                     return;
                 };
@@ -693,7 +693,7 @@ impl<'cx, 'tcx> SelectionContext<'cx, 'tcx> {
                 | ty::Int(_)
                 | ty::Uint(_)
                 | ty::Float(_)
-                | ty::Adt(_, _)
+                | ty::Adt(_, _, _)
                 | ty::Foreign(_)
                 | ty::Str
                 | ty::Array(_, _)
@@ -1088,7 +1088,7 @@ impl<'cx, 'tcx> SelectionContext<'cx, 'tcx> {
             }
 
             // `Struct<T>` -> `Struct<U>`
-            (&ty::Adt(def_id_a, _), &ty::Adt(def_id_b, _)) if def_id_a.is_struct() => {
+            (&ty::Adt(def_id_a, _, _), &ty::Adt(def_id_b, _, _)) if def_id_a.is_struct() => {
                 if def_id_a == def_id_b {
                     candidates.vec.push(BuiltinUnsizeCandidate);
                 }
@@ -1332,7 +1332,7 @@ impl<'cx, 'tcx> SelectionContext<'cx, 'tcx> {
             | ty::Int(_)
             | ty::Uint(_)
             | ty::Float(_)
-            | ty::Adt(_, _)
+            | ty::Adt(_, _, _)
             | ty::Foreign(_)
             | ty::Str
             | ty::Array(_, _)
@@ -1455,7 +1455,7 @@ impl<'cx, 'tcx> SelectionContext<'cx, 'tcx> {
         obligation: &PolyTraitObligation<'tcx>,
         candidates: &mut SelectionCandidateSet<'tcx>,
     ) {
-        if let ty::Adt(def, args) = obligation.predicate.self_ty().skip_binder().kind()
+        if let ty::Adt(def, args, _) = obligation.predicate.self_ty().skip_binder().kind()
             && let Some(FieldInfo { base, ty, .. }) =
                 def.field_representing_type_info(self.tcx(), args)
             // NOTE: these bounds have to be kept in sync with the definition of the `Field` trait
@@ -1489,7 +1489,7 @@ impl<'cx, 'tcx> SelectionContext<'cx, 'tcx> {
                 _ => false,
             }
             && match base.kind() {
-                ty::Adt(def, _) => def.is_struct() && !def.repr().packed(),
+                ty::Adt(def, _, _) => def.is_struct() && !def.repr().packed(),
                 ty::Tuple(..) => true,
                 _ => false,
             }

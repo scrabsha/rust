@@ -114,7 +114,7 @@ impl<'tcx> TypeFolder<TyCtxt<'tcx>> for CheckGpuKernelTypes<'tcx> {
                 }
             }
 
-            ty::Adt(_, _)
+            ty::Adt(_, _, _)
             | ty::Alias(_)
             | ty::Array(_, _)
             | ty::Bound(_, _)

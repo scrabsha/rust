@@ -14,7 +14,7 @@ pub fn check(cx: &LateContext<'_>, expr: &Expr<'_>, recv: &Expr<'_>, span: Span,
     let recv_ty = cx.typeck_results().expr_ty_adjusted(recv);
     let inner_ty = match recv_ty.kind() {
         // `Option<T>` -> `T`
-        ty::Adt(adt, subst)
+        ty::Adt(adt, subst, _)
             if cx.tcx.is_diagnostic_item(sym::Option, adt.did()) && msrv.meets(cx, msrvs::OPTION_COPIED) =>
         {
             subst.type_at(0)

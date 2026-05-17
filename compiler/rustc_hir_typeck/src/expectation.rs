@@ -75,7 +75,7 @@ impl<'a, 'tcx> Expectation<'tcx> {
     /// for examples of where this comes up,.
     pub(super) fn rvalue_hint(fcx: &FnCtxt<'a, 'tcx>, ty: Ty<'tcx>) -> Expectation<'tcx> {
         let span = match ty.kind() {
-            ty::Adt(adt_def, _) => fcx.tcx.def_span(adt_def.did()),
+            ty::Adt(adt_def, _, _) => fcx.tcx.def_span(adt_def.did()),
             _ => fcx.tcx.def_span(fcx.body_id),
         };
         let cause = ObligationCause::misc(span, fcx.body_id);

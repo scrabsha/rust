@@ -34,7 +34,7 @@ fn codegen_field<'tcx>(
             let (_, mut unsized_align) = crate::unsize::size_and_align_of(fx, field_layout, extra);
 
             // For packed types, we need to cap alignment.
-            if let ty::Adt(def, _) = layout.ty.kind() {
+            if let ty::Adt(def, _, _) = layout.ty.kind() {
                 if let Some(packed) = def.repr().pack {
                     let packed = fx.bcx.ins().iconst(fx.pointer_type, packed.bytes() as i64);
                     let cmp = fx.bcx.ins().icmp(IntCC::UnsignedLessThan, unsized_align, packed);
@@ -921,7 +921,7 @@ pub(crate) fn assert_assignable<'tcx>(
                 }
             }
         }
-        (&ty::Adt(adt_def_a, args_a), &ty::Adt(adt_def_b, args_b))
+        (&ty::Adt(adt_def_a, args_a, _), &ty::Adt(adt_def_b, args_b, _))
             if adt_def_a.did() == adt_def_b.did() =>
         {
             let mut types_a = args_a.types();

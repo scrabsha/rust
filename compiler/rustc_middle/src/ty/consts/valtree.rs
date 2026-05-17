@@ -210,14 +210,14 @@ impl<'tcx> Value<'tcx> {
         let fields = self.to_branch();
 
         let (variant, fields) = match self.ty.kind() {
-            ty::Adt(def, _) if def.variants().is_empty() => {
+            ty::Adt(def, _, _) if def.variants().is_empty() => {
                 bug!("unreachable")
             }
-            ty::Adt(def, _) if def.is_enum() => {
+            ty::Adt(def, _, _) if def.is_enum() => {
                 let (head, rest) = fields.split_first().unwrap();
                 (VariantIdx::from_u32(head.to_leaf().to_u32()), rest)
             }
-            ty::Adt(_, _) => (FIRST_VARIANT, fields),
+            ty::Adt(_, _, _) => (FIRST_VARIANT, fields),
             _ => bug!("destructure_adt_const called on non-ADT type: {:?}", self.ty),
         };
 

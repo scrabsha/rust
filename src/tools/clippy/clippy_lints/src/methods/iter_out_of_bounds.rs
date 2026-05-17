@@ -21,7 +21,7 @@ fn expr_as_u128(cx: &LateContext<'_>, e: &Expr<'_>) -> Option<u128> {
 
 /// Attempts to extract the length out of an iterator expression.
 fn get_iterator_length<'tcx>(cx: &LateContext<'tcx>, iter: &'tcx Expr<'tcx>) -> Option<u128> {
-    let ty::Adt(adt, substs) = cx.typeck_results().expr_ty(iter).kind() else {
+    let ty::Adt(adt, substs, _) = cx.typeck_results().expr_ty(iter).kind() else {
         return None;
     };
 

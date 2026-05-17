@@ -143,7 +143,7 @@ pub(crate) fn orphan_check_impl(
         let (local_impl, nonlocal_impl) = match self_ty.kind() {
             // struct Struct<T>;
             // impl AutoTrait for Struct<Foo> {}
-            ty::Adt(self_def, _) => (
+            ty::Adt(self_def, _, _) => (
                 LocalImpl::Allow,
                 if self_def.did().is_local() {
                     NonlocalImpl::Allow
@@ -440,7 +440,7 @@ fn emit_orphan_check_error<'tcx>(
                         }
                         diag.subdiagnostic(errors::OnlyCurrentTraitsPointer { span, pointer: ty });
                     }
-                    ty::Adt(adt_def, _) => {
+                    ty::Adt(adt_def, _, _) => {
                         diag.subdiagnostic(errors::OnlyCurrentTraitsAdt {
                             span,
                             name: tcx.def_path_str(adt_def.did()),

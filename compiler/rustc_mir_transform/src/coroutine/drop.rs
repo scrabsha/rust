@@ -398,8 +398,8 @@ pub(super) fn expand_async_drops<'tcx>(
             {
                 // For AsyncGen we need `yield Poll<OptRet>::Pending`
                 let full_yield_ty = body.yield_ty().unwrap();
-                let ty::Adt(_poll_adt, args) = *full_yield_ty.kind() else { bug!() };
-                let ty::Adt(_option_adt, args) = *args.type_at(0).kind() else { bug!() };
+                let ty::Adt(_poll_adt, args, _) = *full_yield_ty.kind() else { bug!() };
+                let ty::Adt(_option_adt, args, _) = *args.type_at(0).kind() else { bug!() };
                 let yield_ty = args.type_at(0);
                 Operand::Constant(Box::new(ConstOperand {
                     span: source_info.span,

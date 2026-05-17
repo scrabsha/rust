@@ -329,7 +329,7 @@ pub(crate) mod rustc {
                         .fold(Tree::unit(), |tree, elt| tree.then(elt)))
                 }
 
-                ty::Adt(adt_def, _args_ref) if !ty.is_box() => match adt_def.adt_kind() {
+                ty::Adt(adt_def, _args_ref, _) if !ty.is_box() => match adt_def.adt_kind() {
                     AdtKind::Struct => Self::from_struct((ty, layout), *adt_def, cx),
                     AdtKind::Enum => Self::from_enum((ty, layout), *adt_def, cx),
                     AdtKind::Union => Self::from_union((ty, layout), *adt_def, cx),
@@ -582,7 +582,7 @@ pub(crate) mod rustc {
         // not erase regions here, since we may need to ultimately emit outlives
         // obligations as a consequence of the transmutability analysis.
         match ty.kind() {
-            ty::Adt(def, args) => {
+            ty::Adt(def, args, _) => {
                 match layout.variants {
                     Variants::Single { index } => {
                         let field = &def.variant(index).fields[i];

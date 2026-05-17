@@ -117,7 +117,7 @@ impl<'a, 'tcx> ConstraintContext<'a, 'tcx> {
         }
 
         match ty.kind() {
-            ty::Adt(def, _) => {
+            ty::Adt(def, _, _) => {
                 // Not entirely obvious: constraints on structs/enums do not
                 // affect the variance of their type parameters. See discussion
                 // in comment at top of module.
@@ -269,7 +269,7 @@ impl<'a, 'tcx> ConstraintContext<'a, 'tcx> {
                 }
             }
 
-            ty::Adt(def, args) => {
+            ty::Adt(def, args, _) => {
                 self.add_constraints_from_args(current, def.did(), args, variance);
             }
 

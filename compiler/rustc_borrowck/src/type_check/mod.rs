@@ -2442,7 +2442,7 @@ impl<'a, 'tcx> TypeChecker<'a, 'tcx> {
                             // deref of raw pointer, guaranteed to be valid
                             break;
                         }
-                        ty::Adt(def, _) if def.is_box() => {
+                        ty::Adt(def, _, _) if def.is_box() => {
                             // deref of `Box`, need the base to be valid - propagate
                         }
                         _ => bug!("unexpected deref ty {:?} in {:?}", base_ty, borrowed_place),
@@ -2489,7 +2489,7 @@ impl<'a, 'tcx> TypeChecker<'a, 'tcx> {
 
         let borrowed_ty = borrowed_place.ty(self.body, tcx).ty;
 
-        let ty::Adt(dest_adt, dest_args) = dest_ty.kind() else { bug!() };
+        let ty::Adt(dest_adt, dest_args, _) = dest_ty.kind() else { bug!() };
         let [dest_arg, ..] = ***dest_args else { bug!() };
         let ty::GenericArgKind::Lifetime(dest_region) = dest_arg.kind() else { bug!() };
         constraints.liveness_constraints.add_location(dest_region.as_var(), location);
@@ -2515,7 +2515,7 @@ impl<'a, 'tcx> TypeChecker<'a, 'tcx> {
             // `CustomMut<'a>` and `CustomRef<'a>`, or `CustomMut<'a, T>` and `CustomRef<'a, T>`.
             // Field-by-field relate_types is expected to work based on the wf-checks that the
             // CoerceShared trait performs.
-            let ty::Adt(borrowed_adt, borrowed_args) = borrowed_ty.kind() else { unreachable!() };
+            let ty::Adt(borrowed_adt, borrowed_args, _) = borrowed_ty.kind() else { unreachable!() };
             let borrowed_fields = borrowed_adt.all_fields().collect::<Vec<_>>();
             for dest_field in dest_adt.all_fields() {
                 let Some(borrowed_field) =

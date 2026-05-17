@@ -231,7 +231,7 @@ impl<'tcx, 'a> ExportableItemsChecker<'tcx, 'a> {
 
     fn check_ty(&mut self) {
         let ty = self.tcx.type_of(self.item_id).skip_binder();
-        if let ty::Adt(adt_def, _) = ty.kind() {
+        if let ty::Adt(adt_def, _, _) = ty.kind() {
             if !adt_def.repr().inhibit_struct_field_reordering() {
                 self.tcx
                     .dcx()
@@ -271,7 +271,7 @@ impl<'tcx, 'a> TypeVisitor<TyCtxt<'tcx>> for ExportableItemsChecker<'tcx, 'a> {
 
     fn visit_ty(&mut self, ty: Ty<'tcx>) -> Self::Result {
         match ty.kind() {
-            ty::Adt(adt_def, _) => {
+            ty::Adt(adt_def, _, _) => {
                 let did = adt_def.did();
                 let exportable = if did.is_local() {
                     self.exportable_items.contains(&did)

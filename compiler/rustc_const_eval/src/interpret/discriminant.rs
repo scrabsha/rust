@@ -125,7 +125,7 @@ impl<'tcx, M: Machine<'tcx>> InterpCx<'tcx, M> {
                 // check above but still not match any actual variant discriminant (e.g.,
                 // non-contiguous discriminants with a wrapping valid_range).
                 let index = match *ty.kind() {
-                    ty::Adt(adt, _) => {
+                    ty::Adt(adt, _, _) => {
                         adt.discriminants(*self.tcx).find(|(_, var)| var.val == discr_bits)
                     }
                     ty::Coroutine(def_id, args) => {

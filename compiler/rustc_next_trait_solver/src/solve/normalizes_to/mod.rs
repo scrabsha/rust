@@ -728,7 +728,7 @@ where
                 });
             }
 
-            ty::Adt(def, args) if def.is_struct() => match def.struct_tail_ty(cx) {
+            ty::Adt(def, args, _) if def.is_struct() => match def.struct_tail_ty(cx) {
                 None => Ty::new_unit(cx),
                 Some(tail_ty) => Ty::new_projection(
                     cx,
@@ -736,7 +736,7 @@ where
                     [tail_ty.instantiate(cx, args).skip_norm_wip()],
                 ),
             },
-            ty::Adt(_, _) => Ty::new_unit(cx),
+            ty::Adt(_, _, _) => Ty::new_unit(cx),
 
             ty::Tuple(elements) => match elements.last() {
                 None => Ty::new_unit(cx),
@@ -954,7 +954,7 @@ where
             | ty::CoroutineWitness(..)
             | ty::Never
             | ty::Foreign(..)
-            | ty::Adt(_, _)
+            | ty::Adt(_, _, _)
             | ty::Str
             | ty::Slice(_)
             | ty::Dynamic(_, _)
@@ -1015,7 +1015,7 @@ where
         goal: Goal<I, Self>,
     ) -> Result<Candidate<I>, NoSolutionOrRerunNonErased> {
         let self_ty = goal.predicate.self_ty();
-        let ty::Adt(def, args) = self_ty.kind() else {
+        let ty::Adt(def, args, _) = self_ty.kind() else {
             return Err(NoSolution.into());
         };
         let Some(FieldInfo { base, ty, .. }) = def.field_representing_type_info(ecx.cx(), args)

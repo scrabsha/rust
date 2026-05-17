@@ -719,7 +719,7 @@ fn detect_iter_and_into_iters<'tcx: 'a, 'a>(
 fn get_captured_ids(cx: &LateContext<'_>, ty: Ty<'_>) -> HirIdSet {
     fn get_captured_ids_recursive(cx: &LateContext<'_>, ty: Ty<'_>, set: &mut HirIdSet) {
         match ty.kind() {
-            ty::Adt(_, generics) => {
+            ty::Adt(_, generics, _) => {
                 for generic in *generics {
                     if let GenericArgKind::Type(ty) = generic.kind() {
                         get_captured_ids_recursive(cx, ty, set);

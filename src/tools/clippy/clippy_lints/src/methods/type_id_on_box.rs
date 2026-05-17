@@ -45,7 +45,7 @@ pub(super) fn check(cx: &LateContext<'_>, receiver: &Expr<'_>, call_span: Span) 
 
     if let Some(Adjustment { target: recv_ty, .. }) = recv_adjusts.last()
         && let ty::Ref(_, ty, _) = recv_ty.kind()
-        && let ty::Adt(adt, args) = ty.kind()
+        && let ty::Adt(adt, args, _) = ty.kind()
         && adt.is_box()
         && let inner_box_ty = args.type_at(0)
         && let ty::Dynamic(..) = inner_box_ty.kind()

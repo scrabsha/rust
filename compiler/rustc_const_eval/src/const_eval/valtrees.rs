@@ -150,7 +150,7 @@ fn const_to_valtree_inner<'tcx>(
 
         ty::Tuple(elem_tys) => branches(ecx, place, elem_tys.len(), None, num_nodes),
 
-        ty::Adt(def, _) => {
+        ty::Adt(def, _, _) => {
             if def.is_union() {
                 return Err(ValTreeCreationError::NonSupportedType(ty));
             } else if def.variants().is_empty() {
@@ -317,7 +317,7 @@ pub fn valtree_to_const_value<'tcx>(
             }
             if layout.backend_repr.is_scalar()
                 && (matches!(cv.ty.kind(), ty::Tuple(_))
-                    || matches!(cv.ty.kind(), ty::Adt(def, _) if def.is_struct()))
+                    || matches!(cv.ty.kind(), ty::Adt(def, _, _) if def.is_struct()))
             {
                 // A Scalar tuple/struct; we can avoid creating an allocation.
                 let branches = cv.to_branch();
@@ -410,12 +410,12 @@ fn valtree_into_mplace<'tcx>(
             debug!(?imm);
             ecx.write_immediate(imm, place).unwrap();
         }
-        ty::Adt(_, _) | ty::Tuple(_) | ty::Array(_, _) | ty::Str | ty::Slice(_) => {
+        ty::Adt(_, _, _) | ty::Tuple(_) | ty::Array(_, _) | ty::Str | ty::Slice(_) => {
             let branches = valtree.to_branch();
 
             // Need to downcast place for enums
             let (place_adjusted, branches, variant_idx) = match ty.kind() {
-                ty::Adt(def, _) if def.is_enum() => {
+                ty::Adt(def, _, _) if def.is_enum() => {
                     // First element of valtree corresponds to variant
                     let scalar_int = branches[0].to_leaf();
                     let variant_idx = VariantIdx::from_u32(scalar_int.to_u32());

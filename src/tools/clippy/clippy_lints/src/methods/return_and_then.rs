@@ -30,7 +30,7 @@ pub(super) fn check<'tcx>(
         return;
     }
 
-    let has_ref_type = matches!(recv_type.kind(), ty::Adt(_, args) if args
+    let has_ref_type = matches!(recv_type.kind(), ty::Adt(_, args, _) if args
         .first()
         .and_then(|arg0: &GenericArg<'tcx>| GenericArg::as_type(*arg0))
         .is_some_and(Ty::is_ref));

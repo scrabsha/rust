@@ -194,7 +194,7 @@ impl<I: Interner> TypeVisitor<I> for OutlivesCollector<'_, I> {
                 // FIXME: Bound vars matter here!
             }
 
-            ty::Adt(_, _)
+            ty::Adt(_, _, _)
             | ty::Foreign(_)
             | ty::Array(_, _)
             | ty::Pat(_, _)

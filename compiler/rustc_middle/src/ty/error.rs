@@ -180,7 +180,7 @@ impl<'tcx> Ty<'tcx> {
             | ty::Str
             | ty::Never => "type".into(),
             ty::Tuple(tys) if tys.is_empty() => "unit type".into(),
-            ty::Adt(def, _) => def.descr().into(),
+            ty::Adt(def, _, _) => def.descr().into(),
             ty::Foreign(_) => "extern type".into(),
             ty::Array(..) => "array".into(),
             ty::Pat(..) => "pattern type".into(),

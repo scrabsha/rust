@@ -40,10 +40,10 @@ pub(crate) fn try_destructure_mir_constant_for_user_output<'tcx>(
     // We go to `usize` as we cannot allocate anything bigger anyway.
     let (field_count, variant, down) = match ty.kind() {
         ty::Array(_, len) => (len.try_to_target_usize(tcx)? as usize, None, op),
-        ty::Adt(def, _) if def.variants().is_empty() => {
+        ty::Adt(def, _, _) if def.variants().is_empty() => {
             return None;
         }
-        ty::Adt(def, _) => {
+        ty::Adt(def, _, _) => {
             let variant = ecx.read_discriminant(&op).discard_err()?;
             let down = ecx.project_downcast(&op, variant).discard_err()?;
             (def.variants()[variant].fields.len(), Some(variant), down)

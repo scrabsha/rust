@@ -506,7 +506,7 @@ impl<'infcx, 'tcx> MirBorrowckCtxt<'_, 'infcx, 'tcx> {
             self.describe_field_from_ty(boxed_ty, field, variant_index, including_tuple_field)
         } else {
             match *ty.kind() {
-                ty::Adt(def, _) => {
+                ty::Adt(def, _, _) => {
                     let variant = if let Some(idx) = variant_index {
                         assert!(def.is_enum());
                         def.variant(idx)
@@ -1457,7 +1457,7 @@ impl<'infcx, 'tcx> MirBorrowckCtxt<'_, 'infcx, 'tcx> {
                         // Erase and shadow everything that could be passed to the new infcx.
                         let ty = moved_place.ty(self.body, tcx).ty;
 
-                        if let ty::Adt(def, args) = ty.peel_refs().kind()
+                        if let ty::Adt(def, args, _) = ty.peel_refs().kind()
                             && tcx.is_lang_item(def.did(), LangItem::Pin)
                             && let ty::Ref(_, _, hir::Mutability::Mut) = args.type_at(0).kind()
                             && let self_ty = self.infcx.instantiate_binder_with_fresh_vars(

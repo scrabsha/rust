@@ -806,7 +806,7 @@ impl<'a, 'tcx> FnCtxt<'a, 'tcx> {
 
         if let (
             hir::ExprKind::Struct(expr_struct_path, expr_struct_fields, _expr_struct_rest),
-            ty::Adt(in_ty_adt, in_ty_adt_generic_args),
+            ty::Adt(in_ty_adt, in_ty_adt_generic_args, _),
         ) = (&expr.kind, in_ty.kind())
         {
             // First, confirm that this struct is the same one as in the types, and if so,
@@ -909,7 +909,7 @@ impl<'a, 'tcx> FnCtxt<'a, 'tcx> {
 
         if let (
             hir::ExprKind::Call(expr_callee, expr_args),
-            ty::Adt(in_ty_adt, in_ty_adt_generic_args),
+            ty::Adt(in_ty_adt, in_ty_adt_generic_args, _),
         ) = (&expr.kind, in_ty.kind())
         {
             let hir::ExprKind::Path(expr_callee_path) = &expr_callee.kind else {

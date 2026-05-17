@@ -46,7 +46,7 @@ pub fn check(cx: &LateContext<'_>, call: &Expr<'_>, recv: &Expr<'_>, arg: &Expr<
                         && segment.ident.name == sym::parse
                         && let parse_result_ty = cx.typeck_results().expr_ty(parent)
                         && parse_result_ty.is_diag_item(cx, sym::Result)
-                        && let ty::Adt(_, substs) = parse_result_ty.kind()
+                        && let ty::Adt(_, substs, _) = parse_result_ty.kind()
                         && let Some(ok_ty) = substs[0].as_type()
                         && parse_fails_on_trailing_newline(ok_ty)
                     {
