@@ -781,7 +781,9 @@ where
                 let tcx = self.tcx();
 
                 match self.elaborator.typing_env().typing_mode().assert_not_erased() {
-                    ty::TypingMode::PostAnalysis | ty::TypingMode::Codegen => {}
+                    ty::TypingMode::PostAnalysis
+                    | ty::TypingMode::Codegen
+                    | ty::TypingMode::IsolatedConst => {}
                     ty::TypingMode::Coherence
                     | ty::TypingMode::Typeck { .. }
                     | ty::TypingMode::PostTypeckUntilBorrowck { .. }

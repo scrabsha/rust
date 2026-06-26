@@ -167,6 +167,7 @@ impl<'tcx> TyCtxt<'tcx> {
         instance: ty::Instance<'tcx>,
         span: Span,
     ) -> EvalToConstValueResult<'tcx> {
+        dbg!("i would love for this debug to show up");
         self.const_eval_global_id(typing_env, GlobalId { instance, promoted: None }, span)
     }
 
@@ -178,6 +179,7 @@ impl<'tcx> TyCtxt<'tcx> {
         cid: GlobalId<'tcx>,
         span: Span,
     ) -> EvalToConstValueResult<'tcx> {
+        dbg!("i would love for this debug to show up");
         // Const-eval shouldn't depend on lifetimes at all, so we can erase them, which should
         // improve caching of queries.
         let inputs = self.erase_and_anonymize_regions(
@@ -199,6 +201,7 @@ impl<'tcx> TyCtxt<'tcx> {
         cid: GlobalId<'tcx>,
         span: Span,
     ) -> ConstToValTreeResult<'tcx> {
+        dbg!("i would love for this debug to show up");
         // Const-eval shouldn't depend on lifetimes at all, so we can erase them, which should
         // improve caching of queries.
         let inputs = self.erase_and_anonymize_regions(

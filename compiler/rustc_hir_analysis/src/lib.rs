@@ -182,6 +182,7 @@ pub fn check_crate(tcx: TyCtxt<'_>) {
                 let instance = ty::Instance::new_raw(item_def_id.into(), ty::GenericArgs::empty());
                 let cid = GlobalId { instance, promoted: None };
                 let typing_env = ty::TypingEnv::fully_monomorphized();
+                dbg!();
                 tcx.ensure_ok().eval_to_const_value_raw(typing_env.as_query_input(cid));
             }
             _ => (),

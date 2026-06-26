@@ -28,7 +28,7 @@ use rustc_middle::{bug, ty};
 fn assert_typing_mode(typing_mode: ty::TypingMode<'_>) {
     if cfg!(debug_assertions) {
         match typing_mode.assert_not_erased() {
-            ty::TypingMode::PostAnalysis | ty::TypingMode::Codegen => {}
+            ty::TypingMode::PostAnalysis | ty::TypingMode::Codegen | ty::TypingMode::IsolatedConst => {}
             // Const eval always happens in PostAnalysis or Codegen mode. See the comment in
             // `InterpCx::new` for more details.
             ty::TypingMode::Coherence

@@ -1149,3 +1149,13 @@ impl NoArgsAttributeParser for RustcExhaustiveParser {
     const STABILITY: AttributeStability = unstable!(rustc_attrs);
     const CREATE: fn(Span) -> AttributeKind = AttributeKind::RustcMustMatchExhaustively;
 }
+
+pub(crate) struct RustcIsolatedConstParser;
+
+impl NoArgsAttributeParser for RustcIsolatedConstParser {
+    const PATH: &[Symbol] = &[sym::rustc_isolated_const];
+    const ALLOWED_TARGETS: AllowedTargets<'_> = AllowedTargets::AllowList(&[Allow(Target::Const)]);
+    const STABILITY: AttributeStability = unstable!(rustc_attrs);
+    const CREATE: fn(Span) -> AttributeKind = |_| AttributeKind::RustcIsolatedConst;
+}
+
