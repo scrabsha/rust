@@ -1401,7 +1401,11 @@ impl CrateMetadata {
                 // but we assume that someone passing a constructor ID actually wants to look at
                 // the attributes on the corresponding struct or variant.
                 let def_key = self.def_key(id);
-                assert_eq!(def_key.disambiguated_data.data, DefPathData::Ctor);
+                // FIXME: this is known for ICEing the compiler (see #156905).
+                assert!(
+                    def_key.disambiguated_data.data == DefPathData::Ctor
+                        || def_key.disambiguated_data.data == DefPathData::AnonConst
+                );
                 let parent_id = def_key.parent.expect("no parent for a constructor");
                 self.root
                     .tables

@@ -395,7 +395,7 @@ pub(super) fn specialization_graph_provider(
     let mut sg = specialization_graph::Graph::new();
     let overlap_mode = specialization_graph::OverlapMode::get(tcx, trait_id);
 
-    let mut trait_impls: Vec<_> = tcx.all_impls(trait_id).collect();
+    let mut trait_impls: Vec<_> = tcx.all_impls(trait_id, ty::IncludeLocalImpls::Yes).collect();
 
     // The coherence checking implementation seems to rely on impls being
     // iterated over (roughly) in definition order, so we are sorting by

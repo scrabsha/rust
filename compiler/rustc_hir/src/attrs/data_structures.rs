@@ -1500,6 +1500,9 @@ pub enum AttributeKind {
     /// Represents `#[rustc_intrinsic_const_stable_indirect]`
     RustcIntrinsicConstStableIndirect,
 
+    /// Represents `#[rustc_quiet_const]` (please bikesheed this name before merging) (used by the reflection machinery).
+    RustcIsolatedConst,
+
     /// Represents `#[rustc_legacy_const_generics]`
     RustcLegacyConstGenerics {
         fn_indexes: ThinVec<(usize, Span)>,

@@ -11,7 +11,8 @@ use rustc_hir::lang_items::LangItem;
 use rustc_span::{DUMMY_SP, Span, Symbol};
 use rustc_type_ir::lang_items::{SolverAdtLangItem, SolverProjectionLangItem, SolverTraitLangItem};
 use rustc_type_ir::{
-    CollectAndApply, Interner, TypeFoldable, Unnormalized, VisitorResult, search_graph,
+    CollectAndApply, IncludeLocalImpls, Interner, TypeFoldable, Unnormalized, VisitorResult,
+    search_graph,
 };
 
 use crate::dep_graph::{DepKind, DepNodeIndex};
@@ -542,6 +543,7 @@ impl<'tcx> Interner for TyCtxt<'tcx> {
     fn for_each_relevant_impl<R: VisitorResult>(
         self,
         trait_ref: ty::TraitRef<'tcx>,
+        include_local_impls: IncludeLocalImpls,
         mut f: impl FnMut(DefId) -> R,
     ) -> R {
         macro_rules! ret {
@@ -556,7 +558,7 @@ impl<'tcx> Interner for TyCtxt<'tcx> {
         let trait_def_id = trait_ref.def_id;
         let self_ty = trait_ref.self_ty();
         let tcx = self;
-        let trait_impls = tcx.trait_impls_of(trait_def_id);
+        let trait_impls = tcx.trait_impls_of((trait_def_id, include_local_impls));
         let mut consider_impls_for_simplified_type = |simp| {
             if let Some(impls_for_type) = trait_impls.non_blanket_impls().get(&simp) {
                 for &impl_def_id in impls_for_type {
@@ -664,14 +666,15 @@ impl<'tcx> Interner for TyCtxt<'tcx> {
         }
 
         #[allow(rustc::usage_of_type_ir_traits)]
-        self.for_each_blanket_impl(trait_def_id, f)
+        self.for_each_blanket_impl(trait_def_id, include_local_impls, f)
     }
     fn for_each_blanket_impl<R: VisitorResult>(
         self,
         trait_def_id: DefId,
+        include_local_impls: IncludeLocalImpls,
         mut f: impl FnMut(DefId) -> R,
     ) -> R {
-        let trait_impls = self.trait_impls_of(trait_def_id);
+        let trait_impls = self.trait_impls_of((trait_def_id, include_local_impls));
         for &impl_def_id in trait_impls.blanket_impls() {
             match f(impl_def_id).branch() {
                 ControlFlow::Break(b) => return R::from_residual(b),

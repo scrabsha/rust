@@ -327,6 +327,7 @@ where
             | TypingMode::PostTypeckUntilBorrowck { defining_opaque_types: _ }
             | TypingMode::PostBorrowck { defined_opaque_types: _ }
             | TypingMode::PostAnalysis
+            | TypingMode::IsolatedConst
             | TypingMode::Codegen => return Default::default(),
         };
 

@@ -12,6 +12,7 @@ use rustc_infer::traits::{
     Obligation, ObligationCause, ObligationCauseCode, PolyTraitObligation, PredicateObligation,
 };
 use rustc_middle::ty::print::PrintPolyTraitPredicateExt;
+use rustc_middle::ty::trait_def::IncludeLocalImpls;
 use rustc_middle::ty::{self, Ty, TyCtxt, TypeVisitable as _, TypeVisitableExt as _, Unnormalized};
 use rustc_session::errors::feature_err_unstable_feature_bound;
 use rustc_span::{DUMMY_SP, ErrorGuaranteed, Span};
@@ -137,6 +138,7 @@ pub fn compute_applicable_impls_for_diagnostics<'tcx>(
     tcx.for_each_relevant_impl(
         obligation.predicate.def_id(),
         obligation.predicate.skip_binder().trait_ref.self_ty(),
+        IncludeLocalImpls::Yes, // FIXME(scrabsha): <-- ?
         |impl_def_id| {
             if infcx.probe(|_| impl_may_apply(impl_def_id)) {
                 ambiguities.push(CandidateSource::DefId(impl_def_id))
@@ -265,7 +267,10 @@ impl<'a, 'tcx> TypeErrCtxt<'a, 'tcx> {
                 let mut err = if let Some(term) = term {
                     let candidates: Vec<_> = self
                         .tcx
-                        .all_impls(trait_pred.def_id())
+                        .all_impls(
+                            trait_pred.def_id(),
+                            self.typing_mode_raw().include_local_impls(),
+                        )
                         .filter_map(|def_id| {
                             let imp = self.tcx.impl_trait_header(def_id);
                             if imp.polarity != ty::ImplPolarity::Positive
@@ -448,7 +453,9 @@ impl<'a, 'tcx> TypeErrCtxt<'a, 'tcx> {
 
                         err.span_label(span, format!("cannot {verb} associated {noun} of trait"));
 
-                        let trait_impls = self.tcx.trait_impls_of(data.trait_ref.def_id);
+                        let trait_impls = self
+                            .tcx
+                            .trait_impls_of((data.trait_ref.def_id, IncludeLocalImpls::Yes));
 
                         if let Some(&impl_def_id) =
                             trait_impls.non_blanket_impls().values().flatten().next()

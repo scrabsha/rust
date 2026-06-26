@@ -15,7 +15,8 @@ use rustc_middle::ty::adjustment::CoerceUnsizedInfo;
 use rustc_middle::ty::print::PrintTraitRefExt as _;
 use rustc_middle::ty::relate::solver_relating::RelateExt;
 use rustc_middle::ty::{
-    self, Ty, TyCtxt, TypeVisitableExt, TypingMode, Unnormalized, suggest_constraining_type_params,
+    self, IncludeLocalImpls, Ty, TyCtxt, TypeVisitableExt, TypingMode, Unnormalized,
+    suggest_constraining_type_params,
 };
 use rustc_span::{DUMMY_SP, Span, sym};
 use rustc_trait_selection::error_reporting::InferCtxtErrorExt;
@@ -313,6 +314,7 @@ fn visit_implementation_of_dispatch_from_dyn(checker: &Checker<'_>) -> Result<()
     tcx.for_each_relevant_impl(
         tcx.require_lang_item(LangItem::CoerceUnsized, span),
         source,
+        IncludeLocalImpls::Yes,
         |impl_def_id| {
             res = res.and(tcx.ensure_result().coerce_unsized_info(impl_def_id));
         },

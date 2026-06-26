@@ -220,7 +220,7 @@ impl<'a, 'tcx> FallibleTypeFolder<TyCtxt<'tcx>> for QueryNormalizer<'a, 'tcx> {
                     | TypingMode::PostTypeckUntilBorrowck { .. }
                     | TypingMode::PostBorrowck { .. } => ty.try_super_fold_with(self)?,
 
-                    TypingMode::PostAnalysis | TypingMode::Codegen => {
+                    TypingMode::PostAnalysis | TypingMode::Codegen | TypingMode::IsolatedConst => {
                         let args = data.args.try_fold_with(self)?;
                         let recursion_limit = self.cx().recursion_limit();
 

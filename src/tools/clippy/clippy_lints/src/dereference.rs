@@ -19,6 +19,7 @@ use rustc_hir::{
 };
 use rustc_lint::{LateContext, LateLintPass};
 use rustc_middle::ty::adjustment::{Adjust, Adjustment, AutoBorrow, AutoBorrowMutability};
+use rustc_middle::ty::trait_def::IncludeLocalImpls;
 use rustc_middle::ty::{self, AssocTag, Ty, TyCtxt, TypeVisitableExt, TypeckResults, Unnormalized};
 use rustc_session::impl_lint_pass;
 use rustc_span::{Span, Symbol, SyntaxContext};
@@ -423,7 +424,7 @@ impl<'tcx> LateLintPass<'tcx> for Dereferencing<'tcx> {
                                                         .is_some()
                                                         || !cx
                                                             .tcx
-                                                            .trait_impls_of(trait_.def_id)
+                                                            .trait_impls_of((trait_.def_id, IncludeLocalImpls::Yes))
                                                             .blanket_impls()
                                                             .is_empty()
                                                 })

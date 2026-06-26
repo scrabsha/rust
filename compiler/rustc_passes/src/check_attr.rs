@@ -360,6 +360,7 @@ impl<'tcx> CheckAttrVisitor<'tcx> {
             AttributeKind::RustcInsignificantDtor => (),
             AttributeKind::RustcIntrinsic => (),
             AttributeKind::RustcIntrinsicConstStableIndirect => (),
+            AttributeKind::RustcIsolatedConst => (),
             AttributeKind::RustcLintOptDenyFieldAccess { .. } => (),
             AttributeKind::RustcLintOptTy => (),
             AttributeKind::RustcLintQueryInstability => (),

@@ -847,7 +847,7 @@ where
             // =============================
             (
                 RerunCondition::OpaqueInStorage(..),
-                TypingMode::PostAnalysis | TypingMode::Codegen,
+                TypingMode::PostAnalysis | TypingMode::Codegen | TypingMode::IsolatedConst,
             ) => RerunDecision::Yes,
             (
                 RerunCondition::OpaqueInStorage(defids),
@@ -864,12 +864,13 @@ where
                 TypingMode::PostBorrowck { .. }
                 | TypingMode::PostAnalysis
                 | TypingMode::Codegen
-                | TypingMode::PostTypeckUntilBorrowck { .. },
+                | TypingMode::PostTypeckUntilBorrowck { .. }
+                | TypingMode::IsolatedConst,
             ) => RerunDecision::No,
             // =============================
             (
                 RerunCondition::OpaqueInStorageOrAnyOpaqueHasInferAsHidden(_),
-                TypingMode::PostAnalysis | TypingMode::Codegen,
+                TypingMode::PostAnalysis | TypingMode::Codegen | TypingMode::IsolatedConst,
             ) => RerunDecision::No,
             (
                 RerunCondition::OpaqueInStorageOrAnyOpaqueHasInferAsHidden(defids),

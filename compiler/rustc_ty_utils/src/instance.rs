@@ -161,9 +161,9 @@ fn resolve_associated_item<'tcx>(
                     | ty::TypingMode::Typeck { .. }
                     | ty::TypingMode::PostTypeckUntilBorrowck { .. }
                     | ty::TypingMode::PostBorrowck { .. } => false,
-                    ty::TypingMode::PostAnalysis | ty::TypingMode::Codegen => {
-                        !trait_ref.still_further_specializable()
-                    }
+                    ty::TypingMode::PostAnalysis
+                    | ty::TypingMode::Codegen
+                    | ty::TypingMode::IsolatedConst => !trait_ref.still_further_specializable(),
                 }
             };
             if !eligible {

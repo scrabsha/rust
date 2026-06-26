@@ -6,6 +6,7 @@ use std::ops::Deref;
 use rustc_ast_ir::Movability;
 use rustc_ast_ir::visit::VisitorResult;
 use rustc_index::bit_set::DenseBitSet;
+use rustc_macros::StableHash;
 
 use crate::fold::TypeFoldable;
 use crate::inherent::*;
@@ -17,6 +18,13 @@ use crate::solve::{
 };
 use crate::visit::{Flags, TypeVisitable};
 use crate::{self as ty, CanonicalParamEnvCacheEntry, TraitRef, search_graph};
+
+// FIXME(scrabsha): find an appropriate place to move this.
+#[derive(Clone, Hash, Eq, PartialEq, Copy, Debug, StableHash)]
+pub enum IncludeLocalImpls {
+    Yes,
+    No,
+}
 
 #[cfg_attr(feature = "nightly", rustc_diagnostic_item = "type_ir_interner")]
 pub trait Interner:
@@ -399,11 +407,13 @@ pub trait Interner:
     fn for_each_relevant_impl<R: VisitorResult>(
         self,
         trait_ref: TraitRef<Self>,
+        include_local_impls: IncludeLocalImpls,
         f: impl FnMut(Self::ImplId) -> R,
     ) -> R;
     fn for_each_blanket_impl<R: VisitorResult>(
         self,
         trait_def_id: Self::TraitId,
+        include_local_impls: IncludeLocalImpls,
         f: impl FnMut(Self::ImplId) -> R,
     ) -> R;
 

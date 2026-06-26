@@ -348,7 +348,8 @@ where
                             | ty::TypingMode::PostTypeckUntilBorrowck { .. }
                             | ty::TypingMode::PostBorrowck { .. }
                             | ty::TypingMode::PostAnalysis
-                            | ty::TypingMode::Codegen => {
+                            | ty::TypingMode::Codegen
+                            | ty::TypingMode::IsolatedConst => {
                                 ecx.instantiate_normalizes_to_as_rigid(goal)?;
                                 return ecx.evaluate_added_goals_and_make_canonical_response(
                                     Certainty::Yes,

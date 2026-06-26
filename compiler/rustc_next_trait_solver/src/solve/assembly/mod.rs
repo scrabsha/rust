@@ -486,7 +486,8 @@ where
                     | TypingMode::PostBorrowck { .. }
                     | TypingMode::PostAnalysis
                     | TypingMode::Codegen
-                    | TypingMode::ErasedNotCoherence(MayBeErased) => !candidates.iter().any(|c| {
+                    | TypingMode::ErasedNotCoherence(MayBeErased)
+                    | TypingMode::IsolatedConst => !candidates.iter().any(|c| {
                         matches!(
                             c.source,
                             CandidateSource::ParamEnv(ParamEnvSource::NonGlobal)
@@ -539,24 +540,29 @@ where
         candidates: &mut Vec<Candidate<I>>,
     ) -> Result<(), RerunNonErased> {
         let cx = self.cx();
-        cx.for_each_relevant_impl(goal.predicate.trait_ref(cx), |impl_def_id| -> Result<_, _> {
-            // For every `default impl`, there's always a non-default `impl`
-            // that will *also* apply. There's no reason to register a candidate
-            // for this impl, since it is *not* proof that the trait goal holds.
-            if cx.impl_is_default(impl_def_id) {
-                return Ok(());
-            }
-            match G::consider_impl_candidate(self, goal, impl_def_id, |ecx, certainty| {
-                ecx.evaluate_added_goals_and_make_canonical_response(certainty)
-            })
-            .map_err_to_rerun()?
-            {
-                Ok(candidate) => candidates.push(candidate),
-                Err(NoSolution) => {}
-            }
+        // dbg!();
+        cx.for_each_relevant_impl(
+            goal.predicate.trait_ref(cx),
+            self.typing_mode().include_local_impls(),
+            |impl_def_id| -> Result<_, _> {
+                // For every `default impl`, there's always a non-default `impl`
+                // that will *also* apply. There's no reason to register a candidate
+                // for this impl, since it is *not* proof that the trait goal holds.
+                if cx.impl_is_default(impl_def_id) {
+                    return Ok(());
+                }
+                match G::consider_impl_candidate(self, goal, impl_def_id, |ecx, certainty| {
+                    ecx.evaluate_added_goals_and_make_canonical_response(certainty)
+                })
+                .map_err_to_rerun()?
+                {
+                    Ok(candidate) => candidates.push(candidate),
+                    Err(NoSolution) => {}
+                }
 
-            Ok(())
-        })
+                Ok(())
+            },
+        )
     }
 
     #[instrument(level = "trace", skip_all)]
@@ -1058,6 +1064,7 @@ where
         assemble_from: AssembleCandidatesFrom,
         candidates: &mut Vec<Candidate<I>>,
     ) -> Result<(), RerunNonErased> {
+        dbg!();
         let self_ty = goal.predicate.self_ty();
         // We only use this hack during HIR typeck.
         let opaque_types = match self.typing_mode() {
@@ -1066,7 +1073,8 @@ where
             | TypingMode::PostTypeckUntilBorrowck { .. }
             | TypingMode::PostBorrowck { .. }
             | TypingMode::PostAnalysis
-            | TypingMode::Codegen => vec![],
+            | TypingMode::Codegen
+            | TypingMode::IsolatedConst => vec![],
             TypingMode::ErasedNotCoherence(MayBeErased) => {
                 self.opaque_accesses
                     .rerun_if_any_opaque_has_infer_as_hidden_type(RerunReason::SelfTyInfer)?;
@@ -1139,36 +1147,40 @@ where
         // See tests/ui/impl-trait/non-defining-uses/use-blanket-impl.rs for an example.
         if assemble_from.should_assemble_impl_candidates() {
             let cx = self.cx();
-            cx.for_each_blanket_impl(goal.predicate.trait_def_id(cx), |impl_def_id| {
-                // For every `default impl`, there's always a non-default `impl`
-                // that will *also* apply. There's no reason to register a candidate
-                // for this impl, since it is *not* proof that the trait goal holds.
-                if cx.impl_is_default(impl_def_id) {
-                    return Ok(());
-                }
-
-                match G::consider_impl_candidate(self, goal, impl_def_id, |ecx, certainty| {
-                    if ecx.shallow_resolve(self_ty).is_ty_var() {
-                        // We force the certainty of impl candidates to be `Maybe`.
-                        let certainty = certainty.and(Certainty::AMBIGUOUS);
-                        ecx.evaluate_added_goals_and_make_canonical_response(certainty)
-                    } else {
-                        // We don't want to use impls if they constrain the opaque.
-                        //
-                        // FIXME(trait-system-refactor-initiative#229): This isn't
-                        // perfect yet as it still allows us to incorrectly constrain
-                        // other inference variables.
-                        Err(NoSolution.into())
+            cx.for_each_blanket_impl(
+                goal.predicate.trait_def_id(cx),
+                self.typing_mode().include_local_impls(),
+                |impl_def_id| {
+                    // For every `default impl`, there's always a non-default `impl`
+                    // that will *also* apply. There's no reason to register a candidate
+                    // for this impl, since it is *not* proof that the trait goal holds.
+                    if cx.impl_is_default(impl_def_id) {
+                        return Ok(());
                     }
-                })
-                .map_err_to_rerun()?
-                {
-                    Ok(candidate) => candidates.push(candidate),
-                    Err(NoSolution) => {}
-                }
 
-                Ok(())
-            })?;
+                    match G::consider_impl_candidate(self, goal, impl_def_id, |ecx, certainty| {
+                        if ecx.shallow_resolve(self_ty).is_ty_var() {
+                            // We force the certainty of impl candidates to be `Maybe`.
+                            let certainty = certainty.and(Certainty::AMBIGUOUS);
+                            ecx.evaluate_added_goals_and_make_canonical_response(certainty)
+                        } else {
+                            // We don't want to use impls if they constrain the opaque.
+                            //
+                            // FIXME(trait-system-refactor-initiative#229): This isn't
+                            // perfect yet as it still allows us to incorrectly constrain
+                            // other inference variables.
+                            Err(NoSolution.into())
+                        }
+                    })
+                    .map_err_to_rerun()?
+                    {
+                        Ok(candidate) => candidates.push(candidate),
+                        Err(NoSolution) => {}
+                    }
+
+                    Ok(())
+                },
+            )?;
         }
 
         if candidates.is_empty() {
