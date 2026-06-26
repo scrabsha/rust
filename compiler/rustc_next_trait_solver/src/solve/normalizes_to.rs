@@ -362,7 +362,8 @@ where
                             | ty::TypingMode::PostTypeckUntilBorrowck { .. }
                             | ty::TypingMode::PostBorrowck { .. }
                             | ty::TypingMode::PostAnalysis
-                            | ty::TypingMode::Codegen => {
+                            | ty::TypingMode::Codegen
+                            | ty::TypingMode::IsolatedConst => {
                                 ecx.structurally_instantiate_normalizes_to_term(
                                     goal,
                                     goal.predicate.alias,

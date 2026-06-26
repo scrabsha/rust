@@ -916,7 +916,8 @@ fn rewrite_type_outlives_constraints_in_universe_for_eager_placeholder_handling<
                 | TypingMode::PostTypeckUntilBorrowck { .. }
                 | TypingMode::PostBorrowck { .. }
                 | TypingMode::PostAnalysis
-                | TypingMode::Codegen => (),
+                | TypingMode::Codegen
+                | TypingMode::IsolatedConst => (),
             };
 
             RegionConstraint::Or(candidates.into_boxed_slice())

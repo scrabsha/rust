@@ -20,6 +20,7 @@ use crate::traits::cache::WithDepNode;
 use crate::traits::solve::{
     self, CanonicalInput, ExternalConstraints, ExternalConstraintsData, QueryResult, inspect,
 };
+use crate::ty::trait_def::IncludeLocalImpls;
 use crate::ty::{
     self, Clause, Const, List, ParamTy, Pattern, PolyExistentialPredicate, Predicate, Region, Ty,
     TyCtxt,
@@ -558,7 +559,7 @@ impl<'tcx> Interner for TyCtxt<'tcx> {
         }
 
         let tcx = self;
-        let trait_impls = tcx.trait_impls_of(trait_def_id);
+        let trait_impls = tcx.trait_impls_of((trait_def_id, IncludeLocalImpls::Yes));
         let mut consider_impls_for_simplified_type = |simp| {
             if let Some(impls_for_type) = trait_impls.non_blanket_impls().get(&simp) {
                 for &impl_def_id in impls_for_type {
@@ -673,7 +674,7 @@ impl<'tcx> Interner for TyCtxt<'tcx> {
         trait_def_id: DefId,
         mut f: impl FnMut(DefId) -> R,
     ) -> R {
-        let trait_impls = self.trait_impls_of(trait_def_id);
+        let trait_impls = self.trait_impls_of((trait_def_id, IncludeLocalImpls::Yes));
         for &impl_def_id in trait_impls.blanket_impls() {
             match f(impl_def_id).branch() {
                 ControlFlow::Break(b) => return R::from_residual(b),

@@ -1,5 +1,6 @@
 use rustc_hir::def::DefKind;
 use rustc_hir::def_id::DefId;
+use rustc_hir::find_attr;
 use rustc_session::lint;
 use rustc_span::{DUMMY_SP, Span};
 use tracing::{debug, instrument};
@@ -17,6 +18,10 @@ impl<'tcx> TyCtxt<'tcx> {
     /// generic parameter is used within the constant `ErrorHandled::TooGeneric` will be returned.
     #[instrument(skip(self), level = "debug")]
     pub fn const_eval_poly(self, def_id: DefId) -> EvalToConstValueResult<'tcx> {
+        dbg!(def_id);
+        if find_attr!(self, def_id, RustcIsolatedConst) {
+            todo!()
+        }
         // In some situations def_id will have generic parameters within scope, but they aren't allowed
         // to be used. So we can't use `Instance::mono`, instead we feed unresolved generic parameters
         // into `const_eval` which will return `ErrorHandled::TooGeneric` if any of them are
@@ -61,6 +66,7 @@ impl<'tcx> TyCtxt<'tcx> {
         ct: mir::UnevaluatedConst<'tcx>,
         span: Span,
     ) -> EvalToConstValueResult<'tcx> {
+        dbg!();
         // Cannot resolve `Unevaluated` constants that contain inference
         // variables. We reject those here since `resolve`
         // would fail otherwise.
@@ -93,6 +99,7 @@ impl<'tcx> TyCtxt<'tcx> {
         ct: ty::UnevaluatedConst<'tcx>,
         span: Span,
     ) -> ConstToValTreeResult<'tcx> {
+        dbg!();
         // Cannot resolve `Unevaluated` constants that contain inference
         // variables. We reject those here since `resolve`
         // would fail otherwise.
@@ -167,6 +174,7 @@ impl<'tcx> TyCtxt<'tcx> {
         instance: ty::Instance<'tcx>,
         span: Span,
     ) -> EvalToConstValueResult<'tcx> {
+        dbg!();
         self.const_eval_global_id(typing_env, GlobalId { instance, promoted: None }, span)
     }
 
@@ -178,6 +186,7 @@ impl<'tcx> TyCtxt<'tcx> {
         cid: GlobalId<'tcx>,
         span: Span,
     ) -> EvalToConstValueResult<'tcx> {
+        dbg!();
         // Const-eval shouldn't depend on lifetimes at all, so we can erase them, which should
         // improve caching of queries.
         let inputs = self.erase_and_anonymize_regions(
@@ -199,6 +208,7 @@ impl<'tcx> TyCtxt<'tcx> {
         cid: GlobalId<'tcx>,
         span: Span,
     ) -> ConstToValTreeResult<'tcx> {
+        dbg!();
         // Const-eval shouldn't depend on lifetimes at all, so we can erase them, which should
         // improve caching of queries.
         let inputs = self.erase_and_anonymize_regions(

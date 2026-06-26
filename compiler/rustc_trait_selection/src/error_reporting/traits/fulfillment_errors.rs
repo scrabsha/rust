@@ -28,6 +28,7 @@ use rustc_middle::ty::print::{
     PrintPolyTraitPredicateExt, PrintPolyTraitRefExt as _, PrintTraitPredicateExt as _,
     PrintTraitRefExt as _, with_forced_trimmed_paths,
 };
+use rustc_middle::ty::trait_def::IncludeLocalImpls;
 use rustc_middle::ty::{
     self, GenericArgKind, TraitRef, Ty, TyCtxt, TypeFoldable, TypeFolder, TypeSuperFoldable,
     TypeVisitableExt, Unnormalized, Upcast,
@@ -3233,7 +3234,7 @@ impl<'a, 'tcx> TypeErrCtxt<'a, 'tcx> {
                 obligation.cause.body_id,
             );
         } else if trait_def_id.is_local()
-            && self.tcx.trait_impls_of(trait_def_id).is_empty()
+            && self.tcx.trait_impls_of((trait_def_id, IncludeLocalImpls::Yes)).is_empty()
             && !self.tcx.trait_is_auto(trait_def_id)
             && !self.tcx.trait_is_alias(trait_def_id)
             && trait_predicate.polarity() == ty::PredicatePolarity::Positive

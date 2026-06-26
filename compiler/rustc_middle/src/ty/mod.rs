@@ -1143,7 +1143,8 @@ impl<'tcx> TypingEnv<'tcx> {
             TypingMode::Coherence
             | TypingMode::Typeck { .. }
             | TypingMode::PostTypeckUntilBorrowck { .. }
-            | TypingMode::PostBorrowck { .. } => {}
+            | TypingMode::PostBorrowck { .. }
+            | TypingMode::IsolatedConst => {}
             TypingMode::PostAnalysis | TypingMode::Codegen => return self,
         }
 
@@ -1160,7 +1161,8 @@ impl<'tcx> TypingEnv<'tcx> {
             | TypingMode::Typeck { .. }
             | TypingMode::PostTypeckUntilBorrowck { .. }
             | TypingMode::PostBorrowck { .. }
-            | TypingMode::PostAnalysis => {}
+            | TypingMode::PostAnalysis
+            | TypingMode::IsolatedConst => {}
             TypingMode::Codegen => return self,
         }
 

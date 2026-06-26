@@ -182,7 +182,8 @@ where
                 | TypingMode::PostTypeckUntilBorrowck { .. }
                 | TypingMode::PostBorrowck { .. }
                 | TypingMode::PostAnalysis
-                | TypingMode::Codegen => structurally_relate_tys(relation, a, b),
+                | TypingMode::Codegen
+                | TypingMode::IsolatedConst => structurally_relate_tys(relation, a, b),
             }
         }
 

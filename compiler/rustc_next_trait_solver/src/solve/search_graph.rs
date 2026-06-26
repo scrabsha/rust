@@ -73,7 +73,8 @@ where
                 | TypingMode::PostBorrowck { .. }
                 | TypingMode::PostAnalysis
                 | TypingMode::Codegen
-                | TypingMode::ErasedNotCoherence(MayBeErased) => {
+                | TypingMode::ErasedNotCoherence(MayBeErased)
+                | TypingMode::IsolatedConst => {
                     (Err(NoSolution), AccessedOpaques::default())
                 }
             },

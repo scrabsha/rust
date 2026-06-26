@@ -136,6 +136,9 @@ pub enum TypingMode<I: Interner, S: TypingModeErasedStatus = MayBeErased> {
     /// layouts.
     Codegen,
 
+    /// During isolated const, forbid referring to traits defined in the current trait.
+    IsolatedConst,
+
     /// The typing modes above (except coherence) only differ in how they handle
     ///
     /// - Generators
@@ -191,6 +194,7 @@ impl<I: Interner> PartialEq for TypingModeEqWrapper<I> {
                 TypingMode::ErasedNotCoherence(MayBeErased),
                 TypingMode::ErasedNotCoherence(MayBeErased),
             ) => true,
+            (TypingMode::IsolatedConst, TypingMode::IsolatedConst) => true,
             (
                 TypingMode::Coherence
                 | TypingMode::Typeck { .. }
@@ -198,7 +202,8 @@ impl<I: Interner> PartialEq for TypingModeEqWrapper<I> {
                 | TypingMode::PostBorrowck { .. }
                 | TypingMode::PostAnalysis
                 | TypingMode::Codegen
-                | TypingMode::ErasedNotCoherence(MayBeErased),
+                | TypingMode::ErasedNotCoherence(MayBeErased)
+                | TypingMode::IsolatedConst,
                 _,
             ) => false,
         }
@@ -221,7 +226,8 @@ impl<I: Interner, S: TypingModeErasedStatus> TypingMode<I, S> {
             | TypingMode::PostBorrowck { .. }
             | TypingMode::PostAnalysis
             | TypingMode::Codegen
-            | TypingMode::ErasedNotCoherence(_) => false,
+            | TypingMode::ErasedNotCoherence(_)
+            | TypingMode::IsolatedConst => false,
         }
     }
 
@@ -238,7 +244,8 @@ impl<I: Interner, S: TypingModeErasedStatus> TypingMode<I, S> {
             | TypingMode::PostTypeckUntilBorrowck { .. }
             | TypingMode::PostBorrowck { .. }
             | TypingMode::PostAnalysis
-            | TypingMode::Codegen => false,
+            | TypingMode::Codegen
+            | TypingMode::IsolatedConst => false,
         }
     }
 }
@@ -262,6 +269,7 @@ impl<I: Interner> TypingMode<I, MayBeErased> {
             }
             TypingMode::PostAnalysis => TypingMode::PostAnalysis,
             TypingMode::Codegen => TypingMode::Codegen,
+            TypingMode::IsolatedConst => TypingMode::IsolatedConst,
             TypingMode::ErasedNotCoherence(MayBeErased) => panic!(
                 "Called `assert_not_erased` from a place that can be called by the trait solver in `TypingMode::ErasedNotCoherence`. `TypingMode` is `ErasedNotCoherence` in a place where that should be impossible"
             ),
@@ -327,6 +335,7 @@ impl<I: Interner> From<TypingMode<I, CantBeErased>> for TypingMode<I, MayBeErase
             }
             TypingMode::PostAnalysis => TypingMode::PostAnalysis,
             TypingMode::Codegen => TypingMode::Codegen,
+            TypingMode::IsolatedConst => TypingMode::IsolatedConst,
         }
     }
 }
@@ -561,7 +570,8 @@ where
         | TypingMode::Typeck { .. }
         | TypingMode::PostTypeckUntilBorrowck { .. }
         | TypingMode::PostBorrowck { .. }
-        | TypingMode::PostAnalysis => infcx.cx().features().feature_bound_holds_in_crate(symbol),
+        | TypingMode::PostAnalysis
+        | TypingMode::IsolatedConst => infcx.cx().features().feature_bound_holds_in_crate(symbol),
         TypingMode::Codegen => true,
     }
 }

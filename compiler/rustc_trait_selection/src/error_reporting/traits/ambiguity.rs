@@ -12,6 +12,7 @@ use rustc_infer::traits::{
     Obligation, ObligationCause, ObligationCauseCode, PolyTraitObligation, PredicateObligation,
 };
 use rustc_middle::ty::print::PrintPolyTraitPredicateExt;
+use rustc_middle::ty::trait_def::IncludeLocalImpls;
 use rustc_middle::ty::{self, Ty, TyCtxt, TypeVisitable as _, TypeVisitableExt as _, Unnormalized};
 use rustc_session::errors::feature_err_unstable_feature_bound;
 use rustc_span::{DUMMY_SP, ErrorGuaranteed, Span};
@@ -447,7 +448,7 @@ impl<'a, 'tcx> TypeErrCtxt<'a, 'tcx> {
 
                         err.span_label(span, format!("cannot {verb} associated {noun} of trait"));
 
-                        let trait_impls = self.tcx.trait_impls_of(data.trait_ref.def_id);
+                        let trait_impls = self.tcx.trait_impls_of((data.trait_ref.def_id, IncludeLocalImpls::Yes));
 
                         if let Some(&impl_def_id) =
                             trait_impls.non_blanket_impls().values().flatten().next()

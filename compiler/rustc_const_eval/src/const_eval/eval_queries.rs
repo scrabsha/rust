@@ -44,7 +44,8 @@ fn retry_codegen_mode_with_postanalysis<'tcx, K: TypeVisitable<TyCtxt<'tcx>>, V>
         | ty::TypingMode::Typeck { .. }
         | ty::TypingMode::PostTypeckUntilBorrowck { .. }
         | ty::TypingMode::PostBorrowck { .. }
-        | ty::TypingMode::PostAnalysis => {}
+        | ty::TypingMode::PostAnalysis
+        | ty::TypingMode::IsolatedConst => {}
     }
 
     None
