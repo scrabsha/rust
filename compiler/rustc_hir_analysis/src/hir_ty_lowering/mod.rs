@@ -3452,7 +3452,7 @@ impl<'tcx> dyn HirTyLowerer<'tcx> + '_ {
         let dcx = self.dcx();
         let tcx = self.tcx();
         match ty.kind() {
-            ty::Adt(def, _) => {
+            ty::Adt(def, _) | ty::View(def, _, _) => {
                 let base_did = def.did();
                 let kind_name = tcx.def_descr(base_did);
                 let (variant_idx, variant) = if def.is_enum() {
@@ -3833,8 +3833,8 @@ impl<'tcx> dyn HirTyLowerer<'tcx> + '_ {
         }
 
         // Step 2: check that the viewed type is a struct.
-        let variant = match inner_ty.kind() {
-            ty::Adt(def, _) if def.is_struct() => def.non_enum_variant(),
+        let (def, args) = match inner_ty.kind() {
+            ty::Adt(def, args) | ty::View(def, args, _) if def.is_struct() => (*def, args),
 
             ty::Adt(def, _) => {
                 let guar = self.dcx().emit_err(diagnostics::OnlyStructsCanBeViewedAdt {
@@ -3856,10 +3856,11 @@ impl<'tcx> dyn HirTyLowerer<'tcx> + '_ {
         };
 
         // Step 3: check that every viewed field exists.
+        let variant = def.non_enum_variant();
         let mut viewed_indices = Vec::with_capacity(viewed_fields.len());
         let mut error = None;
         for field in viewed_fields {
-            let Some((_, field)) = variant
+            let Some((field_idx, _)) = variant
                 .fields
                 .iter_enumerated()
                 .find(|(_, f)| f.ident(self.tcx()).normalize_to_macros_2_0() == field)
@@ -3870,13 +3871,13 @@ impl<'tcx> dyn HirTyLowerer<'tcx> + '_ {
                 continue;
             };
 
-            viewed_indices.push(field);
+            viewed_indices.push(field_idx);
         }
         if let Some(guar) = error {
             return Ty::new_error(self.tcx(), guar);
         }
 
         // FIXME(scrabsha): actually lower view types.
-        inner_ty
+        Ty::new_resolved_view(self.tcx(), def, args, &viewed_indices)
     }
 }

@@ -2209,6 +2209,44 @@ impl<'tcx> TyCtxt<'tcx> {
         }
     }
 
+    /// With `cfg(debug_assertions)`, assert that `def` refers to an `Adt`.
+    pub fn debug_assert_is_adt(self, def: DefId) {
+        if cfg!(debug_assertions) {
+            match self.def_kind(def) {
+                DefKind::Struct | DefKind::Union | DefKind::Enum => {}
+                DefKind::Mod
+                | DefKind::Variant
+                | DefKind::Trait
+                | DefKind::TyAlias
+                | DefKind::ForeignTy
+                | DefKind::TraitAlias
+                | DefKind::AssocTy
+                | DefKind::TyParam
+                | DefKind::Fn
+                | DefKind::Const { .. }
+                | DefKind::ConstParam
+                | DefKind::Static { .. }
+                | DefKind::Ctor(..)
+                | DefKind::AssocFn
+                | DefKind::AssocConst { .. }
+                | DefKind::Macro(..)
+                | DefKind::ExternCrate
+                | DefKind::Use
+                | DefKind::ForeignMod
+                | DefKind::AnonConst
+                | DefKind::OpaqueTy
+                | DefKind::Field
+                | DefKind::LifetimeParam
+                | DefKind::GlobalAsm
+                | DefKind::Impl { .. }
+                | DefKind::Closure
+                | DefKind::SyntheticCoroutineBody => {
+                    bug!("not an adt: {def:?} ({:?})", self.def_kind(def))
+                }
+            }
+        }
+    }
+
     #[inline(always)]
     pub(crate) fn check_and_mk_args(
         self,
