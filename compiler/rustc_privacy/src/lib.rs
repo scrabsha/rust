@@ -185,7 +185,8 @@ where
             | ty::FnDef(def_id, ..)
             | ty::Closure(def_id, ..)
             | ty::CoroutineClosure(def_id, ..)
-            | ty::Coroutine(def_id, ..) => {
+            | ty::Coroutine(def_id, ..)
+            | ty::View(ty::AdtDef(Interned(&ty::AdtDefData { did: def_id, .. }, _)), ..) => {
                 try_visit!(self.def_id_visitor.visit_def_id(def_id, "type", &ty));
                 if V::SHALLOW {
                     return V::Result::output();

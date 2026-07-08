@@ -735,7 +735,7 @@ where
                 // `&mut T` and `&T` always implement `BikeshedGuaranteedNoDrop`.
                 ty::Ref(..) => {}
                 // `ManuallyDrop<T>` always implements `BikeshedGuaranteedNoDrop`.
-                ty::Adt(def, _) if def.is_manually_drop() => {}
+                ty::Adt(def, _) | ty::View(def, _, _) if def.is_manually_drop() => {}
                 // Arrays and tuples implement `BikeshedGuaranteedNoDrop` only if
                 // their constituent types implement `BikeshedGuaranteedNoDrop`.
                 ty::Tuple(tys) => {
@@ -779,6 +779,7 @@ where
                 | ty::Closure(..)
                 | ty::CoroutineClosure(..)
                 | ty::Coroutine(..)
+                | ty::View(..)
                 | ty::UnsafeBinder(_)
                 | ty::CoroutineWitness(..) => {
                     ecx.add_goal(
@@ -1389,6 +1390,7 @@ where
             | ty::Never
             | ty::Tuple(_)
             | ty::Adt(_, _)
+            | ty::View(_, _, _)
             | ty::UnsafeBinder(_) => check_impls(),
             ty::Error(_) => None,
 

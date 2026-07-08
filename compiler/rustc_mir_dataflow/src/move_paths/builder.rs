@@ -169,13 +169,14 @@ impl<'a, 'tcx, F: Fn(Ty<'tcx>) -> bool> MoveDataBuilder<'a, 'tcx, F> {
                             | ty::Param(_)
                             | ty::Bound(_, _)
                             | ty::Infer(_)
+                            | ty::View(_, _, _)
                             | ty::Error(_)
                             | ty::Placeholder(_) => {
                                 bug!("When Place is Deref it's type shouldn't be {place_ty:#?}")
                             }
                         },
                         MoveSubPath::Field(_) => match place_ty.kind() {
-                            ty::Adt(adt, _) => {
+                            ty::Adt(adt, _) | ty::View(adt, _, _) => {
                                 if adt.has_dtor(tcx) {
                                     return;
                                 }
