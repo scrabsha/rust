@@ -971,6 +971,7 @@ symbols! {
         field_representing_type_actual_type_id,
         field_representing_type_raw,
         field_type,
+        field_set_representing_type,
         fields,
         file,
         final_associated_functions,

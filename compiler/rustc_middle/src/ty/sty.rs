@@ -533,6 +533,19 @@ impl<'tcx> Ty<'tcx> {
     }
 
     #[inline]
+    pub fn new_field_set_representing_type(tcx: TyCtxt<'tcx>, base: Ty<'tcx>, id: u32) -> Ty<'tcx> {
+        let Some(did) = tcx.lang_items().field_set_representing_type() else {
+            bug!("could not locate the `FieldSetRepresentingType` lang item")
+        };
+        let def = tcx.adt_def(did);
+        let args = tcx.mk_args(&[
+            base.into(),
+            Const::new_value(tcx, ValTree::from_scalar_int(tcx, id.into()), tcx.types.u32).into(),
+        ]);
+        Ty::new_adt(tcx, def, args)
+    }
+
+    #[inline]
     #[instrument(level = "debug", skip(tcx))]
     pub fn new_opaque(
         tcx: TyCtxt<'tcx>,
@@ -944,6 +957,10 @@ impl<'tcx> Ty<'tcx> {
         let context_args = tcx.mk_args(&[tcx.lifetimes.re_erased.into()]);
         let context_ty = Ty::new_adt(tcx, context_adt_ref, context_args);
         Ty::new_mut_ref(tcx, tcx.lifetimes.re_erased, context_ty)
+    }
+
+    pub fn new_view_infer(tcx: TyCtxt<'tcx>) -> Ty<'tcx> {
+        todo!()
     }
 }
 
