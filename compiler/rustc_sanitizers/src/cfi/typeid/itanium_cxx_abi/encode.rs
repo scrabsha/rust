@@ -219,7 +219,7 @@ fn encode_const_value<'tcx>(
         // User-defined types
         // Struct and enum values are encoded as their field values as literal arguments, preceded
         // by V<variant-index> for enum values.
-        ty::Adt(adt_def, ..) => {
+        ty::Adt(adt_def, ..) | ty::View(adt_def, ..) => {
             let contents = cv.destructure_adt_const();
             if adt_def.is_enum() {
                 let _ = write!(s, "V{}", contents.variant.as_u32());
@@ -542,7 +542,7 @@ pub(crate) fn encode_ty<'tcx>(
         }
 
         // User-defined types
-        ty::Adt(adt_def, args) => {
+        ty::Adt(adt_def, args) | ty::View(adt_def, args, _) => {
             let mut s = String::new();
             let def_id = adt_def.did();
             if let Some(encoding) = find_attr!(tcx, def_id, CfiEncoding { encoding } => encoding) {

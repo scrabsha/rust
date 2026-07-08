@@ -262,7 +262,7 @@ fn is_ty_fully_unsafe_celled<'tcx>(cx: &LateContext<'tcx>, ty: Ty<'tcx>) -> bool
 
         // Check that the inner fields/types are them-selves covered by an `UnsafeCell`.
         match ty.kind() {
-            ty::Adt(def, args) => {
+            ty::Adt(def, args) | ty::View(def, args, _) => {
                 // Is this an enum? Yes, bail-out.
                 if def.is_enum() {
                     return false;

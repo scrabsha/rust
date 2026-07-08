@@ -1215,6 +1215,7 @@ impl<'tcx> Ty<'tcx> {
             | ty::Infer(_)
             | ty::Alias(..)
             | ty::Param(_)
+            | ty::View(..)
             | ty::Placeholder(_) => false,
         }
     }
@@ -1265,6 +1266,7 @@ impl<'tcx> Ty<'tcx> {
             | ty::Infer(_)
             | ty::Alias(..)
             | ty::Param(_)
+            | ty::View(..)
             | ty::Placeholder(_) => false,
         }
     }
@@ -1319,6 +1321,7 @@ impl<'tcx> Ty<'tcx> {
             | ty::Infer(_)
             | ty::Alias(..)
             | ty::Param(_)
+            | ty::View(..)
             | ty::Placeholder(_) => false,
         }
     }
@@ -1454,7 +1457,7 @@ impl<'tcx> Ty<'tcx> {
     pub fn is_structural_eq_shallow(self, tcx: TyCtxt<'tcx>) -> bool {
         match self.kind() {
             // Look for an impl of `StructuralPartialEq`.
-            ty::Adt(..) => tcx.has_structural_eq_impl(self),
+            ty::Adt(..) | ty::View(..) => tcx.has_structural_eq_impl(self),
 
             // Primitive types that satisfy `Eq`.
             ty::Bool | ty::Char | ty::Int(_) | ty::Uint(_) | ty::Str | ty::Never => true,
@@ -1593,6 +1596,7 @@ pub fn needs_drop_components_with_async<'tcx>(
         | ty::CoroutineClosure(..)
         | ty::Coroutine(..)
         | ty::CoroutineWitness(..)
+        | ty::View(..)
         | ty::UnsafeBinder(_) => Ok(smallvec![ty]),
     }
 }

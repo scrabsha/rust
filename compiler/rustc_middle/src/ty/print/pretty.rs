@@ -3,7 +3,7 @@ use std::fmt::{self, Write as _};
 use std::iter;
 use std::ops::{Deref, DerefMut};
 
-use rustc_abi::{ExternAbi, Size};
+use rustc_abi::{ExternAbi, FIRST_VARIANT, FieldIdx, Size};
 use rustc_apfloat::Float;
 use rustc_apfloat::ieee::{Double, Half, Quad, Single};
 use rustc_data_structures::Limit;
@@ -759,6 +759,57 @@ pub trait PrettyPrinter<'tcx>: Printer<'tcx> + fmt::Write {
                 write!(self, "(")?;
                 ty.print(self)?;
                 write!(self, ") is {pat:?}")?;
+            }
+            ty::View(adt_def, args, fields) => {
+                self.print_def_path(adt_def.did(), args)?;
+                write!(self, ".{{")?;
+                match fields.kind() {
+                    ty::Tuple(fields) => {
+                        if !fields.is_empty() {
+                            write!(self, " ")?;
+                        }
+                        let struct_fields = &adt_def.variant(FIRST_VARIANT).fields;
+
+                        let mut first = true;
+                        for field in fields.iter() {
+                            if !first {
+                                write!(self, ", ")?;
+                            } else {
+                                first = false;
+                            }
+
+                            match field.kind() {
+                                ty::Adt(def_id, args)
+                                    if self.tcx().is_lang_item(
+                                        def_id.did(),
+                                        LangItem::FieldRepresentingType,
+                                    ) =>
+                                {
+                                    let field_idx = args[2].as_const().expect("Malformed FRT");
+                                    let Some(field_idx) = field_idx.try_to_leaf() else {
+                                        self.print_const(field_idx)?;
+                                        continue;
+                                    };
+                                    let field_idx = field_idx.to_u32();
+                                    let field_idx = FieldIdx::from_usize(field_idx as _);
+                                    let ident = struct_fields[field_idx].ident(self.tcx());
+                                    write!(self, "{ident}")?;
+                                }
+                                ty::Infer(..) | ty::Error(..) => self.print_type(field)?,
+
+                                _ => bug!("malformed view type field set element: {field}"),
+                            }
+                        }
+
+                        if !fields.is_empty() {
+                            write!(self, " ")?;
+                        }
+                    }
+                    ty::Infer(..) | ty::Error(..) => self.print_type(fields)?,
+
+                    _ => bug!("malformed view type field set: {fields}"),
+                }
+                write!(self, "}}")?;
             }
             ty::RawPtr(ty, mutbl) => {
                 write!(self, "*{} ", mutbl.ptr_str())?;

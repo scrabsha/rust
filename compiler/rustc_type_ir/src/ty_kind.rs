@@ -304,6 +304,14 @@ pub enum TyKind<I: Interner> {
     /// A type parameter; for example, `T` in `fn f<T>(x: T) {}`.
     Param(I::ParamTy),
 
+    /// A view over an ADT. The set of viewed fields has been computed. Refer to the
+    /// documentation of [`TyKind::Adt`] for more.
+    ///
+    /// The set of viewed fields is represented either as a [`TyKind::Infer`] (when the
+    /// set of viewed fields has yet to be inferred) or as a [`TyKind::Tuple`] of
+    /// `FieldRepresentingType`, each element representing a field that is accessible.
+    View(I::AdtDef, I::GenericArgs, I::Ty),
+
     /// Bound type variable, used to represent the `'a` in `for<'a> fn(&'a ())`.
     ///
     /// For canonical queries, we replace inference variables with bound variables,
@@ -401,7 +409,8 @@ impl<I: Interner> TyKind<I> {
             | ty::Coroutine(_, _)
             | ty::CoroutineWitness(..)
             | ty::Never
-            | ty::Tuple(_) => true,
+            | ty::Tuple(_)
+            | ty::View(_, _, _) => true,
 
             ty::Error(_)
             | ty::Infer(_)
@@ -422,21 +431,7 @@ impl<I: Interner> fmt::Debug for TyKind<I> {
             Int(i) => write!(f, "{i:?}"),
             Uint(u) => write!(f, "{u:?}"),
             Float(float) => write!(f, "{float:?}"),
-            Adt(d, s) => {
-                write!(f, "{d:?}")?;
-                let mut s = s.iter();
-                let first = s.next();
-                match first {
-                    Some(first) => write!(f, "<{:?}", first)?,
-                    None => return Ok(()),
-                };
-
-                for arg in s {
-                    write!(f, ", {:?}", arg)?;
-                }
-
-                write!(f, ">")
-            }
+            Adt(d, s) => debug_adt::<I>(f, d, s),
             Foreign(d) => f.debug_tuple("Foreign").field(d).finish(),
             Str => write!(f, "str"),
             Array(t, c) => write!(f, "[{t:?}; {c:?}]"),
@@ -473,11 +468,39 @@ impl<I: Interner> fmt::Debug for TyKind<I> {
             Alias(is_rigid, a) => f.debug_tuple("Alias").field(&is_rigid).field(&a).finish(),
             Param(p) => write!(f, "{p:?}"),
             Bound(d, b) => crate::debug_bound_var(f, *d, b),
+            View(d, s, fs) => {
+                write!(f, "view_type!(")?;
+                debug_adt::<I>(f, d, s)?;
+                write!(f, ".{{ {fs:?} }})")
+            }
             Placeholder(p) => write!(f, "{p:?}"),
             Infer(t) => write!(f, "{:?}", t),
             TyKind::Error(_) => write!(f, "{{type error}}"),
         }
     }
+}
+
+fn debug_adt<I>(
+    f: &mut fmt::Formatter<'_>,
+    d: &<I as Interner>::AdtDef,
+    s: &I::GenericArgs,
+) -> fmt::Result
+where
+    I: Interner,
+{
+    write!(f, "{d:?}")?;
+    let mut s = s.iter();
+    let first = s.next();
+    match first {
+        Some(first) => write!(f, "<{:?}", first)?,
+        None => return Ok(()),
+    };
+
+    for arg in s {
+        write!(f, ", {:?}", arg)?;
+    }
+
+    write!(f, ">")
 }
 
 impl<I: Interner> AliasTy<I> {
@@ -729,6 +752,23 @@ rustc_index::newtype_index! {
     #[debug_format = "?{}f"]
     #[gate_rustc_only]
     pub struct FloatVid {}
+}
+
+rustc_index::newtype_index! {
+    /// A **field set** **v**ariable **ID**.
+    #[encodable]
+    #[orderable]
+    #[debug_format = "?{}"]
+    #[gate_rustc_only]
+    #[derive(GenericTypeVisitable)]
+    pub struct FieldSetVid {}
+}
+
+#[cfg(feature = "nightly")]
+impl StableHash for FieldSetVid {
+    fn stable_hash<Hcx: StableHashCtxt>(&self, _hcx: &mut Hcx, _hasher: &mut StableHasher) {
+        panic!("field set variables should not be hashed: {self:?}")
+    }
 }
 
 /// A placeholder for a type that hasn't been inferred yet.

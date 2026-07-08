@@ -712,6 +712,7 @@ impl<'cx, 'tcx> SelectionContext<'cx, 'tcx> {
                 | ty::UnsafeBinder(_)
                 | ty::Never
                 | ty::Tuple(_)
+                | ty::View(_, _, _)
                 | ty::Error(_) => return true,
                 // FIXME: Function definitions could actually implement `FnPtr` by
                 // casting the ZST function def to a function pointer.
@@ -892,6 +893,7 @@ impl<'cx, 'tcx> SelectionContext<'cx, 'tcx> {
                 | ty::CoroutineClosure(..)
                 | ty::Never
                 | ty::Tuple(_)
+                | ty::View(..)
                 | ty::UnsafeBinder(_) => {
                     // Only consider auto impls of unsafe traits when there are
                     // no unsafe fields.
@@ -1231,7 +1233,7 @@ impl<'cx, 'tcx> SelectionContext<'cx, 'tcx> {
             }
 
             // Fallback to whatever user-defined impls or param-env clauses exist in this case.
-            ty::Adt(..) | ty::Alias(..) | ty::Param(..) | ty::Placeholder(..) => {}
+            ty::Adt(..) | ty::Alias(..) | ty::Param(..) | ty::Placeholder(..) | ty::View(..) => {}
 
             ty::Infer(ty::TyVar(_)) => {
                 candidates.ambiguous = true;
@@ -1287,7 +1289,7 @@ impl<'cx, 'tcx> SelectionContext<'cx, 'tcx> {
             }
 
             // Conditionally `Sized`.
-            ty::Tuple(..) | ty::Pat(..) | ty::Adt(..) | ty::UnsafeBinder(_) => {
+            ty::Tuple(..) | ty::Pat(..) | ty::Adt(..) | ty::UnsafeBinder(_) | ty::View(..) => {
                 candidates.vec.push(SizedCandidate);
             }
 
@@ -1363,6 +1365,7 @@ impl<'cx, 'tcx> SelectionContext<'cx, 'tcx> {
             | ty::Alias(..)
             | ty::Param(_)
             | ty::Bound(_, _)
+            | ty::View(..)
             | ty::Error(_)
             | ty::Infer(_)
             | ty::Placeholder(_) => {}
@@ -1402,6 +1405,7 @@ impl<'cx, 'tcx> SelectionContext<'cx, 'tcx> {
             | ty::Never
             | ty::Tuple(..)
             | ty::Alias(..)
+            | ty::View(..)
             | ty::Param(..)
             | ty::Bound(..)
             | ty::Error(_)
@@ -1449,6 +1453,7 @@ impl<'cx, 'tcx> SelectionContext<'cx, 'tcx> {
             | ty::Closure(..)
             | ty::CoroutineClosure(..)
             | ty::Coroutine(..)
+            | ty::View(..)
             | ty::UnsafeBinder(_)
             | ty::CoroutineWitness(..)
             | ty::Bound(..) => {

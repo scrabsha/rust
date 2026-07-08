@@ -170,6 +170,7 @@ impl<'tcx> TyCtxt<'tcx> {
             | ty::Uint(_)
             | ty::Float(_)
             | ty::Adt(_, _)
+            | ty::View(_, _, _)
             | ty::Foreign(_)
             | ty::Str
             | ty::Array(_, _)
