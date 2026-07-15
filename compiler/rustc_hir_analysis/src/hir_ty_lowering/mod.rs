@@ -3834,15 +3834,15 @@ impl<'tcx> dyn HirTyLowerer<'tcx> + '_ {
         }
 
         // Step 2: check that the viewed type is a struct.
-        let variant = match inner_ty.kind() {
-            ty::Adt(def, _) if def.is_struct() => def.non_enum_variant(),
+        let (variant, def, args) = match inner_ty.kind() {
+            ty::Adt(def, args) if def.is_struct() => (def.non_enum_variant(), def, args),
 
-            ty::Adt(def, _) => {
+            ty::Adt(adt_def, _) => {
                 let guar = self.dcx().emit_err(diagnostics::OnlyStructsCanBeViewedAdt {
                     ty: inner_ty,
                     span: ty_span,
-                    article: def.article(),
-                    kind: def.descr(),
+                    article: adt_def.article(),
+                    kind: adt_def.descr(),
                 });
                 return Ty::new_error(self.tcx(), guar);
             }
@@ -3860,24 +3860,22 @@ impl<'tcx> dyn HirTyLowerer<'tcx> + '_ {
         let mut viewed_indices = Vec::with_capacity(viewed_fields.len());
         let mut error = None;
         for field in viewed_fields {
-            let Some((_, field)) = variant
-                .fields
-                .iter_enumerated()
-                .find(|(_, f)| f.ident(self.tcx()).normalize_to_macros_2_0() == field)
-            else {
+            let Some(idx) = variant.fields.iter_enumerated().find_map(|(idx, f)| {
+                (f.ident(self.tcx()).normalize_to_macros_2_0() == field).then_some(idx)
+            }) else {
                 let err =
                     self.dcx().emit_err(NoFieldOnType { span: field.span, field, ty: inner_ty });
                 error = Some(err);
                 continue;
             };
 
-            viewed_indices.push(field);
+            viewed_indices.push(idx);
         }
         if let Some(guar) = error {
             return Ty::new_error(self.tcx(), guar);
         }
 
-        // FIXME(scrabsha): actually lower view types.
-        inner_ty
+        let fields = self.tcx().mk_fields(&viewed_indices);
+        Ty::new_view(self.tcx(), *def, *args, fields)
     }
 }
