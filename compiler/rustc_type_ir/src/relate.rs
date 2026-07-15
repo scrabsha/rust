@@ -394,6 +394,20 @@ pub fn structurally_relate_tys<I: Interner, R: TypeRelation<I>>(
             }
         }
 
+        (
+            ty::View(a_def, a_args, _) | ty::ViewInfer(a_def, a_args, _),
+            ty::View(b_def, b_args, _) | ty::ViewInfer(b_def, b_args, _),
+        ) if a_def == b_def => {
+            // FIXME(scrabsha): should we relate the viewed fields/inferred viewed fields?
+            if a_args.is_empty() {
+                Ok(a)
+            } else {
+                relation.relate_ty_args(a, b, a_def.def_id().into(), a_args, b_args, |args| {
+                    Ty::new_adt(cx, a_def, args)
+                })
+            }
+        }
+
         (ty::Foreign(a_id), ty::Foreign(b_id)) if a_id == b_id => Ok(Ty::new_foreign(cx, a_id)),
 
         (ty::Dynamic(a_obj, a_region), ty::Dynamic(b_obj, b_region)) => Ok(Ty::new_dynamic(

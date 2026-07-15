@@ -3835,7 +3835,11 @@ impl<'tcx> dyn HirTyLowerer<'tcx> + '_ {
 
         // Step 2: check that the viewed type is a struct.
         let (variant, def, args) = match inner_ty.kind() {
-            ty::Adt(def, args) if def.is_struct() => (def.non_enum_variant(), def, args),
+            ty::Adt(def, args) | ty::View(def, args, _) | ty::ViewInfer(def, args, _)
+                if def.is_struct() =>
+            {
+                (def.non_enum_variant(), def, args)
+            }
 
             ty::Adt(adt_def, _) => {
                 let guar = self.dcx().emit_err(diagnostics::OnlyStructsCanBeViewedAdt {
@@ -3874,6 +3878,10 @@ impl<'tcx> dyn HirTyLowerer<'tcx> + '_ {
         if let Some(guar) = error {
             return Ty::new_error(self.tcx(), guar);
         }
+
+        // FIXME(scrabsha): if the inner type is a view itself, check that the outer set
+        // of fields is a subset of the inner set of fields. That is, emit an error on
+        // `Foo.{ a, b }.{ a, c }`.
 
         let fields = self.tcx().mk_fields(&viewed_indices);
         Ty::new_view(self.tcx(), *def, *args, fields)
