@@ -173,7 +173,7 @@ pub trait Interner:
         + TypeVisitable<Self>
         + SliceLike<Item = Self::Pat>;
     type Safety: Safety<Self>;
-    type FieldSet: Copy + Eq + Hash + SliceLike<Item = Self::Field>;
+    type FieldSet: Copy + Debug + Eq + Hash + SliceLike<Item = Self::Field>;
     type Field: Debug + Hash;
 
     // Kinds of consts

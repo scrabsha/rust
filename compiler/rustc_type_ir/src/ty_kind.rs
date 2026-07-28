@@ -3,7 +3,7 @@ use std::marker::PhantomData;
 use std::ops::Deref;
 
 use derive_where::derive_where;
-use rustc_abi::ExternAbi;
+use rustc_abi::{ExternAbi};
 use rustc_ast_ir::Mutability;
 #[cfg(feature = "nightly")]
 use rustc_data_structures::stable_hash::{StableHash, StableHashCtxt, StableHasher};
@@ -747,6 +747,12 @@ impl FloatVarValue {
     }
 }
 
+#[derive_where(Clone, Copy, Debug, Eq, PartialEq)]
+pub enum FieldSetVarValue<I: Interner> {
+    Unknown,
+    Known(I::FieldSet),
+}
+
 rustc_index::newtype_index! {
     /// A **ty**pe **v**ariable **ID**.
     #[encodable]
@@ -892,6 +898,44 @@ impl UnifyKey for FloatVid {
     }
     fn tag() -> &'static str {
         "FloatVid"
+    }
+}
+
+impl<I> UnifyKey for FieldSetVid
+where
+    I: Interner,
+{
+    type Value = FieldSetVarValue<I>;
+    #[inline]
+    fn index(&self) -> u32 {
+        self.as_u32()
+    }
+    #[inline]
+    fn from_index(i: u32) -> FieldSetVid {
+        FieldSetVid::from_u32(i)
+    }
+    fn tag() -> &'static str {
+        "FieldSetVid"
+    }
+}
+
+impl<I> UnifyValue for FieldSetVarValue<I>
+where
+    I: Interner,
+{
+    type Error = NoError;
+
+    fn unify_values(value1: &Self, value2: &Self) -> Result<Self, Self::Error> {
+        match (*value1, *value2) {
+            (FieldSetVarValue::Unknown, FieldSetVarValue::Unknown) => Ok(FieldSetVarValue::Unknown),
+            (FieldSetVarValue::Unknown, FieldSetVarValue::Known(known))
+            | (FieldSetVarValue::Known(known), FieldSetVarValue::Unknown) => {
+                Ok(FieldSetVarValue::Known(known))
+            }
+            (FieldSetVarValue::Known(_), FieldSetVarValue::Known(_)) => {
+                panic!("differing field sets should have been resolved first")
+            }
+        }
     }
 }
 

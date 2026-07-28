@@ -14,7 +14,7 @@ use rustc_hir::LangItem;
 use rustc_hir::def_id::DefId;
 use rustc_macros::{StableHash, TyDecodable, TyEncodable, TypeFoldable, extension};
 use rustc_span::{DUMMY_SP, Span, Symbol, kw, sym};
-use rustc_type_ir::TyKind::*;
+use rustc_type_ir::{FieldSetVid, TyKind::*};
 use rustc_type_ir::solve::SizedTraitKind;
 use rustc_type_ir::walk::TypeWalker;
 use rustc_type_ir::{
@@ -923,6 +923,18 @@ impl<'tcx> Ty<'tcx> {
         tcx.debug_assert_args_compatible(def.did(), args);
         tcx.debug_assert_valid_adt_defkind(def);
         Ty::new(tcx, View(def, args, fields))
+    }
+
+    #[inline]
+    pub fn new_view_infer(
+        tcx: TyCtxt<'tcx>,
+        def: AdtDef<'tcx>,
+        args: GenericArgsRef<'tcx>,
+        fs_vid: FieldSetVid,
+    ) -> Ty<'tcx> {
+        tcx.debug_assert_args_compatible(def.did(), args);
+        tcx.debug_assert_valid_adt_defkind(def);
+        Ty::new(tcx, ViewInfer(def, args, fs_vid))
     }
 }
 

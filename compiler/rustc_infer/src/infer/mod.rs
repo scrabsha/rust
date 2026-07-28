@@ -27,11 +27,11 @@ use rustc_middle::traits::select;
 use rustc_middle::traits::solve::Goal;
 use rustc_middle::ty::error::{ExpectedFound, TypeError};
 use rustc_middle::ty::{
-    self, BoundVarReplacerDelegate, ConstVid, FloatVid, GenericArg, GenericArgKind, GenericArgs,
-    GenericArgsRef, GenericParamDefKind, InferConst, IntVid, OpaqueTypeKey, ProvisionalHiddenType,
-    PseudoCanonicalInput, RegionExt, RegionUtilitiesExt, Term, TermKind, Ty, TyCtxt, TyVid,
-    TypeFoldable, TypeFolder, TypeSuperFoldable, TypeVisitable, TypeVisitableExt, TypingEnv,
-    TypingMode, fold_regions,
+    self, AdtDef, BoundVarReplacerDelegate, ConstVid, FloatVid, GenericArg, GenericArgKind,
+    GenericArgs, GenericArgsRef, GenericParamDefKind, InferConst, IntVid, OpaqueTypeKey,
+    ProvisionalHiddenType, PseudoCanonicalInput, RegionExt, RegionUtilitiesExt, Term, TermKind, Ty,
+    TyCtxt, TyVid, TypeFoldable, TypeFolder, TypeSuperFoldable, TypeVisitable, TypeVisitableExt,
+    TypingEnv, TypingMode, fold_regions,
 };
 use rustc_span::{DUMMY_SP, Span, Symbol};
 use rustc_type_ir::MayBeErased;
@@ -110,6 +110,9 @@ pub struct InferCtxtInner<'tcx> {
 
     /// Map from floating variable to the kind of float it represents.
     float_unification_storage: ut::UnificationTableStorage<ty::FloatVid>,
+
+    /// Map from field set variable to the kind of view it represents.
+    field_set_unification_storage: ut::UnificationTableStorage<ty::FieldSetVid>,
 
     /// Map from floating variable to the origin span it came from, and the HirId that should be
     /// used to lint at that location. This is only used for the FCW for the fallback to `f32`,
@@ -958,6 +961,10 @@ impl<'tcx> InferCtxt<'tcx> {
         let span_index = inner.float_origin_origin_storage.push(origin);
         debug_assert_eq!(next_float_var_id, span_index);
         Ty::new_float_var(self.tcx, next_float_var_id)
+    }
+
+    pub fn next_field_set_var(&self, adt_def: AdtDef, args: GenericArgsRef) -> Ty<'tcx> {
+        todo!()
     }
 
     /// Creates a fresh region variable with the next available index.

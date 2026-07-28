@@ -776,6 +776,9 @@ pub(crate) fn method_autoderef_steps<'tcx>(
 
             None
         }
+        ty::Adt(adt_def, args) => {
+            todo!();
+        }
         _ => None,
     };
 
