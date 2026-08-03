@@ -270,6 +270,10 @@ impl<'tcx> ThirBuildCx<'tcx> {
 
                 kind
             }
+
+            Adjust::View(_) => {
+                todo!("adjust::view in `apply_ajustment`");
+            }
         };
 
         Expr { temp_scope_id, ty: adjustment.target, span, kind }

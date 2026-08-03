@@ -382,6 +382,8 @@ impl<'a, 'tcx> FnCtxt<'a, 'tcx> {
                 Adjust::Borrow(_) => {
                     // No effects to enforce here.
                 }
+
+                Adjust::View(_) => todo!(),
             }
 
             expr_ty = a.target;

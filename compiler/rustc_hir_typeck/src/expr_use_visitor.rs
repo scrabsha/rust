@@ -761,6 +761,10 @@ impl<'tcx, Cx: TypeInformationCtxt<'tcx>, D: Delegate<'tcx>> ExprUseVisitor<'tcx
                 adjustment::Adjust::GenericReborrow(_) => {
                     span_bug!(expr.span, "generic reborrow adjustment must be terminal");
                 }
+
+                adjustment::Adjust::View(_) => {
+                    todo!()
+                }
             }
             place_with_id = self.cat_expr_adjusted(expr, place_with_id, adjustment)?;
         }
@@ -1297,6 +1301,8 @@ impl<'tcx, Cx: TypeInformationCtxt<'tcx>, D: Delegate<'tcx>> ExprUseVisitor<'tcx
                 // Result is an rvalue.
                 Ok(self.cat_rvalue(expr.hir_id, target))
             }
+
+            adjustment::Adjust::View(_) => todo!(),
         }
     }
 

@@ -223,7 +223,7 @@ impl<'f, 'tcx> Coerce<'f, 'tcx> {
         a: Ty<'tcx>,
         b: Ty<'tcx>,
         adjustments: impl IntoIterator<Item = Adjustment<'tcx>>,
-        final_adjustment: Adjust,
+        final_adjustment: Adjust<'tcx>,
         leak_check: ForceLeakCheck,
     ) -> CoerceResult<'tcx> {
         self.unify_raw(a, b, leak_check).and_then(|InferOk { value: ty, obligations }| {

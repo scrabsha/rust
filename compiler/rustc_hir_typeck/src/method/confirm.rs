@@ -28,7 +28,7 @@ use rustc_middle::ty::{
 use rustc_middle::{bug, span_bug};
 use rustc_span::{DUMMY_SP, Span};
 use rustc_trait_selection::traits;
-use tracing::debug;
+use tracing::{debug, instrument};
 
 use super::{MethodCallee, probe};
 use crate::diagnostics::{SupertraitItemShadowee, SupertraitItemShadower, SupertraitItemShadowing};
@@ -193,6 +193,7 @@ impl<'a, 'tcx> ConfirmContext<'a, 'tcx> {
         unadjusted_self_ty: Ty<'tcx>,
         pick: &probe::Pick<'tcx>,
     ) -> (Ty<'tcx>, Vec<Adjustment<'tcx>>) {
+        debug!("create_ty_adjustments_from_pick: unadjusted_self_ty={unadjusted_self_ty:?} pick={pick:?}");
         let mut autoderef = self.autoderef(self.call_expr.span, unadjusted_self_ty);
         let Some((mut target, n)) = autoderef.nth(pick.autoderefs) else {
             let error_ty = Ty::new_error_with_message(
@@ -550,6 +551,7 @@ impl<'a, 'tcx> ConfirmContext<'a, 'tcx> {
         self.normalize(self.span, Unnormalized::new_wip(args))
     }
 
+    #[instrument(level = "debug", skip(self, pick))]
     fn unify_receivers(
         &mut self,
         self_ty: Ty<'tcx>,

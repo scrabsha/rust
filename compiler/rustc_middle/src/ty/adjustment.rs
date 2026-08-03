@@ -81,7 +81,7 @@ pub enum PointerCoercion {
 ///    `Box<[i32]>` is an `Adjust::Unsize` with the target `Box<[i32]>`.
 #[derive(Clone, TyEncodable, TyDecodable, StableHash, TypeFoldable, TypeVisitable)]
 pub struct Adjustment<'tcx> {
-    pub kind: Adjust,
+    pub kind: Adjust<'tcx>,
     pub target: Ty<'tcx>,
 }
 
@@ -92,7 +92,7 @@ impl<'tcx> Adjustment<'tcx> {
 }
 
 #[derive(Clone, Debug, TyEncodable, TyDecodable, StableHash, TypeFoldable, TypeVisitable)]
-pub enum Adjust {
+pub enum Adjust<'tcx> {
     /// Go from ! to any type.
     NeverToAny,
 
@@ -111,6 +111,8 @@ pub enum Adjust {
     ///
     /// [`ExprKind::Reborrow`]: crate::thir::ExprKind::Reborrow
     GenericReborrow(hir::Mutability),
+
+    View(Ty<'tcx>),
 }
 
 #[derive(Copy, Clone, Debug, TyEncodable, TyDecodable, StableHash, TypeFoldable, TypeVisitable)]

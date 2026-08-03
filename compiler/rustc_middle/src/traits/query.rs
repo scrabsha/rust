@@ -142,7 +142,7 @@ impl<'tcx> FromIterator<DropckConstraint<'tcx>> for DropckConstraint<'tcx> {
     }
 }
 
-#[derive(Debug, StableHash)]
+#[derive(Clone, Debug, StableHash)]
 pub struct CandidateStep<'tcx> {
     pub self_ty: Canonical<'tcx, QueryResponse<'tcx, Ty<'tcx>>>,
     pub self_ty_is_opaque: bool,
