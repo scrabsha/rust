@@ -1922,6 +1922,11 @@ fn receiver_is_valid<'tcx>(
 
         confirm_type_is_not_a_method_generic_param(potential_self_ty, method_generics)?;
 
+        let potential_self_ty = match potential_self_ty.kind() {
+            ty::View(def, args, _) => Ty::new_adt(infcx.tcx, *def, args),
+            _ => potential_self_ty,
+        };
+
         // Check if the self type unifies. If it does, then commit the result
         // since it may have region side-effects.
         if let Ok(()) = wfcx.infcx.commit_if_ok(|_| {
