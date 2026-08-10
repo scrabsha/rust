@@ -239,10 +239,6 @@ pub(crate) struct Pick<'tcx> {
 
     /// Candidates that were shadowed by supertraits.
     pub shadowed_candidates: Vec<ty::AssocItem>,
-
-    /// Indicates that we want to perform a `View` adjustment after all the other adjustments have
-    /// been run. The wrapped type represents the inferred set of fields to be viewed.
-    pub view_adjustment: Option<Ty<'tcx>>,
 }
 
 #[derive(Clone, Debug, PartialEq, Eq)]
@@ -346,7 +342,7 @@ impl<'a, 'tcx> FnCtxt<'a, 'tcx> {
         scope_expr_id: HirId,
         scope: ProbeScope<'tcx>,
     ) -> PickResult<'tcx> {
-        self.probe_op(
+        let meow = self.probe_op(
             item_name.span,
             mode,
             Some(item_name),
@@ -356,7 +352,10 @@ impl<'a, 'tcx> FnCtxt<'a, 'tcx> {
             scope_expr_id,
             scope,
             |probe_cx| probe_cx.pick(),
-        )
+        );
+        debug!("probe_for_name: result is {meow:?}");
+
+        meow
     }
 
     #[instrument(level = "debug", skip(self))]
@@ -571,44 +570,78 @@ impl<'a, 'tcx> FnCtxt<'a, 'tcx> {
 
         debug!("ProbeContext: steps for self_ty={:?} are {:?}", self_ty, steps);
 
+        // FIXME(scrabsha): does this even work?????
+        let steps = if self.tcx.features().view_types()
+            && let Some(last_candidate) = steps.steps.last()
+            && let ty::Adt(adt_def, args) = *last_candidate.self_ty.value.value.kind()
+        {
+            let infcx = &self.infcx;
+            let (ParamEnvAnd { param_env: _, value }, var_values) =
+                infcx.instantiate_canonical(span, &query_input.canonical);
+            let query::MethodAutoderefSteps { predefined_opaques_in_body: _, .. } = value;
+            let prev_opaque_entries = self.inner.borrow_mut().opaque_types().num_entries();
+
+            let autoderefs = steps.steps.iter().filter(|s| s.reachable_via_deref).count() - 1;
+            let inferred = dbg!(self.next_ty_var(DUMMY_SP));
+            let view_step = CandidateStep {
+                self_ty: self.make_query_response_ignoring_pending_obligations(
+                    var_values,
+                    Ty::new_inferred_view(self.tcx, adt_def, args, inferred),
+                    prev_opaque_entries,
+                ),
+                self_ty_is_opaque: false,
+                autoderefs,
+                // this could be from an unsafe deref if we had
+                // a *mut/const [T; N]
+                from_unsafe_deref: false,
+                unsize: false, // FIXME(scrabsha): fight Niko about it, i guess
+                reachable_via_deref: true, // this is always the final type from
+                               // autoderef_via_deref
+            };
+
+            self.tcx.arena.alloc_from_iter(steps.steps.iter().cloned().chain(iter::once(view_step)))
+        } else {
+            steps.steps
+        };
+
         // this creates one big transaction so that all type variables etc
         // that we create during the probe process are removed later
         self.probe(|_| {
-            // FIXME(scrabsha): does this even work?????
-            let steps = if self.tcx.features().view_types()
-                && let Some(last_candidate) = steps.steps.last()
-                && let ty::Adt(adt_def, args) = *last_candidate.self_ty.value.value.kind()
-            {
-                let infcx = &self.infcx;
-                let (ParamEnvAnd { param_env: _, value }, var_values) =
-                    infcx.instantiate_canonical(span, &query_input.canonical);
-                let query::MethodAutoderefSteps { predefined_opaques_in_body: _, .. } = value;
-                let prev_opaque_entries = self.inner.borrow_mut().opaque_types().num_entries();
+            // // FIXME(scrabsha): does this even work?????
+            // let steps = if self.tcx.features().view_types()
+            //     && let Some(last_candidate) = steps.steps.last()
+            //     && let ty::Adt(adt_def, args) = *last_candidate.self_ty.value.value.kind()
+            // {
+            //     let infcx = &self.infcx;
+            //     let (ParamEnvAnd { param_env: _, value }, var_values) =
+            //         infcx.instantiate_canonical(span, &query_input.canonical);
+            //     let query::MethodAutoderefSteps { predefined_opaques_in_body: _, .. } = value;
+            //     let prev_opaque_entries = self.inner.borrow_mut().opaque_types().num_entries();
 
-                let autoderefs = steps.steps.iter().filter(|s| s.reachable_via_deref).count() - 1;
-                let inferred = self.next_ty_var(DUMMY_SP);
-                let view_step = CandidateStep {
-                    self_ty: self.make_query_response_ignoring_pending_obligations(
-                        var_values,
-                        Ty::new_inferred_view(self.tcx, adt_def, args, inferred),
-                        prev_opaque_entries,
-                    ),
-                    self_ty_is_opaque: false,
-                    autoderefs,
-                    // this could be from an unsafe deref if we had
-                    // a *mut/const [T; N]
-                    from_unsafe_deref: false,
-                    unsize: false, // FIXME(scrabsha): fight Niko about it, i guess
-                    reachable_via_deref: true, // this is always the final type from
-                                   // autoderef_via_deref
-                };
+            //     let autoderefs = steps.steps.iter().filter(|s| s.reachable_via_deref).count() - 1;
+            //     let inferred = dbg!(self.next_ty_var(DUMMY_SP));
+            //     let view_step = CandidateStep {
+            //         self_ty: self.make_query_response_ignoring_pending_obligations(
+            //             var_values,
+            //             Ty::new_inferred_view(self.tcx, adt_def, args, inferred),
+            //             prev_opaque_entries,
+            //         ),
+            //         self_ty_is_opaque: false,
+            //         autoderefs,
+            //         // this could be from an unsafe deref if we had
+            //         // a *mut/const [T; N]
+            //         from_unsafe_deref: false,
+            //         unsize: false, // FIXME(scrabsha): fight Niko about it, i guess
+            //         reachable_via_deref: true, // this is always the final type from
+            //                        // autoderef_via_deref
+            //     };
 
-                self.tcx
-                    .arena
-                    .alloc_from_iter(steps.steps.iter().cloned().chain(iter::once(view_step)))
-            } else {
-                steps.steps
-            };
+            //     self.tcx
+            //         .arena
+            //         .alloc_from_iter(steps.steps.iter().cloned().chain(iter::once(view_step)))
+            // } else {
+            //     steps.steps
+            // };
 
             let mut probe_cx = ProbeContext::new(
                 self,
@@ -1881,7 +1914,6 @@ impl<'tcx> Pick<'tcx> {
             unstable_candidates: _,
             receiver_steps: _,
             shadowed_candidates: _,
-            view_adjustment: _,
         } = *self;
         self_ty != other.self_ty || def_id != other.item.def_id
     }
@@ -2433,8 +2465,6 @@ impl<'a, 'tcx> ProbeContext<'a, 'tcx> {
             import_ids: probes[0].0.import_ids,
             autoderefs: 0,
             autoref_or_ptr_adjustment: None,
-            // FIXME(scrabsha): ??????
-            view_adjustment: None,
             self_ty,
             unstable_candidates: vec![],
             receiver_steps: None,

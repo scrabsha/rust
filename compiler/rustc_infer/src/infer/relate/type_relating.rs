@@ -118,6 +118,7 @@ impl<'tcx> TypeRelation<TyCtxt<'tcx>> for TypeRelating<'_, 'tcx> {
 
     #[instrument(skip(self), level = "trace")]
     fn tys(&mut self, a: Ty<'tcx>, b: Ty<'tcx>) -> RelateResult<'tcx, Ty<'tcx>> {
+        tracing::debug!("TypeRelation::tys({a:?}, {b:?})");
         // We don't use the rigid marker in the old solver.
         debug_assert!(!a.has_rigid_aliases());
         debug_assert!(!b.has_rigid_aliases());
@@ -129,6 +130,7 @@ impl<'tcx> TypeRelation<TyCtxt<'tcx>> for TypeRelating<'_, 'tcx> {
         let infcx = self.infcx;
         let a = infcx.shallow_resolve(a);
         let b = infcx.shallow_resolve(b);
+        tracing::debug!("TypeRelation::tys after shallow resolve: a={a:?} b={b:?}");
 
         if self.cache.contains(&(self.ambient_variance, a, b)) {
             return Ok(a);

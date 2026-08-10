@@ -303,8 +303,13 @@ impl<I: Interner> FlagComputation<I> {
                 }
             },
 
-            ty::Adt(_, args) | ty::View(_, args, _) => {
+            ty::Adt(_, args) => {
                 self.add_args(args.as_slice());
+            }
+
+            ty::View(_, args, fields) => {
+                self.add_args(args.as_slice());
+                self.add_ty(fields);
             }
 
             ty::Alias(is_rigid, alias) => {

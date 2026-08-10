@@ -383,7 +383,9 @@ impl<'a, 'tcx> FnCtxt<'a, 'tcx> {
                     // No effects to enforce here.
                 }
 
-                Adjust::View(_) => todo!(),
+                Adjust::View(_) => {
+                    // FIXME(view_types): what should we do here?
+                },
             }
 
             expr_ty = a.target;

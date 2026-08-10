@@ -2,7 +2,7 @@ use std::iter;
 
 use derive_where::derive_where;
 use rustc_ast_ir::Mutability;
-use tracing::{instrument, trace};
+use tracing::{debug, instrument, trace};
 
 use crate::error::{ExpectedFound, TypeError};
 use crate::fold::TypeFoldable;
@@ -351,6 +351,7 @@ pub fn structurally_relate_tys<I: Interner, R: TypeRelation<I>>(
     a: I::Ty,
     b: I::Ty,
 ) -> RelateResult<I, I::Ty> {
+    debug!("structurally_relate_tys::<{}>({:?}, {:?})", std::any::type_name::<R>(), a, b);
     let cx = relation.cx();
     match (a.kind(), b.kind()) {
         (ty::Infer(_), _) | (_, ty::Infer(_)) => {

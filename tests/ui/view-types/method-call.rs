@@ -8,12 +8,14 @@ struct Foo {
 }
 
 impl Foo {
-    fn meow(self: view_type!(Foo.{ bar })) {
-        println!("wagu wagu");
-    }
+    fn by_val(self: view_type!(Foo.{ bar })) {}
+    fn by_ref(self: &view_type!(Foo.{ bar })) {}
+    fn by_mut_ref(self: &mut view_type!(Foo.{ bar })) {}
 }
 
 fn main() {
-    let foo = Foo { bar: (), baz: () };
-    foo.meow();
+    let mut foo = Foo { bar: (), baz: () };
+    // foo.by_ref();
+    // foo.by_mut_ref();
+    foo.by_val();
 }

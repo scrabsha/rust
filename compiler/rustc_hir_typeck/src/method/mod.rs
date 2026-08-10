@@ -189,6 +189,7 @@ impl<'a, 'tcx> FnCtxt<'a, 'tcx> {
         };
 
         let pick = self.lookup_probe(segment.ident, self_ty, call_expr, scope)?;
+        debug!("lookup_method: meow meow {pick:?}");
 
         self.lint_edition_dependent_dot_call(
             self_ty, segment, span, call_expr, self_expr, &pick, args,

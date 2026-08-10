@@ -193,7 +193,9 @@ impl<'a, 'tcx> ConfirmContext<'a, 'tcx> {
         unadjusted_self_ty: Ty<'tcx>,
         pick: &probe::Pick<'tcx>,
     ) -> (Ty<'tcx>, Vec<Adjustment<'tcx>>) {
-        debug!("create_ty_adjustments_from_pick: unadjusted_self_ty={unadjusted_self_ty:?} pick={pick:?}");
+        debug!(
+            "create_ty_adjustments_from_pick: unadjusted_self_ty={unadjusted_self_ty:?} pick={pick:?}"
+        );
         let mut autoderef = self.autoderef(self.call_expr.span, unadjusted_self_ty);
         let Some((mut target, n)) = autoderef.nth(pick.autoderefs) else {
             let error_ty = Ty::new_error_with_message(
@@ -207,7 +209,18 @@ impl<'a, 'tcx> ConfirmContext<'a, 'tcx> {
 
         assert_eq!(n, pick.autoderefs);
 
-        let mut adjustments = self.adjust_steps(&autoderef);
+        let mut adjustments = Vec::new();
+
+        if let ty::Adt(def, args) = unadjusted_self_ty.peel_refs().kind()
+            && let ty::View(def_, args_, fields) = pick.self_ty.peel_refs().kind()
+            && def == def_
+            && args == args_
+        {
+            target = Ty::new_inferred_view(self.tcx, *def, args, *fields);
+            adjustments.push(Adjustment { kind: Adjust::View(*fields), target });
+        }
+
+        adjustments.extend(self.adjust_steps(&autoderef));
         match pick.autoref_or_ptr_adjustment {
             Some(probe::AutorefOrPtrAdjustment::Autoref { mutbl, unsize }) => {
                 let region = self.next_region_var(RegionVariableOrigin::Autoref(self.span));
