@@ -27,15 +27,19 @@ impl VisitorResult for () {
 impl<T> VisitorResult for ControlFlow<T> {
     type Residual = T;
 
+    #[inline(always)]
     fn output() -> Self {
         ControlFlow::Continue(())
     }
+    #[inline(always)]
     fn from_residual(residual: Self::Residual) -> Self {
         ControlFlow::Break(residual)
     }
+    #[inline(always)]
     fn from_branch(b: Self) -> Self {
         b
     }
+    #[inline(always)]
     fn branch(self) -> Self {
         self
     }
@@ -44,18 +48,22 @@ impl<T> VisitorResult for ControlFlow<T> {
 impl<E> VisitorResult for Result<(), E> {
     type Residual = E;
 
+    #[inline(always)]
     fn output() -> Self {
         Ok(())
     }
+    #[inline(always)]
     fn from_residual(residual: Self::Residual) -> Self {
         Err(residual)
     }
+    #[inline(always)]
     fn from_branch(b: ControlFlow<Self::Residual>) -> Self {
         match b {
             ControlFlow::Continue(()) => Ok(()),
             ControlFlow::Break(e) => Err(e),
         }
     }
+    #[inline(always)]
     fn branch(self) -> ControlFlow<Self::Residual> {
         match self {
             Ok(()) => ControlFlow::Continue(()),
