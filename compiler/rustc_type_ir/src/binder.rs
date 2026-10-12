@@ -264,6 +264,7 @@ impl<I: Interner> TypeVisitor<I> for ValidateBoundVars<I> {
             {
                 let idx = bound_ty.var().as_usize();
                 let Some(bound_var) = self.bound_vars.get(idx) else {
+                    std::hint::cold_path();
                     panic!("Not enough bound vars: {:?} not found in {:?}", t, self.bound_vars);
                 };
                 bound_ty.assert_eq(bound_var);
@@ -284,6 +285,7 @@ impl<I: Interner> TypeVisitor<I> for ValidateBoundVars<I> {
             {
                 let idx = bound_const.var().as_usize();
                 let Some(bound_var) = self.bound_vars.get(idx) else {
+                    std::hint::cold_path();
                     panic!("Not enough bound vars: {:?} not found in {:?}", c, self.bound_vars);
                 };
                 bound_const.assert_eq(bound_var);
@@ -299,6 +301,7 @@ impl<I: Interner> TypeVisitor<I> for ValidateBoundVars<I> {
             ty::ReBound(index, br) if index == ty::BoundVarIndexKind::Bound(self.binder_index) => {
                 let idx = br.var().as_usize();
                 let Some(bound_var) = self.bound_vars.get(idx) else {
+                    std::hint::cold_path();
                     panic!("Not enough bound vars: {:?} not found in {:?}", r, self.bound_vars);
                 };
                 br.assert_eq(bound_var);
