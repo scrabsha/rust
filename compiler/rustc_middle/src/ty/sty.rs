@@ -1167,6 +1167,44 @@ impl<'tcx> Ty<'tcx> {
         matches!(self.kind(), Never)
     }
 
+    /// Faster way to check whether a type may resolve to `!` after resolving.
+    #[inline(always)]
+    pub fn may_be_never(self) -> bool {
+        match self.kind() {
+            Bool
+            | Char
+            | Int(_)
+            | Uint(_)
+            | Float(_)
+            | Adt(_, _)
+            | Foreign(_)
+            | Str
+            | Array(_, _)
+            | Pat(_, _)
+            | Slice(_)
+            | RawPtr(_, _)
+            | Ref(_, _, _)
+            | FnDef(_, _)
+            | FnPtr(_, _)
+            | UnsafeBinder(_)
+            | Dynamic(_, _)
+            | Closure(_, _)
+            | CoroutineClosure(_, _)
+            | Coroutine(_, _)
+            | CoroutineWitness(_, _)
+            | Tuple(_)
+            | rustc_type_ir::TyKind::Alias(_, _)
+            | Infer(IntVar(_) | FloatVar(_) | FreshIntTy(_) | FreshFloatTy(_)) => false,
+
+            Never
+            | Param(_)
+            | Bound(_, _)
+            | Error(_)
+            | rustc_type_ir::TyKind::Placeholder(_)
+            | Infer(_) => true,
+        }
+    }
+
     #[inline]
     pub fn is_primitive(self) -> bool {
         matches!(self.kind(), Bool | Char | Int(_) | Uint(_) | Float(_))
